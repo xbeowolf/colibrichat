@@ -1,0 +1,93 @@
+/******************************************************************************
+*                                                                             *
+* kcp.h -- Colibri Chat Protocol constants and declarations                   *
+*                                                                             *
+* Copyright (c) Podobashev Dmitry / BEOWOLF, 2009. All rights reserved.       *
+*                                                                             *
+******************************************************************************/
+
+#ifndef _COLIBRIPROTOCOL_
+#define _COLIBRIPROTOCOL_
+
+//-----------------------------------------------------------------------------
+
+//
+// Includes
+//
+
+#pragma region Includes
+
+// Project
+#include "bnp.h"
+
+#pragma endregion
+
+//-----------------------------------------------------------------------------
+
+#define CCP_PORT               7531
+
+// Current engine version
+#define BNP_ENGINEVERSSTRW MAKEVERSIONSTR(1, 0, 0, 1)
+#define BNP_ENGINEVERSSTRA MAKEVERSIONSTR(1, 0, 0, 1)
+#define BNP_ENGINEVERSNUM  MAKEVERSIONNUM(1, 0, 0, 1)
+#define BNP_ENGINEVERSMIN  MAKEVERSIONNUM(1, 0, 0, 1)
+#ifdef UNICODE
+#define BNP_ENGINEVERSSTR  BNP_ENGINEVERSSTRW
+#else
+#define BNP_ENGINEVERSSTR  BNP_ENGINEVERSSTRA
+#endif
+
+//-----------------------------------------------------------------------------
+
+// Reserved contacts identifiers
+#define CRC_SERVER             0xa67413a6
+#define NAME_SERVER            TEXT("Server")
+#define CRC_LIST               0xfc089517
+#define NAME_LIST              TEXT("Channels")
+#define CRC_NONAME             0x265cf8a4
+#define NAME_NONAME            TEXT("Noname")
+#define CRC_ANONYMOUS          0xbec1fbcd
+#define NAME_ANONYMOUS         TEXT("Anonymous")
+#define CI_RESERVEDPOOL        10
+
+//-----------------------------------------------------------------------------
+
+//
+// Chat base
+//
+
+// Creates new nick
+#define CCPM_NICK                      100
+#define NICK_OK                        0
+#define NICK_TAKEN                     1
+#define NICK_TAKENCHANNEL              2
+#define NICK_TAKENUSER                 3
+
+// Rename contact
+#define CCPM_RENAME                    101
+
+// Channels list
+#define CCPM_LIST                      102
+
+// User information, i.e. name, IP, creation time
+#define CCPM_USERINFO                  103
+
+// Join to channel or to private talk
+#define CCPM_JOIN                      104
+#define CHAN_OK                        0
+#define CHAN_ALREADY                   1
+#define CHAN_DENY                      2
+
+// Part channel or private talk
+#define CCPM_PART                      105
+#define PART_LEAVE                     1
+#define PART_DISCONNECT                2
+
+#define CCPM_ONLINE                    106
+
+// Say to channel or to private talk
+#define CCPM_SAY                       107
+
+//-----------------------------------------------------------------------------
+
+#endif // _COLIBRIPROTOCOL_

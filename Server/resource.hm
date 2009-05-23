@@ -1,0 +1,4 @@
+// Microsoft Visual C++ generated Help ID include file.
+// Used by Server.rc
+//
+#define HIDC_LIST                       0x80640064    // IDD_CONNECTIONS [English (United States)]

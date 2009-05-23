@@ -1,0 +1,306 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Neutral resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
+#ifdef _WIN32
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#pragma code_page(1251)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RT_MANIFEST
+//
+
+IDR_MANIFEST            RT_MANIFEST             "ColibriClient.exe.manifest"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDA_MAIN ACCELERATORS 
+BEGIN
+    "B",            201,                    VIRTKEY, CONTROL, NOINVERT
+    "I",            202,                    VIRTKEY, CONTROL, NOINVERT
+    "U",            203,                    VIRTKEY, CONTROL, NOINVERT
+    "D",            206,                    VIRTKEY, CONTROL, NOINVERT
+    VK_RETURN,      IDOK,                   VIRTKEY, NOINVERT
+    VK_RETURN,      IDOK2,                  VIRTKEY, CONTROL, NOINVERT
+    VK_F4,          IDC_CLOSE,              VIRTKEY, CONTROL, NOINVERT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_EDIT                BITMAP                  "iml_edit.bmp"
+IDB_SEND                BITMAP                  "send.bmp"
+IDB_TAB                 BITMAP                  "iml_tab.bmp"
+IDB_MAN                 BITMAP                  "iml_man.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_MAIN                ICON                    "Colibri1.ico"
+IDI_SMALL               ICON                    "Chat.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+1 VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x1fL
+#ifdef _DEBUG
+ FILEFLAGS 0x9L
+#else
+ FILEFLAGS 0x8L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000904b0"
+        BEGIN
+            VALUE "Comments", "Shareware; Colibri Chat created 19.04.2009 17:17:32\r\n\r\nContact information:\r\nmailto:xbeowolf@gmail.com\r\nicq:320-329-575\r\nphone:+380684862837"
+            VALUE "CompanyName", "Podobashev D. O. / BEOWOLF"
+            VALUE "FileDescription", "Colibri Chat Client Application"
+            VALUE "FileVersion", "1, 0, 0, 1"
+            VALUE "InternalName", "ColibriClient"
+            VALUE "LegalCopyright", "© BEOWOLF / Podobashev Dmitry, 2009"
+            VALUE "LegalTrademarks", "MetaShape"
+            VALUE "OriginalFilename", "ColibriClient.exe"
+            VALUE "PrivateBuild", "Build 1"
+            VALUE "ProductName", "Colibri Chat"
+            VALUE "ProductVersion", "1, 0, 0, 1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x9, 1200
+    END
+END
+
+#endif    // Neutral resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Russian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+#ifdef _WIN32
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_MAIN DIALOGEX 30, 20, 400, 300
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_FIXEDSYS | WS_MINIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CAPTION | WS_SYSMENU
+CAPTION "Colibri Chat"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_CHANNELS,"SysTabControl32",TCS_SCROLLOPPOSITE | TCS_HOTTRACK | WS_TABSTOP,4,4,392,292
+END
+
+IDD_SERVER DIALOGEX 8, 20, 384, 271
+STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_CAPTION
+EXSTYLE WS_EX_CONTEXTHELP | WS_EX_CONTROLPARENT
+CAPTION "Server"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_LOG,"RichEdit20A",ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | WS_BORDER | WS_VSCROLL | WS_TABSTOP,0,0,384,225
+    CONTROL         "Hostname or IP:",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,0,229,52,8
+    EDITTEXT        IDC_HOST,54,227,100,12,ES_AUTOHSCROLL
+    CONTROL         "with port:",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,156,229,30,8
+    EDITTEXT        IDC_PORT,188,227,48,12,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Password for connection:",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,238,229,80,8
+    EDITTEXT        IDC_PASS,320,227,64,12,ES_PASSWORD | ES_AUTOHSCROLL
+    CHECKBOX        "&Connect to server",IDC_CONNECT,0,241,384,14,BS_PUSHLIKE | BS_FLAT
+    LTEXT           "Nickname:",IDC_STATIC,135,259,32,8
+    EDITTEXT        IDC_NICK,169,257,80,12,ES_AUTOHSCROLL
+END
+
+IDD_LIST DIALOGEX 8, 20, 384, 271
+STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_CAPTION
+EXSTYLE WS_EX_CONTEXTHELP | WS_EX_CONTROLPARENT
+CAPTION "List"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_CHANLIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_SHAREIMAGELISTS | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,0,0,384,255
+    CONTROL         "Join to channel:",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,0,259,50,8
+    EDITTEXT        IDC_JOINCHAN,52,257,120,12,ES_AUTOHSCROLL
+    CONTROL         "with password:",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,174,259,48,8
+    EDITTEXT        IDC_JOINPASS,224,257,64,12,ES_PASSWORD | ES_AUTOHSCROLL
+    PUSHBUTTON      "&Join",IDC_JOIN,290,257,24,12
+    PUSHBUTTON      "&Refresh",IDC_REFRESHLIST,334,257,50,12
+END
+
+IDD_USER DIALOGEX 8, 20, 384, 271
+STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_CAPTION
+EXSTYLE WS_EX_CONTEXTHELP | WS_EX_CONTROLPARENT
+CAPTION "User"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "Rich edit controls",IDC_TOOLBAR,"ToolbarWindow32",WS_TABSTOP | 0x900,0,0,384,16,WS_EX_TOOLWINDOW
+    CONTROL         "",IDC_LOG,"RichEdit20A",ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | WS_BORDER | WS_VSCROLL | WS_TABSTOP,0,18,384,211
+    CONTROL         "",IDC_RICHEDIT,"RichEdit20A",ES_MULTILINE | ES_AUTOVSCROLL | WS_BORDER | WS_VSCROLL | WS_TABSTOP,0,231,302,40
+    DEFPUSHBUTTON   "Send",IDC_SEND,304,231,80,40,BS_BITMAP
+END
+
+IDD_CHANNEL DIALOGEX 8, 20, 384, 271
+STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_CAPTION
+EXSTYLE WS_EX_CONTEXTHELP | WS_EX_CONTROLPARENT
+CAPTION "Channel"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "Rich edit controls",IDC_TOOLBAR,"ToolbarWindow32",WS_TABSTOP | 0x900,0,0,384,16,WS_EX_TOOLWINDOW
+    CONTROL         "",IDC_LOG,"RichEdit20A",ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | WS_BORDER | WS_VSCROLL | WS_TABSTOP,0,18,302,211
+    CONTROL         "",IDC_USERLIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHAREIMAGELISTS | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,304,18,80,211
+    CONTROL         "",IDC_RICHEDIT,"RichEdit20A",ES_MULTILINE | ES_AUTOVSCROLL | WS_BORDER | WS_VSCROLL | WS_TABSTOP,0,231,302,40
+    DEFPUSHBUTTON   "Send",IDC_SEND,304,231,80,40,BS_BITMAP
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDM_RICHEDIT MENU 
+BEGIN
+    POPUP "&Overlap"
+    BEGIN
+        MENUITEM "&Send",                       IDC_SEND
+        MENUITEM SEPARATOR
+        MENUITEM "Send by &Enter",              IDC_SENDBYENTER
+        MENUITEM "Send by Ctrl+Enter",          IDC_SENDBYCTRLENTER
+        MENUITEM SEPARATOR
+        MENUITEM "&Copy",                       IDC_COPY
+        MENUITEM "C&ut",                        IDC_CUT
+        MENUITEM "&Paste",                      IDC_PASTE
+        MENUITEM "&Delete",                     IDC_DELETE
+        MENUITEM "Select &All",                 IDC_SELECTALL
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_MAIN, DIALOG
+    BEGIN
+        LEFTMARGIN, 4
+        RIGHTMARGIN, 396
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 296
+    END
+
+    IDD_LIST, DIALOG
+    BEGIN
+        LEFTMARGIN, 2
+        TOPMARGIN, 2
+        BOTTOMMARGIN, 216
+    END
+
+    IDD_USER, DIALOG
+    BEGIN
+        LEFTMARGIN, 2
+        TOPMARGIN, 2
+        BOTTOMMARGIN, 216
+    END
+
+    IDD_CHANNEL, DIALOG
+    BEGIN
+        LEFTMARGIN, 2
+        TOPMARGIN, 2
+        BOTTOMMARGIN, 216
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
