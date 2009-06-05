@@ -48,6 +48,9 @@
 #define RK_PORT                TEXT("Port")
 #define RK_PASSWORD            TEXT("Password")
 #define RK_STATE               TEXT("ConnectionState")
+#define RK_STATUS              TEXT("Status")
+#define RK_STATUSIMG           TEXT("StatusImage")
+#define RK_STATUSMSG           TEXT("StatusMessage")
 //#define RK_QUITPAUSE           TEXT("QuitPause")
 
 // Interface
@@ -79,15 +82,18 @@
 #define IML_BKMODE             17
 // Tab icons
 #define IML_CHANNELVOID        0
-#define IML_CHANNELGREEN       1
-#define IML_CHANNELBLUE        2
-#define IML_CHANNELRED         3
-#define IML_PRIVATEGREEN       4
-#define IML_PRIVATEBLUE        5
-#define IML_PRIVATERED         6
-#define IML_SERVERGREEN        7
-#define IML_SERVERBLUE         8
-#define IML_SERVERRED          9
+#define IML_CHANNELRED         1
+#define IML_CHANNELYELLOW      2
+#define IML_CHANNELGREEN       3
+#define IML_CHANNELCYAN        4
+#define IML_CHANNELBLUE        5
+#define IML_CHANNELMAGENTA     6
+#define IML_PRIVATEGREEN       7
+#define IML_PRIVATEBLUE        8
+#define IML_PRIVATERED         9
+#define IML_SERVERGREEN        10
+#define IML_SERVERBLUE         11
+#define IML_SERVERRED          12
 // Man icons
 #define IML_MANREDON           0
 #define IML_MANYELLOWON        1
@@ -101,6 +107,10 @@
 #define IML_MANCYANOFF         9
 #define IML_MANBLUEOFF         10
 #define IML_MANMAGENTAOFF      11
+#define IML_MANVOID            60
+#define IML_MAN_COUNT          61
+// Status images
+#define IML_STATUSIMG_COUNT    38
 
 //-----------------------------------------------------------------------------
 
@@ -220,6 +230,9 @@ namespace colibrichat
 			JPROPERTY_R(HWND, hwndPort);
 			JPROPERTY_R(HWND, hwndPass);
 			JPROPERTY_R(HWND, hwndNick);
+			JPROPERTY_R(HWND, hwndStatus);
+			JPROPERTY_R(HWND, hwndStatusImg);
+			JPROPERTY_R(HWND, hwndStatusMsg);
 		};
 
 		class JPageList : public JPage
@@ -302,8 +315,11 @@ namespace colibrichat
 			DWORD m_ID;
 			JPROPERTY_RREF_CONST(User, user);
 
+			JPROPERTY_R(HWND, hwndMsgSpin);
 			JPROPERTY_R(HWND, hwndSend);
 			RECT rcSend;
+
+			std::vector<std::string> vecMsgSpin;
 		};
 
 		class JPageChannel : public JPageLog, public rtf::Editor
@@ -350,8 +366,11 @@ namespace colibrichat
 			JPROPERTY_RREF_CONST(Channel, channel);
 
 			JPROPERTY_R(HWND, hwndList);
+			JPROPERTY_R(HWND, hwndMsgSpin);
 			JPROPERTY_R(HWND, hwndSend);
 			RECT rcList, rcSend;
+
+			std::vector<std::string> vecMsgSpin;
 		};
 
 	public:
@@ -392,7 +411,7 @@ namespace colibrichat
 		void ShowErrorMessage(HWND hwnd, const std::tstring& msg);
 
 		// Users managment
-		void CALLBACK InsertUser(DWORD id, const User& user);
+		void CALLBACK InsertUser(DWORD idUser, const User& user);
 		void CALLBACK LinkUser(DWORD idUser, DWORD idLink);
 		void CALLBACK UnlinkUser(DWORD idUser, DWORD idLink);
 
@@ -406,6 +425,7 @@ namespace colibrichat
 		void CALLBACK Recv_Notify_PART(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Reply_USERINFO(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_ONLINE(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Notify_STATUS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_SAY(SOCKET sock, WORD trnid, io::mem& is);
 
 		// Beowolf Network Protocol Messages sending
@@ -414,6 +434,10 @@ namespace colibrichat
 		void CALLBACK Send_Cmd_PART(SOCKET sock, DWORD id, DWORD reason);
 		void CALLBACK Send_Quest_USERINFO(SOCKET sock, const SetId& set);
 		void CALLBACK Send_Cmd_ONLINE(SOCKET sock, bool on, DWORD id);
+		void CALLBACK Send_Cmd_STATUS_Mode(SOCKET sock, EUserStatus stat);
+		void CALLBACK Send_Cmd_STATUS_Img(SOCKET sock, int img);
+		void CALLBACK Send_Cmd_STATUS_Msg(SOCKET sock, const std::tstring& msg);
+		void CALLBACK Send_Cmd_STATUS(SOCKET sock, EUserStatus stat, int img, const std::tstring& msg);
 		void CALLBACK Send_Cmd_SAY(SOCKET sock, DWORD idWhere, UINT type, const std::string& content);
 
 		void OnHook(JEventable* src);
@@ -482,12 +506,20 @@ namespace colibrichat
 
 		JPROPERTY_R(HACCEL, haccelMain);
 
+		JPROPERTY_R(HMENU, hmenuTab);
+		JPROPERTY_R(HMENU, hmenuLog);
 		JPROPERTY_R(HMENU, hmenuRichEdit);
 
 		JPROPERTY_R(HIMAGELIST, himlEdit);
 		JPROPERTY_R(HIMAGELIST, himlTab);
 		JPROPERTY_R(HIMAGELIST, himlMan);
+		JPROPERTY_R(HIMAGELIST, himlStatus);
+		JPROPERTY_R(HIMAGELIST, himlStatusImg);
 		JPROPERTY_R(HANDLE, himgSend);
+		JPROPERTY_R(HANDLE, himgULBG);
+		JPROPERTY_R(HANDLE, himgULFoc);
+		JPROPERTY_R(HANDLE, himgULSel);
+		JPROPERTY_R(HANDLE, himgULHot);
 	};
 }; // colibrichat
 

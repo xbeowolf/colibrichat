@@ -18,6 +18,20 @@
 #define IDD_CHANNEL                     104
 #define IDC_JOIN                        104
 #define IDB_MAN                         133
+#define IDR_MENU1                       134
+#define IDM_LOG                         134
+#define IDR_MENU2                       136
+#define IDM_TAB                         136
+#define IDB_BITMAP1                     137
+#define IDB_BITMAP2                     139
+#define IDB_MODE                        139
+#define IDB_STATUS                      139
+#define IDB_BITMAP3                     148
+#define IDB_STATUSIMG                   148
+#define IDB_UL_BG                       149
+#define IDB_UL_SEL                      150
+#define IDB_UL_HOT                      151
+#define IDB_UL_FOC                      152
 #define IDC_LOG                         1001
 #define IDC_USERLIST                    1002
 #define IDC_RICHEDIT                    1003
@@ -30,6 +44,16 @@
 #define IDC_JOINCHAN                    1034
 #define IDC_REFRESHLIST                 1036
 #define IDC_BUTTON1                     1037
+#define IDC_SPIN1                       1038
+#define IDC_MSGSPIN                     1038
+#define IDC_COMBOBOXEX1                 1039
+#define IDC_USERMODE                    1039
+#define IDC_MODE                        1039
+#define IDC_STATUS                      1039
+#define IDC_COMBOBOXEX2                 1040
+#define IDC_STATUSIMG                   1040
+#define IDC_EDIT1                       1041
+#define IDC_STATUSMSG                   1041
 #define IDC_NICK                        40002
 #define IDC_CONNECT                     40004
 #define IDC_SENDBYENTER                 40017
@@ -42,14 +66,24 @@
 #define IDC_SELECTALL                   40033
 #define IDC_CLOSE                       40034
 #define IDC_COPY                        40036
+#define ID_OVERLAP_COPY                 40037
+#define ID_OVERLAP_CLEARLOG             40038
+#define IDC_CLEARLOG                    40039
+#define IDC_LOGCLEAR                    40040
+#define IDC_LOGCOPY                     40041
+#define ID_OVERLAP_CLOSE                40042
+#define IDC_TABCLOSE                    40043
+#define ID_BUTTON40044                  40044
+#define ID_BUTTON40045                  40045
+#define ID_BUTTON40046                  40046
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        134
-#define _APS_NEXT_COMMAND_VALUE         40037
-#define _APS_NEXT_CONTROL_VALUE         1038
+#define _APS_NEXT_RESOURCE_VALUE        153
+#define _APS_NEXT_COMMAND_VALUE         40047
+#define _APS_NEXT_CONTROL_VALUE         1042
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

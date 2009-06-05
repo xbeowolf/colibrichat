@@ -43,6 +43,17 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+                "Items"
+                {
+                }
+            }
         }
         "Release"
         {
@@ -59,6 +70,22 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Net.Framework.2.0"
+                    {
+                    "Name" = "8:Microsoft .NET Framework 2.0"
+                    "ProductCode" = "8:Microsoft.Net.Framework.2.0"
+                    }
+                }
+            }
         }
     }
     "Deployable"
@@ -187,7 +214,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Colibri Chat"
         "ProductCode" = "8:{CB4F402C-DC95-4E54-8F11-A91C0416DCAB}"
-        "PackageCode" = "8:{FD14A701-31B9-4408-B91B-8406284147AD}"
+        "PackageCode" = "8:{0E547AF3-B3A0-4C70-A8BA-28237DBA97CC}"
         "UpgradeCode" = "8:{9CE85361-B45F-48AE-B43E-D9C165BF7E24}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
@@ -361,6 +388,14 @@
                                                     "ValueTypes" = "3:1"
                                                     "Value" = "8:127.0.0.1"
                                                     }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_6C7D07DF80DC4324B0BEB631F12F9B76"
+                                                    {
+                                                    "Name" = "8:Status"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:0"
+                                                    }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_A6DA317CA84E42E4A6A45963D788C31F"
                                                     {
                                                     "Name" = "8:Nickname"
@@ -368,6 +403,14 @@
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:1"
                                                     "Value" = "8:User"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_AA13D1B85DD54D83B276B36ED14055E3"
+                                                    {
+                                                    "Name" = "8:StatusImage"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:0"
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_BEC89DC848E6465E80EFB1DF55D6175C"
                                                     {
@@ -384,6 +427,14 @@
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:3"
                                                     "Value" = "3:7531"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_DABA3F84283C47C5BBC3DE65982D6EA8"
+                                                    {
+                                                    "Name" = "8:StatusMessage"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:1"
+                                                    "Value" = "8:ready to talk"
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_E1D1D7B54CAC43708BD6EBF9E735898E"
                                                     {

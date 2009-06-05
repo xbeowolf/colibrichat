@@ -127,6 +127,7 @@ namespace colibrichat
 		void CALLBACK Recv_Cmd_PART(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Quest_USERINFO(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_ONLINE(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Cmd_STATUS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_SAY(SOCKET sock, WORD trnid, io::mem& is);
 
 		// Beowolf Network Protocol Messages sending
@@ -142,6 +143,7 @@ namespace colibrichat
 		void CALLBACK Broadcast_Notify_PART(const SetId& set, DWORD idWho, DWORD idWhere, DWORD reason);
 		void CALLBACK Send_Reply_USERINFO(SOCKET sock, WORD trnid, const SetId& set);
 		void CALLBACK Broadcast_Notify_ONLINE(const SetId& set, DWORD idWho, bool on, DWORD id);
+		void CALLBACK Broadcast_Notify_STATUS(const SetId& set, DWORD idWho, WORD type, EUserStatus stat, int img, std::tstring msg);
 		void CALLBACK Send_Notify_SAY(SOCKET sock, DWORD idWho, DWORD idWhere, UINT type, const std::string& content);
 		void CALLBACK Broadcast_Notify_SAY(const SetId& set, DWORD idWho, DWORD idWhere, UINT type, const std::string& content);
 

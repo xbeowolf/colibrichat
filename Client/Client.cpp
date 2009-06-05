@@ -51,6 +51,8 @@ jpOnline(0)
 	m_metrics.uNickMaxLength = 20;
 	m_metrics.uChanMaxLength = 20;
 	m_metrics.uPassMaxLength = 32;
+	m_metrics.uStatusMsgMaxLength = 32;
+	m_metrics.nMsgSpinMaxCount = 20;
 }
 
 void CALLBACK JClient::Init()
@@ -90,6 +92,9 @@ void CALLBACK JClient::LoadState()
 	user.IP.S_un.S_addr = ntohl(INADDR_LOOPBACK);
 	user.isOnline = true;
 	user.idOnline = 0;
+	user.nStatus = (EUserStatus)Profile::GetInt(RF_CLIENT, RK_STATUS, eReady);
+	user.nStatusImg = Profile::GetInt(RF_CLIENT, RK_STATUSIMG, 0);
+	user.strStatus = Profile::GetString(RF_CLIENT, RK_STATUSMSG, TEXT("ready to talk"));
 	m_hostname = tstrToANSI(Profile::GetString(RF_CLIENT, RK_HOST, TEXT("127.0.0.1")));
 	m_port = (u_short)Profile::GetInt(RF_CLIENT, RK_PORT, CCP_PORT);
 	m_password = Profile::GetString(RF_CLIENT, RK_PASSWORD, TEXT("beowolf"));
@@ -98,11 +103,17 @@ void CALLBACK JClient::LoadState()
 
 void CALLBACK JClient::SaveState()
 {
-	Profile::WriteString(RF_CLIENT, RK_NICK, m_mUser[m_idOwn].name.c_str());
+	User& user = m_mUser[m_idOwn];
+
 	Profile::WriteString(RF_CLIENT, RK_HOST, ANSIToTstr(m_hostname).c_str());
 	Profile::WriteInt(RF_CLIENT, RK_PORT, m_port);
 	Profile::WriteString(RF_CLIENT, RK_PASSWORD, m_password.c_str());
 	Profile::WriteInt(RF_CLIENT, RK_SENDBYENTER, m_bSendByEnter);
+
+	Profile::WriteString(RF_CLIENT, RK_NICK, user.name.c_str());
+	Profile::WriteInt(RF_CLIENT, RK_STATUS, user.nStatus);
+	Profile::WriteInt(RF_CLIENT, RK_STATUSIMG, user.nStatusImg);
+	Profile::WriteString(RF_CLIENT, RK_STATUSMSG, user.strStatus.c_str());
 }
 
 LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -193,29 +204,59 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			case IDOK2:
 				{
 					int id = (int)(INT_PTR)GetMenu(GetFocus());
-					if (id == IDC_RICHEDIT) {
+					switch (id)
+					{
+					case IDC_RICHEDIT:
 						if ((m_bSendByEnter && LOWORD(wParam) == IDOK)
 							|| (!m_bSendByEnter && LOWORD(wParam) == IDOK2))
 							SendMessage(hWnd, WM_COMMAND, IDC_SEND, 0);
 						else
 							SendDlgItemMessage(jpOnline->hwndPage, IDC_RICHEDIT, WM_KEYDOWN, '\n', 0); // send "enter"
-					} else if (id == IDC_HOST || id == IDC_PORT || id == IDC_PASS) {
-						SendMessage(jpOnline->hwndPage, WM_COMMAND, IDC_CONNECT, 0);
-					} else if (id == IDC_NICK) {
-						std::tstring nick(m_metrics.uNickMaxLength, 0), msg;
-						GetDlgItemText(jpOnline->hwndPage, IDC_NICK, &nick[0], (int)nick.size()+1);
-						if (CheckNick(nick, msg)) { // check content
-							Send_Quest_NICK(m_clientsock, nick);
-						} else {
-							ShowErrorMessage(jpPageServer->hwndNick, msg);
+						break;
+
+					case IDC_HOST:
+					case IDC_PORT:
+					case IDC_PASS:
+						{
+							std::tstring nick(m_metrics.uNickMaxLength, 0), msg;
+							GetDlgItemText(jpOnline->hwndPage, IDC_NICK, &nick[0], (int)nick.size()+1);
+							if (CheckNick(nick, msg)) { // check content
+								SendMessage(jpOnline->hwndPage, WM_COMMAND, IDC_CONNECT, 0);
+							} else {
+								ShowErrorMessage(jpPageServer->hwndNick, msg);
+							}
+							break;
 						}
-					} else if (id == IDC_JOINCHAN || id == IDC_JOINPASS) {
+
+					case IDC_NICK:
+						{
+							std::tstring nick(m_metrics.uNickMaxLength, 0), msg;
+							GetDlgItemText(jpOnline->hwndPage, IDC_NICK, &nick[0], (int)nick.size()+1);
+							if (CheckNick(nick, msg)) { // check content
+								Send_Quest_NICK(m_clientsock, nick);
+							} else {
+								ShowErrorMessage(jpPageServer->hwndNick, msg);
+							}
+							break;
+						}
+
+					case IDC_STATUSMSG:
+						{
+							std::tstring msg(m_metrics.uStatusMsgMaxLength, 0);
+							GetDlgItemText(jpOnline->hwndPage, IDC_STATUSMSG, &msg[0], (int)msg.size()+1);
+							Send_Cmd_STATUS_Msg(m_clientsock, msg);
+							break;
+						}
+
+					case IDC_JOINCHAN:
+					case IDC_JOINPASS:
 						SendMessage(jpOnline->hwndPage, WM_COMMAND, IDC_JOIN, 0);
+						break;
 					}
 					break;
 				}
 
-			case IDC_CLOSE:
+			case IDC_TABCLOSE:
 				{
 					if (jpOnline->IsPermanent()) {
 						ShowErrorMessage(hwndTab, TEXT("This page can not be closed"));
@@ -258,6 +299,33 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 				}
 
 			default: retval = FALSE;
+			}
+			break;
+		}
+
+	case WM_CONTEXTMENU:
+		{
+			if ((HWND)wParam == hwndTab) {
+				RECT r;
+				GetWindowRect((HWND)wParam, &r);
+				TrackPopupMenu(GetSubMenu(JClientApp::jpApp->hmenuTab, 0), TPM_LEFTALIGN | TPM_RIGHTBUTTON,
+					min(max(GET_X_LPARAM(lParam), r.left), r.right),
+					min(max(GET_Y_LPARAM(lParam), r.top), r.bottom), 0, hWnd, 0);
+			} else {
+				__super::DlgProc(hWnd, message, wParam, lParam);
+			}
+			break;
+		}
+
+	case WM_INITMENUPOPUP:
+		{
+			if ((HMENU)wParam == GetSubMenu(JClientApp::jpApp->hmenuTab, 0))
+			{
+				EnableMenuItem((HMENU)wParam, IDC_TABCLOSE,
+					MF_BYCOMMAND | (jpOnline && !jpOnline->IsPermanent() ? MF_ENABLED : MF_GRAYED));
+				break;
+			} else {
+				__super::DlgProc(hWnd, message, wParam, lParam);
 			}
 			break;
 		}
@@ -536,15 +604,14 @@ void JClient::ShowErrorMessage(HWND hwnd, const std::tstring& msg)
 	SetFocus(hwnd);
 }
 
-void CALLBACK JClient::InsertUser(DWORD id, const User& user)
+void CALLBACK JClient::InsertUser(DWORD idUser, const User& user)
 {
-	if (m_mUser.find(id) == m_mUser.end()) {
-		m_mUser[id] = user;
-	} else {
-		m_mUser[id].name = user.name;
-		m_mUser[id].ftCreation = user.ftCreation;
-		m_mUser[id].IP = user.IP;
+	SetId set;
+	if (m_mUser.find(idUser) != m_mUser.end()) {
+		set = m_mUser[idUser].opened;
 	}
+	m_mUser[idUser] = user;
+	m_mUser[idUser].opened = set;
 }
 
 void CALLBACK JClient::LinkUser(DWORD idUser, DWORD idLink)
@@ -644,7 +711,15 @@ void JClient::OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access)
 {
 	__super::OnLinkIdentify(sock, access);
 
-	Send_Quest_NICK(sock, m_mUser[m_idOwn].name);
+	std::tstring nick(m_metrics.uNickMaxLength, 0);
+	GetDlgItemText(jpPageServer->hwndPage, IDC_NICK, &nick[0], (int)nick.size()+1);
+	EUserStatus stat = (EUserStatus)SendDlgItemMessage(jpPageServer->hwndPage, IDC_STATUS, CB_GETCURSEL, 0, 0);
+	int img = (int)SendDlgItemMessage(jpPageServer->hwndPage, IDC_STATUSIMG, CB_GETCURSEL, 0, 0);
+	std::tstring msg(m_metrics.uStatusMsgMaxLength, 0);
+	GetDlgItemText(jpPageServer->hwndPage, IDC_STATUSMSG, &msg[0], (int)msg.size()+1);
+
+	Send_Quest_NICK(sock, nick);
+	Send_Cmd_STATUS(sock, stat, img, msg);
 }
 
 void JClient::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is)
@@ -662,6 +737,7 @@ void JClient::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 		{NOTIFY(CCPM_PART), &JClient::Recv_Notify_PART},
 		{REPLY(CCPM_USERINFO), &JClient::Recv_Reply_USERINFO},
 		{NOTIFY(CCPM_ONLINE), &JClient::Recv_Notify_ONLINE},
+		{NOTIFY(CCPM_STATUS), &JClient::Recv_Notify_STATUS},
 		{NOTIFY(CCPM_SAY), &JClient::Recv_Notify_SAY},
 	};
 	for (int i = 0; i < _countof(responseTable); i++)
@@ -1032,6 +1108,63 @@ void CALLBACK JClient::Recv_Notify_ONLINE(SOCKET sock, WORD trnid, io::mem& is)
 	EvReport(tformat(TEXT("user %s is %s"), iu != m_mUser.end() ? iu->second.name.c_str() : TEXT("unknown"), isOnline ? TEXT("online") : TEXT("offline")), netengine::eInformation, netengine::eLowest);
 }
 
+void CALLBACK JClient::Recv_Notify_STATUS(SOCKET sock, WORD trnid, io::mem& is)
+{
+	DWORD idWho;
+	WORD type;
+	EUserStatus stat;
+	int img;
+	std::tstring msg;
+
+	try
+	{
+		io::unpack(is, idWho);
+		io::unpack(is, type);
+		if (type & STATUS_MODE) {
+			io::unpack(is, stat);
+		}
+		if (type & STATUS_IMG) {
+			io::unpack(is, img);
+		}
+		if (type & STATUS_MSG) {
+			io::unpack(is, msg);
+		}
+	}
+	catch (io::exception e)
+	{
+		switch (e.count)
+		{
+		case 0:
+		case 1:
+			// Report about message
+			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			return;
+		}
+	}
+
+	MapUser::iterator iu = m_mUser.find(idWho);
+	if (iu != m_mUser.end()) {
+		if (type & STATUS_MODE) {
+			iu->second.nStatus = stat;
+		}
+		if (type & STATUS_IMG) {
+			iu->second.nStatusImg = img;
+		}
+		if (type & STATUS_MSG) {
+			iu->second.strStatus = msg;
+		}
+
+		MapPageChannel::iterator ipc = mPageChannel.find(jpOnline ? jpOnline->getID() : 0);
+		if (ipc != mPageChannel.end()) {
+			LVFINDINFO lvfi;
+			lvfi.flags = LVFI_PARAM;
+			lvfi.lParam = idWho;
+			int index = ListView_FindItem(ipc->second->hwndList, -1, &lvfi);
+			if (index != -1) VERIFY(ListView_RedrawItems(ipc->second->hwndList, index, index));
+		}
+	}
+}
+
 void CALLBACK JClient::Recv_Notify_SAY(SOCKET sock, WORD trnid, io::mem& is)
 {
 	DWORD idWho, idWhere;
@@ -1122,6 +1255,40 @@ void CALLBACK JClient::Send_Cmd_ONLINE(SOCKET sock, bool on, DWORD id)
 	PushTrn(sock, COMMAND(CCPM_ONLINE), 0, os.str());
 }
 
+void CALLBACK JClient::Send_Cmd_STATUS_Mode(SOCKET sock, EUserStatus stat)
+{
+	std::ostringstream os;
+	io::pack(os, (WORD)STATUS_MODE);
+	io::pack(os, stat);
+	PushTrn(sock, COMMAND(CCPM_STATUS), 0, os.str());
+}
+
+void CALLBACK JClient::Send_Cmd_STATUS_Img(SOCKET sock, int img)
+{
+	std::ostringstream os;
+	io::pack(os, (WORD)STATUS_IMG);
+	io::pack(os, img);
+	PushTrn(sock, COMMAND(CCPM_STATUS), 0, os.str());
+}
+
+void CALLBACK JClient::Send_Cmd_STATUS_Msg(SOCKET sock, const std::tstring& msg)
+{
+	std::ostringstream os;
+	io::pack(os, (WORD)STATUS_MSG);
+	io::pack(os, msg);
+	PushTrn(sock, COMMAND(CCPM_STATUS), 0, os.str());
+}
+
+void CALLBACK JClient::Send_Cmd_STATUS(SOCKET sock, EUserStatus stat, int img, const std::tstring& msg)
+{
+	std::ostringstream os;
+	io::pack(os, (WORD)(STATUS_MODE | STATUS_IMG | STATUS_MSG));
+	io::pack(os, stat);
+	io::pack(os, img);
+	io::pack(os, msg);
+	PushTrn(sock, COMMAND(CCPM_STATUS), 0, os.str());
+}
+
 void CALLBACK JClient::Send_Cmd_SAY(SOCKET sock, DWORD idWhere, UINT type, const std::string& content)
 {
 	std::ostringstream os;
@@ -1174,12 +1341,20 @@ void CALLBACK JClientApp::Init()
 	m_haccelMain = LoadAccelerators(hinstApp, MAKEINTRESOURCE(IDA_MAIN));
 
 	// Load popup menus
+	m_hmenuTab = LoadMenu(hinstApp, MAKEINTRESOURCE(IDM_TAB));
+	m_hmenuLog = LoadMenu(hinstApp, MAKEINTRESOURCE(IDM_LOG));
 	m_hmenuRichEdit = LoadMenu(hinstApp, MAKEINTRESOURCE(IDM_RICHEDIT));
 	// Create the image list
 	m_himlEdit = ImageList_LoadImage(hinstApp, MAKEINTRESOURCE(IDB_EDIT), 16, 12, CLR_DEFAULT, IMAGE_BITMAP, LR_CREATEDIBSECTION);
 	m_himlTab = ImageList_LoadImage(hinstApp, MAKEINTRESOURCE(IDB_TAB), 16, 12, CLR_DEFAULT, IMAGE_BITMAP, LR_CREATEDIBSECTION);
 	m_himlMan = ImageList_LoadImage(hinstApp, MAKEINTRESOURCE(IDB_MAN), 16, 8, CLR_DEFAULT, IMAGE_BITMAP, LR_CREATEDIBSECTION);
+	m_himlStatus = ImageList_LoadImage(hinstApp, MAKEINTRESOURCE(IDB_STATUS), 16, 8, CLR_DEFAULT, IMAGE_BITMAP, LR_CREATEDIBSECTION);
+	m_himlStatusImg = ImageList_LoadImage(hinstApp, MAKEINTRESOURCE(IDB_STATUSIMG), 16, 8, CLR_DEFAULT, IMAGE_BITMAP, LR_CREATEDIBSECTION);
 	m_himgSend = LoadImage(hinstApp, MAKEINTRESOURCE(IDB_SEND), IMAGE_BITMAP, 72, 48, LR_LOADMAP3DCOLORS);
+	m_himgULBG = LoadBitmap(hinstApp, MAKEINTRESOURCE(IDB_UL_BG));
+	m_himgULFoc = LoadBitmap(hinstApp, MAKEINTRESOURCE(IDB_UL_FOC));
+	m_himgULSel = LoadBitmap(hinstApp, MAKEINTRESOURCE(IDB_UL_SEL));
+	m_himgULHot = LoadBitmap(hinstApp, MAKEINTRESOURCE(IDB_UL_HOT));
 
 	jpClient = new JClient;
 	jpClient->Init();
@@ -1200,12 +1375,20 @@ void CALLBACK JClientApp::Done()
 	if (jpClient->State != JService::eStopped) jpClient->Stop();
 	jpClient->Done();
 	// Free associated resources
+	DestroyMenu(m_hmenuTab);
+	DestroyMenu(m_hmenuLog);
 	DestroyMenu(m_hmenuRichEdit);
 	// Destroy the image list
 	ImageList_Destroy(m_himlEdit);
 	ImageList_Destroy(m_himlTab);
 	ImageList_Destroy(m_himlMan);
+	ImageList_Destroy(m_himlStatus);
+	ImageList_Destroy(m_himlStatusImg);
 	DeleteObject(m_himgSend);
+	DeleteObject(m_himgULBG);
+	DeleteObject(m_himgULFoc);
+	DeleteObject(m_himgULSel);
+	DeleteObject(m_himgULHot);
 	// Free RichEdit library
 	FreeLibrary(hinstRichEdit);
 }

@@ -43,7 +43,8 @@ namespace colibrichat
 	struct Message;
 
 	enum EContact {eServer, eList, eUser, eChannel, eBoard};
-	enum EChanStatus {eReader, eWriter, eMember, eModerator, eAdmin, eFounder};
+	enum EChanStatus {eOutsider, eReader, eWriter, eMember, eModerator, eAdmin, eFounder};
+	enum EUserStatus {eReady, eDND, eBusy, eNA, eAway, eInvisible};
 
 	typedef std::set<DWORD> SetId;
 
@@ -60,6 +61,11 @@ namespace colibrichat
 		in_addr IP; // IP-address of user
 		bool isOnline; // true if application window is active
 		DWORD idOnline; // identifier of selected contact
+		EUserStatus nStatus;
+		int nStatusImg;
+		std::tstring strStatus;
+
+		void CALLBACK Init();
 	};
 	typedef std::map<DWORD, User> MapUser;
 
@@ -70,7 +76,11 @@ namespace colibrichat
 		SetId writer, member, moderator, admin; // users identifiers with access rights
 		DWORD idFounder; // the founder of channel
 		EChanStatus nAutoStatus; // default access right for incomer
+		UINT nLimit; // maximum users on channel
 		bool isHidden, isAnonymous;
+
+		EChanStatus CALLBACK getStatus(DWORD idUser) const;
+		void CALLBACK setStatus(DWORD idUser, EChanStatus val);
 	};
 	typedef std::map<DWORD, Channel> MapChannel;
 
@@ -79,6 +89,8 @@ namespace colibrichat
 		size_t uNickMaxLength;
 		size_t uChanMaxLength;
 		size_t uPassMaxLength;
+		size_t uStatusMsgMaxLength;
+		size_t nMsgSpinMaxCount;
 	};
 
 	struct Message

@@ -452,6 +452,7 @@ void JServer::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 		{COMMAND(CCPM_PART), &JServer::Recv_Cmd_PART},
 		{QUEST(CCPM_USERINFO), &JServer::Recv_Quest_USERINFO},
 		{COMMAND(CCPM_ONLINE), &JServer::Recv_Cmd_ONLINE},
+		{COMMAND(CCPM_STATUS), &JServer::Recv_Cmd_STATUS},
 		{COMMAND(CCPM_SAY), &JServer::Recv_Cmd_SAY},
 	};
 	for (int i = 0; i < _countof(responseTable); i++)
@@ -541,16 +542,16 @@ void CALLBACK JServer::Recv_Quest_NICK(SOCKET sock, WORD trnid, io::mem& is)
 	}
 
 	if (m_mUser.find(idOld) == m_mUser.end()) {
-		FILETIME ft;
-		GetSystemFileTime(ft);
 		sockaddr_in si;
 		int len = sizeof(si);
 		getpeername(sock, (struct sockaddr*)&si, &len);
+
 		// Create new user
 		User user;
+		user.Init();
 		user.name = name;
-		user.ftCreation = ft;
 		user.IP = si.sin_addr;
+
 		m_mUser[idNew] = user;
 		m_mSocketId[sock] = idNew;
 		m_mIdSocket[idNew] = sock;
@@ -607,18 +608,24 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 			Send_Reply_JOIN_Result(sock, trnid, CHAN_ALREADY, eUser, idDst);
 		}
 	} else {
-		MapChannel::const_iterator ic = m_mChannel.find(idDst);
+		MapChannel::iterator ic = m_mChannel.find(idDst);
 		if (ic != m_mChannel.end()) { // channel
-			if (ic->second.password.empty() || ic->second.password == pass) {
-				if (ic->second.opened.find(idSrc) == ic->second.opened.end()) {
-					Broadcast_Notify_JOIN(ic->second.opened, idSrc, idDst, m_mUser[idSrc]);
-					linkCRC(idDst, idSrc);
-					Send_Reply_JOIN_Channel(sock, trnid, idDst, ic->second);
+			if (ic->second.opened.size() < ic->second.nLimit) {
+				if (ic->second.password.empty() || ic->second.password == pass) {
+					if (ic->second.opened.find(idSrc) == ic->second.opened.end()) {
+						if (ic->second.getStatus(idSrc) == eOutsider)
+							ic->second.setStatus(idSrc, ic->second.nAutoStatus);
+						Broadcast_Notify_JOIN(ic->second.opened, idSrc, idDst, m_mUser[idSrc]);
+						linkCRC(idDst, idSrc);
+						Send_Reply_JOIN_Channel(sock, trnid, idDst, ic->second);
+					} else {
+						Send_Reply_JOIN_Result(sock, trnid, CHAN_ALREADY, eChannel, idDst);
+					}
 				} else {
-					Send_Reply_JOIN_Result(sock, trnid, CHAN_ALREADY, eChannel, idDst);
+					Send_Reply_JOIN_Result(sock, trnid, CHAN_DENY, eChannel, idDst);
 				}
 			} else {
-				Send_Reply_JOIN_Result(sock, trnid, CHAN_DENY, eChannel, idDst);
+				Send_Reply_JOIN_Result(sock, trnid, CHAN_LIMIT, eChannel, idDst);
 			}
 		} else { // create new channel if nothing was found
 			FILETIME ft;
@@ -631,6 +638,7 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 			chan.topic = TEXT("");
 			chan.idFounder = idSrc;
 			chan.nAutoStatus = eWriter;
+			chan.nLimit = -1;
 			chan.isHidden = false;
 			chan.isAnonymous = false;
 			m_mChannel[idDst] = chan;
@@ -742,11 +750,71 @@ void CALLBACK JServer::Recv_Cmd_ONLINE(SOCKET sock, WORD trnid, io::mem& is)
 	if (iu != m_mUser.end()) {
 		iu->second.isOnline = isOnline;
 		iu->second.idOnline = idOnline;
-		Broadcast_Notify_ONLINE(iu->second.opened, idSrc, isOnline, idOnline);
+
+		SetId set = iu->second.opened;
+		set.insert(idSrc);
+		Broadcast_Notify_ONLINE(set, idSrc, isOnline, idOnline);
 	}
 
 	// Report about message
 	EvReport(tformat(TEXT("user is %s"), isOnline ? TEXT("online") : TEXT("offline")), netengine::eInformation, netengine::eLowest);
+}
+
+void CALLBACK JServer::Recv_Cmd_STATUS(SOCKET sock, WORD trnid, io::mem& is)
+{
+	WORD type;
+	EUserStatus stat;
+	int img;
+	std::tstring msg;
+
+	stat = eReady;
+	img = 0;
+	msg = TEXT("");
+
+	try
+	{
+		io::unpack(is, type);
+		if (type & STATUS_MODE) {
+			io::unpack(is, stat);
+		}
+		if (type & STATUS_IMG) {
+			io::unpack(is, img);
+		}
+		if (type & STATUS_MSG) {
+			io::unpack(is, msg);
+		}
+	}
+	catch (io::exception e)
+	{
+		switch (e.count)
+		{
+		case 0:
+			// Report about message
+			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			return;
+		}
+	}
+
+	DWORD idSrc = m_mSocketId[sock];
+	MapUser::iterator iu = m_mUser.find(idSrc);
+	if (iu != m_mUser.end()) {
+		if (type & STATUS_MODE) {
+			iu->second.nStatus = stat;
+		}
+		if (type & STATUS_IMG) {
+			iu->second.nStatusImg = img;
+		}
+		if (type & STATUS_MSG) {
+			iu->second.strStatus = msg;
+		}
+
+		SetId set = iu->second.opened;
+		set.insert(idSrc);
+		Broadcast_Notify_STATUS(set, idSrc, type, stat, img, msg);
+	}
+
+	// Report about message
+	EvReport(tformat(TEXT("user changes status")), netengine::eInformation, netengine::eLowest);
 }
 
 void CALLBACK JServer::Recv_Cmd_SAY(SOCKET sock, WORD trnid, io::mem& is)
@@ -911,6 +979,23 @@ void CALLBACK JServer::Broadcast_Notify_ONLINE(const SetId& set, DWORD idWho, bo
 	io::pack(os, on);
 	io::pack(os, id);
 	BroadcastTrn(set, true, NOTIFY(CCPM_ONLINE), os.str());
+}
+
+void CALLBACK JServer::Broadcast_Notify_STATUS(const SetId& set, DWORD idWho, WORD type, EUserStatus stat, int img, std::tstring msg)
+{
+	std::ostringstream os;
+	io::pack(os, idWho);
+	io::pack(os, type);
+	if (type & STATUS_MODE) {
+		io::pack(os, stat);
+	}
+	if (type & STATUS_IMG) {
+		io::pack(os, img);
+	}
+	if (type & STATUS_MSG) {
+		io::pack(os, msg);
+	}
+	BroadcastTrn(set, true, NOTIFY(CCPM_STATUS), os.str());
 }
 
 void CALLBACK JServer::Send_Notify_SAY(SOCKET sock, DWORD idWho, DWORD idWhere, UINT type, const std::string& content)

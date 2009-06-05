@@ -39,9 +39,9 @@ BEGIN
     "I",            202,                    VIRTKEY, CONTROL, NOINVERT
     "U",            203,                    VIRTKEY, CONTROL, NOINVERT
     "D",            206,                    VIRTKEY, CONTROL, NOINVERT
+    VK_F4,          IDC_TABCLOSE,           VIRTKEY, CONTROL, NOINVERT
     VK_RETURN,      IDOK,                   VIRTKEY, NOINVERT
     VK_RETURN,      IDOK2,                  VIRTKEY, CONTROL, NOINVERT
-    VK_F4,          IDC_CLOSE,              VIRTKEY, CONTROL, NOINVERT
 END
 
 
@@ -54,6 +54,12 @@ IDB_EDIT                BITMAP                  "iml_edit.bmp"
 IDB_SEND                BITMAP                  "send.bmp"
 IDB_TAB                 BITMAP                  "iml_tab.bmp"
 IDB_MAN                 BITMAP                  "iml_man.bmp"
+IDB_STATUS              BITMAP                  "iml_status.bmp"
+IDB_STATUSIMG           BITMAP                  "iml_statusImg.bmp"
+IDB_UL_BG               BITMAP                  "userlist_bg.bmp"
+IDB_UL_SEL              BITMAP                  "userlist_sel.bmp"
+IDB_UL_HOT              BITMAP                  "userlist_hot.bmp"
+IDB_UL_FOC              BITMAP                  "userlist_foc.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -71,8 +77,8 @@ IDI_SMALL               ICON                    "Chat.ico"
 //
 
 1 VERSIONINFO
- FILEVERSION 1,0,0,1
- PRODUCTVERSION 1,0,0,1
+ FILEVERSION 1,0,1,0
+ PRODUCTVERSION 1,0,1,0
  FILEFLAGSMASK 0x1fL
 #ifdef _DEBUG
  FILEFLAGS 0x9L
@@ -90,14 +96,14 @@ BEGIN
             VALUE "Comments", "Shareware; Colibri Chat created 19.04.2009 17:17:32\r\n\r\nContact information:\r\nmailto:xbeowolf@gmail.com\r\nicq:320-329-575\r\nphone:+380684862837"
             VALUE "CompanyName", "Podobashev D. O. / BEOWOLF"
             VALUE "FileDescription", "Colibri Chat Client Application"
-            VALUE "FileVersion", "1, 0, 0, 1"
+            VALUE "FileVersion", "1, 0, 1, 0"
             VALUE "InternalName", "ColibriClient"
             VALUE "LegalCopyright", "© BEOWOLF / Podobashev Dmitry, 2009"
             VALUE "LegalTrademarks", "MetaShape"
             VALUE "OriginalFilename", "ColibriClient.exe"
-            VALUE "PrivateBuild", "Build 1"
+            VALUE "PrivateBuild", "Build 2"
             VALUE "ProductName", "Colibri Chat"
-            VALUE "ProductVersion", "1, 0, 0, 1"
+            VALUE "ProductVersion", "1, 0, 1, 0"
         END
     END
     BLOCK "VarFileInfo"
@@ -142,6 +148,19 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Toolbar
+//
+
+IDB_BITMAP1 TOOLBAR  16, 16
+BEGIN
+    BUTTON      ID_BUTTON40044
+    BUTTON      ID_BUTTON40045
+    BUTTON      ID_BUTTON40046
+END
+
 #endif    // Russian resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -182,8 +201,12 @@ BEGIN
     CONTROL         "Password for connection:",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,238,229,80,8
     EDITTEXT        IDC_PASS,320,227,64,12,ES_PASSWORD | ES_AUTOHSCROLL
     CHECKBOX        "&Connect to server",IDC_CONNECT,0,241,384,14,BS_PUSHLIKE | BS_FLAT
-    LTEXT           "Nickname:",IDC_STATIC,135,259,32,8
-    EDITTEXT        IDC_NICK,169,257,80,12,ES_AUTOHSCROLL
+    LTEXT           "Nickname:",IDC_STATIC,104,259,32,8
+    EDITTEXT        IDC_NICK,138,257,60,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_STATUS,"ComboBoxEx32",CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP,200,257,50,80
+    LTEXT           "Status:",IDC_STATIC,252,259,24,8
+    CONTROL         "",IDC_STATUSIMG,"ComboBoxEx32",CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP,278,257,28,95
+    EDITTEXT        IDC_STATUSMSG,308,257,60,12,ES_AUTOHSCROLL
 END
 
 IDD_LIST DIALOGEX 8, 20, 384, 271
@@ -210,7 +233,8 @@ BEGIN
     CONTROL         "Rich edit controls",IDC_TOOLBAR,"ToolbarWindow32",WS_TABSTOP | 0x900,0,0,384,16,WS_EX_TOOLWINDOW
     CONTROL         "",IDC_LOG,"RichEdit20A",ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | WS_BORDER | WS_VSCROLL | WS_TABSTOP,0,18,384,211
     CONTROL         "",IDC_RICHEDIT,"RichEdit20A",ES_MULTILINE | ES_AUTOVSCROLL | WS_BORDER | WS_VSCROLL | WS_TABSTOP,0,231,302,40
-    DEFPUSHBUTTON   "Send",IDC_SEND,304,231,80,40,BS_BITMAP
+    CONTROL         "",IDC_MSGSPIN,"msctls_updown32",UDS_ARROWKEYS | UDS_HOTTRACK | WS_TABSTOP,304,231,12,40
+    DEFPUSHBUTTON   "Send",IDC_SEND,316,231,68,40,BS_BITMAP
 END
 
 IDD_CHANNEL DIALOGEX 8, 20, 384, 271
@@ -221,9 +245,10 @@ FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     CONTROL         "Rich edit controls",IDC_TOOLBAR,"ToolbarWindow32",WS_TABSTOP | 0x900,0,0,384,16,WS_EX_TOOLWINDOW
     CONTROL         "",IDC_LOG,"RichEdit20A",ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | WS_BORDER | WS_VSCROLL | WS_TABSTOP,0,18,302,211
-    CONTROL         "",IDC_USERLIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHAREIMAGELISTS | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,304,18,80,211
+    CONTROL         "",IDC_USERLIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHAREIMAGELISTS | LVS_OWNERDRAWFIXED | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,304,18,80,211
     CONTROL         "",IDC_RICHEDIT,"RichEdit20A",ES_MULTILINE | ES_AUTOVSCROLL | WS_BORDER | WS_VSCROLL | WS_TABSTOP,0,231,302,40
-    DEFPUSHBUTTON   "Send",IDC_SEND,304,231,80,40,BS_BITMAP
+    CONTROL         "",IDC_MSGSPIN,"msctls_updown32",UDS_ARROWKEYS | UDS_HOTTRACK | WS_TABSTOP,304,231,12,40
+    DEFPUSHBUTTON   "Send",IDC_SEND,316,231,68,40,BS_BITMAP
 END
 
 
@@ -246,6 +271,23 @@ BEGIN
         MENUITEM "&Paste",                      IDC_PASTE
         MENUITEM "&Delete",                     IDC_DELETE
         MENUITEM "Select &All",                 IDC_SELECTALL
+    END
+END
+
+IDM_LOG MENU 
+BEGIN
+    POPUP "&Overlap"
+    BEGIN
+        MENUITEM "&Copy",                       IDC_LOGCOPY
+        MENUITEM "Clear &log",                  IDC_LOGCLEAR
+    END
+END
+
+IDM_TAB MENU 
+BEGIN
+    POPUP "&Overlap"
+    BEGIN
+        MENUITEM "&Close",                      IDC_TABCLOSE
     END
 END
 

@@ -358,11 +358,39 @@
 				>
 			</File>
 			<File
+				RelativePath=".\iml_mode.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\iml_status.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\iml_statusImg.bmp"
+				>
+			</File>
+			<File
 				RelativePath=".\iml_tab.bmp"
 				>
 			</File>
 			<File
 				RelativePath=".\send.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\userlist_bg.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\userlist_foc.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\userlist_hot.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\userlist_sel.bmp"
 				>
 			</File>
 		</Filter>

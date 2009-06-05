@@ -302,6 +302,53 @@ LRESULT WINAPI JClient::JPageLog::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 			break;
 		}
 
+	case WM_COMMAND:
+		{
+			switch (LOWORD(wParam))
+			{
+			case IDC_LOGCOPY:
+				SendMessage(m_hwndLog, WM_COPY, 0, 0);
+				break;
+
+			case IDC_LOGCLEAR:
+				SetWindowText(m_hwndLog, TEXT(""));
+				break;
+
+			default:
+				retval = __super::DlgProc(hWnd, message, wParam, lParam);
+			}
+			break;
+		}
+
+	case WM_CONTEXTMENU:
+		{
+			if ((HWND)wParam == m_hwndLog) {
+				RECT r;
+				GetWindowRect((HWND)wParam, &r);
+				TrackPopupMenu(GetSubMenu(JClientApp::jpApp->hmenuLog, 0), TPM_LEFTALIGN | TPM_RIGHTBUTTON,
+					min(max(GET_X_LPARAM(lParam), r.left), r.right),
+					min(max(GET_Y_LPARAM(lParam), r.top), r.bottom), 0, hWnd, 0);
+			} else {
+				__super::DlgProc(hWnd, message, wParam, lParam);
+			}
+			break;
+		}
+
+	case WM_INITMENUPOPUP:
+		{
+			if ((HMENU)wParam == GetSubMenu(JClientApp::jpApp->hmenuLog, 0)) {
+				CHARRANGE cr;
+				SendMessage(m_hwndLog, EM_EXGETSEL, 0, (LPARAM)&cr);
+				bool cancopy = cr.cpMin != cr.cpMax;
+				EnableMenuItem((HMENU)wParam, IDC_LOGCOPY,
+					MF_BYCOMMAND | (cancopy ? MF_ENABLED : MF_GRAYED));
+				break;
+			} else {
+				__super::DlgProc(hWnd, message, wParam, lParam);
+			}
+			break;
+		}
+
 	default: retval = __super::DlgProc(hWnd, message, wParam, lParam);
 	}
 	return retval;
@@ -331,6 +378,9 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 			m_hwndPort = GetDlgItem(hWnd, IDC_PORT);
 			m_hwndPass = GetDlgItem(hWnd, IDC_PASS);
 			m_hwndNick = GetDlgItem(hWnd, IDC_NICK);
+			m_hwndStatus = GetDlgItem(hWnd, IDC_STATUS);
+			m_hwndStatusImg = GetDlgItem(hWnd, IDC_STATUSIMG);
+			m_hwndStatusMsg = GetDlgItem(hWnd, IDC_STATUSMSG);
 
 			// Init Host control
 			SetWindowTextA(m_hwndHost, pSource->m_hostname.c_str());
@@ -344,6 +394,31 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 			// Init Nick control
 			SetWindowText(m_hwndNick, pSource->m_mUser[pSource->m_idOwn].name.c_str());
 			SendMessage(m_hwndNick, EM_LIMITTEXT, pSource->m_metrics.uNickMaxLength, 0);
+			// Init status combobox
+			COMBOBOXEXITEM cbei[] = {
+				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, 0, TEXT("Ready"), -1, 0, 0, 0, 0, 0},
+				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, 1, TEXT("D'N'D"), -1, 1, 1, 0, 0, 0},
+				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, 2, TEXT("Busy"), -1, 2, 2, 0, 0, 0},
+				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, 3, TEXT("N/A"), -1, 3, 3, 0, 0, 0},
+				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, 4, TEXT("Away"), -1, 4, 4, 0, 0, 0},
+			};
+			for (int i = 0; i < _countof(cbei); i++)
+				SendMessage(m_hwndStatus, CBEM_INSERTITEM, 0, (LPARAM)&cbei[i]);
+			SendMessage(m_hwndStatus, CBEM_SETIMAGELIST, 0, (LPARAM)JClientApp::jpApp->himlStatus);
+			SendMessage(m_hwndStatus, CB_SETCURSEL, pSource->m_mUser[pSource->m_idOwn].nStatus, 0);
+			// Init status images combobox
+			COMBOBOXEXITEM cbeiImg;
+			cbeiImg.mask = CBEIF_IMAGE | CBEIF_SELECTEDIMAGE;
+			for (int i = 0; i < IML_STATUSIMG_COUNT; i++) {
+				cbeiImg.iItem = i;
+				cbeiImg.iImage = i = cbeiImg.iSelectedImage = i;
+				SendMessage(m_hwndStatusImg, CBEM_INSERTITEM, 0, (LPARAM)&cbeiImg);
+			}
+			SendMessage(m_hwndStatusImg, CBEM_SETIMAGELIST, 0, (LPARAM)JClientApp::jpApp->himlStatusImg);
+			SendMessage(m_hwndStatusImg, CB_SETCURSEL, pSource->m_mUser[pSource->m_idOwn].nStatusImg, 0);
+			// Init Status message control
+			SetWindowText(m_hwndStatusMsg, pSource->m_mUser[pSource->m_idOwn].strStatus.c_str());
+			SendMessage(m_hwndStatusMsg, EM_LIMITTEXT, pSource->m_metrics.uStatusMsgMaxLength, 0);
 
 			// Set introduction comments
 			static const std::tstring szIntro =
@@ -378,6 +453,34 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 						pSource->Disconnect();
 					} else {
 						pSource->Connect(true);
+					}
+					break;
+				}
+
+			case IDC_STATUS:
+				{
+					switch (HIWORD(wParam))
+					{
+					case CBN_SELENDOK:
+						{
+							EUserStatus stat = (EUserStatus)SendMessage((HWND)lParam, CB_GETCURSEL, 0, 0);
+							pSource->Send_Cmd_STATUS_Mode(pSource->m_clientsock, stat);
+							break;
+						}
+					}
+					break;
+				}
+
+			case IDC_STATUSIMG:
+				{
+					switch (HIWORD(wParam))
+					{
+					case CBN_SELENDOK:
+						{
+							int img = (int)SendMessage((HWND)lParam, CB_GETCURSEL, 0, 0);
+							pSource->Send_Cmd_STATUS_Img(pSource->m_clientsock, img);
+							break;
+						}
 					}
 					break;
 				}
@@ -731,7 +834,35 @@ int CALLBACK JClient::JPageList::AddLine(DWORD id)
 	lvi.iSubItem = 0;
 	lvi.pszText = LPSTR_TEXTCALLBACK;
 	lvi.cchTextMax = 0;
-	lvi.iImage = IML_CHANNELVOID;
+	MapChannel::const_iterator iter = m_mChannel.find(id);
+	if (iter != m_mChannel.end()) {
+		switch (iter->second.getStatus(pSource->m_idOwn))
+		{
+		case eFounder:
+			lvi.iImage = IML_CHANNELMAGENTA;
+			break;
+		case eAdmin:
+			lvi.iImage = IML_CHANNELRED;
+			break;
+		case eModerator:
+			lvi.iImage = IML_CHANNELBLUE;
+			break;
+		case eMember:
+			lvi.iImage = IML_CHANNELGREEN;
+			break;
+		case eWriter:
+			lvi.iImage = IML_CHANNELCYAN;
+			break;
+		case eReader:
+			lvi.iImage = IML_CHANNELYELLOW;
+			break;
+		default:
+			lvi.iImage = IML_CHANNELVOID;
+			break;
+		}
+	} else {
+		lvi.iImage = IML_CHANNELVOID;
+	}
 	lvi.lParam = (LPARAM)id;
 	index = ListView_InsertItem(m_hwndList, &lvi);
 	ListView_SetItemText(m_hwndList, index, 1, LPSTR_TEXTCALLBACK);
@@ -958,6 +1089,7 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 			hwndTB = GetDlgItem(hWnd, IDC_TOOLBAR);
 			hwndEdit = GetDlgItem(hWnd, IDC_RICHEDIT);
 			m_hwndSend = GetDlgItem(hWnd, IDC_SEND);
+			m_hwndMsgSpin = GetDlgItem(hWnd, IDC_MSGSPIN);
 
 			// Get initial windows sizes
 			MapControl(hwndEdit, rcEdit);
@@ -982,8 +1114,13 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 			SendMessage(hwndEdit, EM_SETEVENTMASK, 0, EN_DRAGDROPDONE | ENM_SELCHANGE);
 			SendMessage(hwndEdit, EM_SETBKGNDCOLOR, FALSE, (LPARAM)crSheet);
 
+			// Init up-doun control
+			vecMsgSpin.clear();
+			vecMsgSpin.push_back("");
+			EnableWindow(m_hwndMsgSpin, FALSE);
+
 			// Inits Send button
-			SendDlgItemMessage(hWnd, IDC_SEND, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)JClientApp::jpApp->himgSend);
+			SendMessage(m_hwndSend, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)JClientApp::jpApp->himgSend);
 
 			retval = TRUE;
 			break;
@@ -1019,6 +1156,16 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 							getContent(content, SF_RTF);
 							pSource->Send_Cmd_SAY(pSource->m_clientsock, getID(), SF_RTF, content);
 							SetWindowText(hwndEdit, TEXT(""));
+
+							ASSERT(vecMsgSpin.size() > 0);
+							vecMsgSpin.back() = content;
+							vecMsgSpin.push_back("");
+							if (vecMsgSpin.size() > pSource->m_metrics.nMsgSpinMaxCount)
+								vecMsgSpin.erase(vecMsgSpin.begin(), vecMsgSpin.begin() + vecMsgSpin.size() - pSource->m_metrics.nMsgSpinMaxCount);
+							EnableWindow(m_hwndMsgSpin, TRUE);
+							InvalidateRect(m_hwndMsgSpin, 0, TRUE);
+							SendMessage(m_hwndMsgSpin, UDM_SETRANGE, 0, MAKELONG(vecMsgSpin.size()-1, 0));
+							SendMessage(m_hwndMsgSpin, UDM_SETPOS, 0, MAKELONG(0, 0));
 						}
 					} else { // connect
 						pSource->Connect(true);
@@ -1062,16 +1209,42 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 			break;
 		}
 
+
+	case WM_NOTIFY:
+		{
+			if (!pSource) break;
+
+			NMHDR* pnmh = (NMHDR*)lParam;
+			switch (pnmh->code)
+			{
+			case UDN_DELTAPOS:
+				{
+					LPNMUPDOWN lpnmud = (LPNMUPDOWN)lParam;
+					if (pnmh->idFrom == IDC_MSGSPIN) {
+						SetWindowText(hwndEdit, ANSIToTstr(vecMsgSpin[vecMsgSpin.size() - 1 - lpnmud->iPos]).c_str());
+					}
+					break;
+				}
+
+			default:
+				retval =
+					JPageLog::DlgProc(hWnd, message, wParam, lParam) ||
+					rtf::Editor::DlgProc(hWnd, message, wParam, lParam);
+			}
+			break;
+		}
+
 	case WM_CONTEXTMENU:
 		{
-			if (!pSource) break; // display only if connected
-
 			if ((HWND)wParam == hwndEdit) {
 				RECT r;
 				GetWindowRect((HWND)wParam, &r);
 				TrackPopupMenu(GetSubMenu(JClientApp::jpApp->hmenuRichEdit, 0), TPM_LEFTALIGN | TPM_RIGHTBUTTON,
 					min(max(GET_X_LPARAM(lParam), r.left), r.right),
 					min(max(GET_Y_LPARAM(lParam), r.top), r.bottom), 0, hWnd, 0);
+			} else {
+				JPageLog::DlgProc(hWnd, message, wParam, lParam);
+				rtf::Editor::DlgProc(hWnd, message, wParam, lParam);
 			}
 			break;
 		}
@@ -1103,8 +1276,10 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 				EnableMenuItem((HMENU)wParam, IDC_SELECTALL,
 					MF_BYCOMMAND | (canselect ? MF_ENABLED : MF_GRAYED));
 				break;
+			} else {
+				JPageLog::DlgProc(hWnd, message, wParam, lParam);
+				rtf::Editor::DlgProc(hWnd, message, wParam, lParam);
 			}
-			retval = FALSE;
 			break;
 		}
 
@@ -1144,7 +1319,6 @@ void JClient::JPageUser::OnLinkConnect(SOCKET sock)
 	if (m_hwndPage)
 	{
 		EnableWindow(hwndEdit, TRUE);
-		EnableWindow(m_hwndSend, TRUE);
 	}
 }
 
@@ -1244,6 +1418,9 @@ bool CALLBACK JClient::JPageChannel::replace(DWORD idOld, DWORD idNew)
 void CALLBACK JClient::JPageChannel::Join(DWORD idUser)
 {
 	m_channel.opened.insert(idUser);
+	if (m_channel.getStatus(idUser) <= eReader)
+		m_channel.setStatus(idUser, m_channel.nAutoStatus);
+
 	if (m_hwndPage) AddLine(idUser);
 
 	// Introduction messages only fo finded user here - user can be unknown or hidden
@@ -1281,13 +1458,14 @@ void CALLBACK JClient::JPageChannel::Part(DWORD idUser, DWORD reason)
 int  CALLBACK JClient::JPageChannel::indexIcon(DWORD idUser) const
 {
 	MapUser::const_iterator iu = pSource->m_mUser.find(idUser);
-	int offset = (iu != pSource->m_mUser.end() && iu->second.isOnline) || (iu == pSource->m_mUser.end()) ? 0 : 6;
+	if (iu == pSource->m_mUser.end()) return IML_MANVOID;
+	int offset = iu->second.isOnline ? 0 : 6;
 	if (idUser == m_channel.idFounder)
 		return IML_MANMAGENTAON + offset;
 	else if (m_channel.admin.find(idUser) != m_channel.admin.end())
 		return IML_MANREDON + offset;
 	else if (m_channel.moderator.find(idUser) != m_channel.moderator.end())
-		return IML_MANBLUEON + offset;
+		return IML_MANBLUEON;
 	else if (m_channel.member.find(idUser) != m_channel.member.end())
 		return IML_MANGREENON + offset;
 	else if (m_channel.writer.find(idUser) != m_channel.writer.end())
@@ -1373,6 +1551,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			hwndEdit = GetDlgItem(hWnd, IDC_RICHEDIT);
 			m_hwndList = GetDlgItem(hWnd, IDC_USERLIST);
 			m_hwndSend = GetDlgItem(hWnd, IDC_SEND);
+			m_hwndMsgSpin = GetDlgItem(hWnd, IDC_MSGSPIN);
 
 			// Get initial windows sizes
 			MapControl(hwndEdit, rcEdit);
@@ -1400,22 +1579,29 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 			// Inits Users list
 			ListView_SetExtendedListViewStyle(m_hwndList,
-				LVS_EX_GRIDLINES | LVS_EX_HEADERDRAGDROP | LVS_EX_ONECLICKACTIVATE | LVS_EX_SUBITEMIMAGES);
+				LVS_EX_GRIDLINES | LVS_EX_HEADERDRAGDROP | LVS_EX_ONECLICKACTIVATE | LVS_EX_SUBITEMIMAGES | LVS_EX_TRACKSELECT);
 			ListView_SetImageList(m_hwndList, JClientApp::jpApp->himlMan, LVSIL_SMALL);
 			ListView_SetItemCount(m_hwndList, 64);
 			static LV_COLUMN lvc0[] = {
 				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
 				120, TEXT("Nickname"), -1, 0},
 				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
-				80, TEXT("IP-address"), -1, 1},
+				100, TEXT("Status"), -1, 1},
 				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
-				120, TEXT("Connected"), -1, 2},
+				80, TEXT("IP-address"), -1, 2},
+				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
+				120, TEXT("Connected"), -1, 3},
 			};
 			for (int i = 0; i < _countof(lvc0); ++i)
 				ListView_InsertColumn(m_hwndList, i, &lvc0[i]);
 
+			// Init up-down control
+			vecMsgSpin.clear();
+			vecMsgSpin.push_back("");
+			EnableWindow(m_hwndMsgSpin, FALSE);
+
 			// Inits Send button
-			SendDlgItemMessage(hWnd, IDC_SEND, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)JClientApp::jpApp->himgSend);
+			SendMessage(m_hwndSend, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)JClientApp::jpApp->himgSend);
 
 			BuildView();
 
@@ -1455,6 +1641,16 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 							getContent(content, SF_RTF);
 							pSource->Send_Cmd_SAY(pSource->m_clientsock, getID(), SF_RTF, content);
 							SetWindowText(hwndEdit, TEXT(""));
+
+							ASSERT(vecMsgSpin.size() > 0);
+							vecMsgSpin.back() = content;
+							vecMsgSpin.push_back("");
+							if (vecMsgSpin.size() > pSource->m_metrics.nMsgSpinMaxCount)
+								vecMsgSpin.erase(vecMsgSpin.begin(), vecMsgSpin.begin() + vecMsgSpin.size() - pSource->m_metrics.nMsgSpinMaxCount);
+							EnableWindow(m_hwndMsgSpin, TRUE);
+							InvalidateRect(m_hwndMsgSpin, 0, TRUE);
+							SendMessage(m_hwndMsgSpin, UDM_SETRANGE, 0, MAKELONG(vecMsgSpin.size()-1, 0));
+							SendMessage(m_hwndMsgSpin, UDM_SETPOS, 0, MAKELONG(0, 0));
 						}
 					} else { // connect
 						pSource->Connect(true);
@@ -1498,6 +1694,96 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			break;
 		}
 
+	case WM_DRAWITEM:
+		{
+			LPDRAWITEMSTRUCT lpDrawItem = (LPDRAWITEMSTRUCT)lParam;
+			switch (wParam)
+			{
+			case IDC_USERLIST:
+				{
+					MapUser::const_iterator iter = pSource->m_mUser.find((DWORD)lpDrawItem->itemData);
+					bool valid = iter != pSource->m_mUser.end() && iter->second.name.length();
+					// Get columns width and order
+					int nColOrder[4], nColWidth[4], nColPos[4];
+					ListView_GetColumnOrderArray(m_hwndList, _countof(nColOrder), nColOrder);
+					for (int i = 0; i < _countof(nColWidth); i++) {
+						nColWidth[i] = ListView_GetColumnWidth(m_hwndList, i);
+					}
+					for (int i = 0, pos = 0; i < _countof(nColPos); i++) {
+						nColPos[nColOrder[i]] = pos;
+						pos += nColWidth[nColOrder[i]];
+					}
+					RECT rc;
+					const int sep = 5;
+					// Draw background
+					HDC hdcCompatible = CreateCompatibleDC(lpDrawItem->hDC);
+					HBITMAP himgOld;
+					int w, h;
+					if (lpDrawItem->itemState & ODS_HOTLIGHT) {
+						himgOld = (HBITMAP)JClientApp::jpApp->himgULHot;
+						w = 16, h = 256;
+					} else if (lpDrawItem->itemState & (ODS_FOCUS | ODS_SELECTED)) {
+						himgOld = /*lpDrawItem->itemState & ODS_FOCUS
+							? (HBITMAP)JClientApp::jpApp->himgULFoc
+							: */(HBITMAP)JClientApp::jpApp->himgULSel;
+						w = 16, h = 256;
+					} else {
+						himgOld = (HBITMAP)JClientApp::jpApp->himgULBG;
+						w = 256, h = 16;
+					}
+					himgOld = (HBITMAP)SelectObject(hdcCompatible, himgOld);
+					StretchBlt(lpDrawItem->hDC,
+						lpDrawItem->rcItem.left, lpDrawItem->rcItem.top,
+						lpDrawItem->rcItem.right - lpDrawItem->rcItem.left,
+						lpDrawItem->rcItem.bottom - lpDrawItem->rcItem.top,
+						hdcCompatible, 0, 0, w, h, SRCCOPY);
+					himgOld = (HBITMAP)SelectObject(hdcCompatible, himgOld);
+					DeleteDC(hdcCompatible);
+					// Draw "Nickname" colunm
+					rc = lpDrawItem->rcItem;
+					rc.left += nColPos[0] + sep;
+					rc.right = rc.left + nColWidth[0];
+					ImageList_Draw(JClientApp::jpApp->himlMan, indexIcon((DWORD)lpDrawItem->itemData), lpDrawItem->hDC, rc.left, rc.top, 0);
+					ImageList_Draw(JClientApp::jpApp->himlStatus, valid ? (int)iter->second.nStatus : 0, lpDrawItem->hDC, rc.left, rc.top, 0);
+					rc.left += 16 + sep;
+					if (valid && iter->second.nStatusImg) {
+						ImageList_Draw(JClientApp::jpApp->himlStatusImg, iter->second.nStatusImg, lpDrawItem->hDC, rc.left, rc.top, 0);
+						rc.left += 16 + sep;
+					}
+					DrawText(lpDrawItem->hDC, valid ? iter->second.name.c_str() : tformat(TEXT("id 0x%08X"), lpDrawItem->itemData).c_str(), -1, &rc, DT_LEFT | DT_NOCLIP | DT_VCENTER);
+					// Draw "Status" column
+					rc = lpDrawItem->rcItem;
+					rc.left += nColPos[1] + sep;
+					rc.right = rc.left + nColWidth[1];
+					DrawText(lpDrawItem->hDC, valid ? iter->second.strStatus.c_str() : TEXT(""), -1, &rc, DT_LEFT | DT_NOCLIP | DT_VCENTER);
+					// Draw "IP-address" column
+					rc = lpDrawItem->rcItem;
+					rc.left += nColPos[2] + sep;
+					rc.right = rc.left + nColWidth[2];
+					DrawText(lpDrawItem->hDC, valid
+						? tformat(TEXT("%i.%i.%i.%i"),
+						iter->second.IP.S_un.S_un_b.s_b1,
+						iter->second.IP.S_un.S_un_b.s_b2,
+						iter->second.IP.S_un.S_un_b.s_b3,
+						iter->second.IP.S_un.S_un_b.s_b4).c_str()
+						: TEXT("N/A"), -1, &rc, DT_LEFT | DT_NOCLIP | DT_VCENTER);
+					// Draw "Connected" column
+					rc = lpDrawItem->rcItem;
+					rc.left += nColPos[3] + sep;
+					rc.right = rc.left + nColWidth[3];
+					SYSTEMTIME st;
+					FileTimeToLocalTime(iter->second.ftCreation, st);
+					DrawText(lpDrawItem->hDC, valid
+						? tformat(TEXT("%02i:%02i:%02i, %02i.%02i.%04i"),
+						st.wHour, st.wMinute, st.wSecond,
+						st.wDay, st.wMonth, st.wYear).c_str()
+						: TEXT("N/A"), -1, &rc, DT_LEFT | DT_NOCLIP | DT_VCENTER);
+					break;
+				}
+			}
+			break;
+		}
+
 	case WM_NOTIFY:
 		{
 			if (!pSource) break;
@@ -1505,7 +1791,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			NMHDR* pnmh = (NMHDR*)lParam;
 			switch (pnmh->code)
 			{
-			case LVN_GETDISPINFO:
+			/*case LVN_GETDISPINFO:
 				{
 					static TCHAR buffer[32];
 					LV_DISPINFO* pnmv = (LV_DISPINFO*)lParam;
@@ -1557,12 +1843,25 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 							}
 							pnmv->item.cchTextMax = lstrlen(pnmv->item.pszText);
 						}
-						if (pnmv->item.mask & LVIF_IMAGE && pnmv->item.iSubItem == 0) {
-							pnmv->item.iImage = indexIcon((DWORD)pnmv->item.lParam);
+						if (pnmv->item.mask & LVIF_IMAGE) {
+							switch (pnmv->item.iSubItem)
+							{
+							case 0:
+								{
+									pnmv->item.iImage = indexIcon((DWORD)pnmv->item.lParam);
+									break;
+								}
+							case 1:
+								{
+									MapUser::const_iterator iter = pSource->m_mUser.find((DWORD)pnmv->item.lParam);
+									pnmv->item.iImage = IML_MAN_COUNT + iter->second.nStatusImg;
+									break;
+								}
+							}
 						}
 					}
 					break;
-				}
+				}*/
 
 			case NM_DBLCLK:
 				{
@@ -1587,6 +1886,15 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					break;
 				}
 
+			case UDN_DELTAPOS:
+				{
+					LPNMUPDOWN lpnmud = (LPNMUPDOWN)lParam;
+					if (pnmh->idFrom == IDC_MSGSPIN) {
+						SetWindowText(hwndEdit, ANSIToTstr(vecMsgSpin[vecMsgSpin.size() - 1 - lpnmud->iPos]).c_str());
+					}
+					break;
+				}
+
 			default:
 				retval =
 					JPageLog::DlgProc(hWnd, message, wParam, lParam) ||
@@ -1597,14 +1905,15 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 	case WM_CONTEXTMENU:
 		{
-			if (!pSource) break; // display only if connected
-
 			if ((HWND)wParam == hwndEdit) {
 				RECT r;
 				GetWindowRect((HWND)wParam, &r);
 				TrackPopupMenu(GetSubMenu(JClientApp::jpApp->hmenuRichEdit, 0), TPM_LEFTALIGN | TPM_RIGHTBUTTON,
 					min(max(GET_X_LPARAM(lParam), r.left), r.right),
 					min(max(GET_Y_LPARAM(lParam), r.top), r.bottom), 0, hWnd, 0);
+			} else {
+				JPageLog::DlgProc(hWnd, message, wParam, lParam);
+				rtf::Editor::DlgProc(hWnd, message, wParam, lParam);
 			}
 			break;
 		}
@@ -1636,8 +1945,10 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				EnableMenuItem((HMENU)wParam, IDC_SELECTALL,
 					MF_BYCOMMAND | (canselect ? MF_ENABLED : MF_GRAYED));
 				break;
+			} else {
+				JPageLog::DlgProc(hWnd, message, wParam, lParam);
+				rtf::Editor::DlgProc(hWnd, message, wParam, lParam);
 			}
-			retval = FALSE;
 			break;
 		}
 
@@ -1716,7 +2027,6 @@ void JClient::JPageChannel::OnLinkConnect(SOCKET sock)
 	if (m_hwndPage)
 	{
 		EnableWindow(hwndEdit, TRUE);
-		EnableWindow(m_hwndSend, TRUE);
 	}
 }
 

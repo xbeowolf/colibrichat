@@ -77,16 +77,24 @@
 #define CHAN_OK                        0
 #define CHAN_ALREADY                   1
 #define CHAN_DENY                      2
+#define CHAN_LIMIT                     3
 
 // Part channel or private talk
 #define CCPM_PART                      105
 #define PART_LEAVE                     1
 #define PART_DISCONNECT                2
 
+// Indicate application activation
 #define CCPM_ONLINE                    106
 
+// Status components
+#define CCPM_STATUS                    107
+#define STATUS_MODE                    0x0001
+#define STATUS_IMG                     0x0002
+#define STATUS_MSG                     0x0004
+
 // Say to channel or to private talk
-#define CCPM_SAY                       107
+#define CCPM_SAY                       108
 
 //-----------------------------------------------------------------------------
 
