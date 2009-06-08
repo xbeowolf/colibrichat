@@ -40,7 +40,6 @@ namespace colibrichat
 	struct Contact;
 	struct User;
 	struct Channel;
-	struct Message;
 
 	enum EContact {eServer, eList, eUser, eChannel, eBoard};
 	enum EChanStatus {eOutsider, eReader, eWriter, eMember, eModerator, eAdmin, eFounder};
@@ -73,8 +72,8 @@ namespace colibrichat
 	{
 		std::tstring password; // password for join into channel
 		std::tstring topic; // channel topic
-		SetId writer, member, moderator, admin; // users identifiers with access rights
-		DWORD idFounder; // the founder of channel
+		DWORD idTopicWriter;
+		SetId writer, member, moderator, admin, founder; // users identifiers with access rights
 		EChanStatus nAutoStatus; // default access right for incomer
 		UINT nLimit; // maximum users on channel
 		bool isHidden, isAnonymous;
@@ -87,17 +86,11 @@ namespace colibrichat
 	struct Metrics
 	{
 		size_t uNickMaxLength;
+		size_t uStatusMsgMaxLength;
 		size_t uChanMaxLength;
 		size_t uPassMaxLength;
-		size_t uStatusMsgMaxLength;
+		size_t uTopicMaxLength;
 		size_t nMsgSpinMaxCount;
-	};
-
-	struct Message
-	{
-		FILETIME time;
-		DWORD idFrom, idTo;
-		std::string text;
 	};
 
 	enum EGender {eMale, eFemale};

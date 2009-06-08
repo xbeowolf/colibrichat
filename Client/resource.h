@@ -22,7 +22,7 @@
 #define IDM_LOG                         134
 #define IDR_MENU2                       136
 #define IDM_TAB                         136
-#define IDB_BITMAP1                     137
+#define IDM_CHANNEL                     137
 #define IDB_BITMAP2                     139
 #define IDB_MODE                        139
 #define IDB_STATUS                      139
@@ -32,6 +32,8 @@
 #define IDB_UL_SEL                      150
 #define IDB_UL_HOT                      151
 #define IDB_UL_FOC                      152
+#define IDD_DIALOG1                     153
+#define IDD_TOPIC                       153
 #define IDC_LOG                         1001
 #define IDC_USERLIST                    1002
 #define IDC_RICHEDIT                    1003
@@ -54,6 +56,9 @@
 #define IDC_STATUSIMG                   1040
 #define IDC_EDIT1                       1041
 #define IDC_STATUSMSG                   1041
+#define IDC_EDIT5                       1045
+#define IDC_TOPIC                       1045
+#define IDC_TOPICTEXT                   1045
 #define IDC_NICK                        40002
 #define IDC_CONNECT                     40004
 #define IDC_SENDBYENTER                 40017
@@ -73,17 +78,16 @@
 #define IDC_LOGCOPY                     40041
 #define ID_OVERLAP_CLOSE                40042
 #define IDC_TABCLOSE                    40043
-#define ID_BUTTON40044                  40044
-#define ID_BUTTON40045                  40045
-#define ID_BUTTON40046                  40046
+#define ID_OVERLAP_TOPIC                40047
+#define IDC_CHANTOPIC                   40048
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        153
-#define _APS_NEXT_COMMAND_VALUE         40047
-#define _APS_NEXT_CONTROL_VALUE         1042
+#define _APS_NEXT_RESOURCE_VALUE        154
+#define _APS_NEXT_COMMAND_VALUE         40049
+#define _APS_NEXT_CONTROL_VALUE         1046
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

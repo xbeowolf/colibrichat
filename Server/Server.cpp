@@ -23,9 +23,9 @@
 
 #pragma endregion
 
-//-----------------------------------------------------------------------------
-
 using namespace colibrichat;
+
+//-----------------------------------------------------------------------------
 
 // Global Variables:
 static TCHAR szHelpFile[MAX_PATH];
@@ -55,6 +55,9 @@ CALLBACK JServer::JServer()
 
 void CALLBACK JServer::Init()
 {
+	jpConnections->SetSource(this);
+	jpConnections->SetupHooks();
+
 	__super::Init();
 
 	m_mSocketId.clear();
@@ -327,20 +330,28 @@ void CALLBACK JServer::RenameContact(DWORD idOld, DWORD idNew, const std::tstrin
 		m_mIdSocket.erase(idOld);
 		// replace content of channels access rights
 		for (MapChannel::iterator ic = m_mChannel.begin(); ic != m_mChannel.end(); ic++) {
-			if (idOld == ic->second.idFounder)
-				ic->second.idFounder = idNew;
-			else if (ic->second.admin.find(idOld) != ic->second.admin.end()) {
+			switch (ic->second.getStatus(idOld))
+			{
+			case eFounder:
+				ic->second.founder.insert(idNew);
+				ic->second.founder.erase(idOld);
+				break;
+			case eAdmin:
 				ic->second.admin.insert(idNew);
 				ic->second.admin.erase(idOld);
-			} else if (ic->second.moderator.find(idOld) != ic->second.moderator.end()) {
+				break;
+			case eModerator:
 				ic->second.moderator.insert(idNew);
 				ic->second.moderator.erase(idOld);
-			} else if (ic->second.member.find(idOld) != ic->second.member.end()) {
+				break;
+			case eMember:
 				ic->second.member.insert(idNew);
 				ic->second.member.erase(idOld);
-			} else if (ic->second.writer.find(idOld) != ic->second.writer.end()) {
+				break;
+			case eWriter:
 				ic->second.writer.insert(idNew);
 				ic->second.writer.erase(idOld);
+				break;
 			}
 		}
 	} else {
@@ -364,19 +375,11 @@ void JServer::OnHook(JEventable* src)
 	using namespace fastdelegate;
 
 	__super::OnHook(src);
-
-	// Setup hooks and pointer to this for dialogs objects at last
-	jpConnections->SetSource(this);
-	jpConnections->SetupHooks();
 }
 
 void JServer::OnUnhook(JEventable* src)
 {
 	using namespace fastdelegate;
-
-	// Reset hooks and pointer to this for dialogs objects at last
-	jpConnections->ResetHooks();
-	jpConnections->SetSource(0);
 
 	__super::OnUnhook(src);
 }
@@ -454,6 +457,7 @@ void JServer::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 		{COMMAND(CCPM_ONLINE), &JServer::Recv_Cmd_ONLINE},
 		{COMMAND(CCPM_STATUS), &JServer::Recv_Cmd_STATUS},
 		{COMMAND(CCPM_SAY), &JServer::Recv_Cmd_SAY},
+		{COMMAND(CCPM_TOPIC), &JServer::Recv_Cmd_TOPIC},
 	};
 	for (int i = 0; i < _countof(responseTable); i++)
 	{
@@ -636,7 +640,8 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 			chan.ftCreation = ft;
 			chan.password = pass;
 			chan.topic = TEXT("");
-			chan.idFounder = idSrc;
+			chan.idTopicWriter = 0;
+			chan.founder.insert(idSrc);
 			chan.nAutoStatus = eWriter;
 			chan.nLimit = -1;
 			chan.isHidden = false;
@@ -854,6 +859,43 @@ void CALLBACK JServer::Recv_Cmd_SAY(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
+void CALLBACK JServer::Recv_Cmd_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
+{
+	DWORD idWhere;
+	std::tstring topic;
+
+	try
+	{
+		io::unpack(is, idWhere);
+		io::unpack(is, topic);
+	}
+	catch (io::exception e)
+	{
+		switch (e.count)
+		{
+		case 0:
+			// Report about message
+			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			return;
+		}
+	}
+
+	DWORD idSrc = m_mSocketId[sock];
+	MapUser::const_iterator iu = m_mUser.find(idWhere);
+	if (iu != m_mUser.end()) { // private talk
+	} else {
+		MapChannel::iterator ic = m_mChannel.find(idWhere);
+		if (ic != m_mChannel.end()) { // channel
+			if (ic->second.getStatus(idSrc) >= eMember) {
+				ic->second.topic = topic;
+				ic->second.idTopicWriter = idSrc;
+
+				Broadcast_Notify_TOPIC(ic->second.opened, idSrc, idWhere, topic);
+			}
+		}
+	}
+}
+
 //
 // Beowolf Network Protocol Messages sending
 //
@@ -1016,6 +1058,15 @@ void CALLBACK JServer::Broadcast_Notify_SAY(const SetId& set, DWORD idWho, DWORD
 	io::pack(os, type);
 	io::pack(os, content);
 	BroadcastTrn(set, false, NOTIFY(CCPM_SAY), os.str());
+}
+
+void CALLBACK JServer::Broadcast_Notify_TOPIC(const SetId& set, DWORD idWho, DWORD idWhere, const std::tstring& topic)
+{
+	std::ostringstream os;
+	io::pack(os, idWho);
+	io::pack(os, idWhere);
+	io::pack(os, topic);
+	BroadcastTrn(set, false, NOTIFY(CCPM_TOPIC), os.str());
 }
 
 void CALLBACK JServer::Connections()

@@ -125,6 +125,13 @@ namespace colibrichat
 	};
 	typedef std::map<DWORD, Tab> MapTab;
 
+	struct Alert {
+		bool fFlashPageNew, fFlashPageSayPrivate, fFlahPageSayChannel, fFlashPageChangeTopic;
+		bool fCanOpenPrivate, fCanSignal, fCanAlert, fCanMessage;
+		bool fPlayChatSounds, fPlaySignal, fPlayAlert, fPlayMessage;
+	};
+	typedef std::map<EUserStatus, Alert> MapAlert;
+
 	class JClient : public netengine::JEngine, public JDialog
 	{
 	public:
@@ -145,6 +152,8 @@ namespace colibrichat
 		class JPageBoard;
 		typedef std::map<DWORD, JPtr<JPageBoard>> MapPageBoard;
 
+		class JTopic;
+
 		//
 		// Pages
 		//
@@ -161,6 +170,8 @@ namespace colibrichat
 			virtual int CALLBACK ImageIndex() const = 0;
 			virtual LPCTSTR CALLBACK Template() const = 0;
 			virtual bool CALLBACK IsPermanent() const = 0;
+			virtual std::tstring gettopic() const {return getname();}
+			virtual HWND getDefFocusWnd() const = 0;
 
 			virtual EContact CALLBACK gettype() const = 0;
 			virtual DWORD CALLBACK getID() const = 0;
@@ -179,6 +190,8 @@ namespace colibrichat
 		public:
 
 			CALLBACK JPageLog();
+
+			HWND getDefFocusWnd() const {return m_hwndLog;}
 
 			void CALLBACK AppendRtf(const std::string& content) const;
 			void CALLBACK AppendScript(const std::tstring& content, bool withtime = true) const;
@@ -206,6 +219,7 @@ namespace colibrichat
 			int CALLBACK ImageIndex() const {return IML_SERVERGREEN;}
 			LPCTSTR CALLBACK Template() const {return MAKEINTRESOURCE(IDD_SERVER);}
 			bool CALLBACK IsPermanent() const {return true;}
+			HWND getDefFocusWnd() const {return m_hwndNick;}
 
 			EContact CALLBACK gettype() const {return eServer;}
 			DWORD CALLBACK getID() const {return CRC_SERVER;}
@@ -244,6 +258,7 @@ namespace colibrichat
 			int CALLBACK ImageIndex() const {return IML_CHANNELGREEN;}
 			LPCTSTR CALLBACK Template() const {return MAKEINTRESOURCE(IDD_LIST);}
 			bool CALLBACK IsPermanent() const {return true;}
+			HWND getDefFocusWnd() const {return m_hwndChan;}
 
 			EContact CALLBACK gettype() const {return eList;}
 			DWORD CALLBACK getID() const {return CRC_LIST;}
@@ -292,6 +307,7 @@ namespace colibrichat
 			int CALLBACK ImageIndex() const {return IML_PRIVATEGREEN;}
 			LPCTSTR CALLBACK Template() const {return MAKEINTRESOURCE(IDD_USER);}
 			bool CALLBACK IsPermanent() const {return false;}
+			HWND getDefFocusWnd() const {return hwndEdit;}
 
 			EContact CALLBACK gettype() const {return eUser;}
 			DWORD CALLBACK getID() const {return m_ID;}
@@ -331,12 +347,15 @@ namespace colibrichat
 			int CALLBACK ImageIndex() const {return IML_CHANNELGREEN;}
 			LPCTSTR CALLBACK Template() const {return MAKEINTRESOURCE(IDD_CHANNEL);}
 			bool CALLBACK IsPermanent() const {return false;}
+			std::tstring gettopic() const;
+			HWND getDefFocusWnd() const {return hwndEdit;}
 
 			EContact CALLBACK gettype() const {return eChannel;}
 			DWORD CALLBACK getID() const {return m_ID;}
 			std::tstring CALLBACK getname() const {return m_channel.name;}
 
 			void CALLBACK setchannel(const Channel& val);
+			void CALLBACK settopic(const std::tstring& topic, DWORD id);
 			void CALLBACK rename(DWORD idNew, const std::tstring& newname);
 			bool CALLBACK replace(DWORD idOld, DWORD idNew);
 
@@ -373,6 +392,32 @@ namespace colibrichat
 			std::vector<std::string> vecMsgSpin;
 		};
 
+		//
+		// Dialogs
+		//
+
+		class JTopic : public JAttachedDialog<JClient>
+		{
+		public:
+
+			CALLBACK JTopic(JClient* p, JPageChannel* chan);
+
+		protected:
+
+			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
+
+			void OnHook(JEventable* src);
+			void OnUnhook(JEventable* src);
+
+			void OnLinkEstablished(SOCKET sock);
+			void OnLinkDestroy(SOCKET sock);
+			void OnPageClose(DWORD id);
+
+		protected:
+
+			JPtr<JPageChannel> jpChannel;
+		};
+
 	public:
 
 		// Constructor
@@ -406,6 +451,7 @@ namespace colibrichat
 		int  CALLBACK getTabIndex(DWORD id);
 		JPtr<JPage> CALLBACK getPage(DWORD id);
 		bool CheckNick(std::tstring& nick, std::tstring& msg);
+		void CALLBACK ShowTopic(const std::tstring& topic);
 
 		// Error provider
 		void ShowErrorMessage(HWND hwnd, const std::tstring& msg);
@@ -427,6 +473,7 @@ namespace colibrichat
 		void CALLBACK Recv_Notify_ONLINE(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_STATUS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_SAY(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is);
 
 		// Beowolf Network Protocol Messages sending
 		void CALLBACK Send_Quest_NICK(SOCKET sock, const std::tstring& nick);
@@ -439,6 +486,7 @@ namespace colibrichat
 		void CALLBACK Send_Cmd_STATUS_Msg(SOCKET sock, const std::tstring& msg);
 		void CALLBACK Send_Cmd_STATUS(SOCKET sock, EUserStatus stat, int img, const std::tstring& msg);
 		void CALLBACK Send_Cmd_SAY(SOCKET sock, DWORD idWhere, UINT type, const std::string& content);
+		void CALLBACK Send_Cmd_TOPIC(SOCKET sock, DWORD idWhere, const std::tstring& topic);
 
 		void OnHook(JEventable* src);
 		void OnUnhook(JEventable* src);
@@ -453,8 +501,8 @@ namespace colibrichat
 
 		// --- Events ---
 
-		fastdelegate::FastDelegateList1<const Message&>
-			EvMessage;
+		fastdelegate::FastDelegateList1<DWORD>
+			EvPageClose;
 		fastdelegate::FastDelegateList1<SOCKET>
 			EvLinkConnecting;
 
@@ -469,6 +517,7 @@ namespace colibrichat
 		JPROPERTY_RREF_CONST(std::tstring, password);
 		JPROPERTY_R(bool, bReconnect);
 		JPROPERTY_R(bool, bSendByEnter);
+		JPROPERTY_RREF_CONST(MapAlert, mAlert);
 
 		// Pages
 		JPtr<JPage> jpOnline;
@@ -508,6 +557,7 @@ namespace colibrichat
 
 		JPROPERTY_R(HMENU, hmenuTab);
 		JPROPERTY_R(HMENU, hmenuLog);
+		JPROPERTY_R(HMENU, hmenuChannel);
 		JPROPERTY_R(HMENU, hmenuRichEdit);
 
 		JPROPERTY_R(HIMAGELIST, himlEdit);

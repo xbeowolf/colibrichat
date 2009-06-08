@@ -25,16 +25,16 @@
 
 #pragma endregion
 
-//-----------------------------------------------------------------------------
-
 using namespace colibrichat;
+
+//-----------------------------------------------------------------------------
 
 CHARFORMAT cfDefault =
 {
 	sizeof(cfDefault), // cbSize
 	CFM_BOLD | CFM_COLOR | CFM_FACE | CFM_ITALIC | CFM_OFFSET | CFM_SIZE | CFM_UNDERLINE, // dwMask
 	0, // dwEffects
-	12*20, // yHeight
+	10*20, // yHeight
 	0, // yOffset
 	RGB(0, 0, 128), // crTextColor
 	DEFAULT_CHARSET, // bCharSet
@@ -186,8 +186,6 @@ void JClient::JPage::OnHook(JEventable* src)
 	using namespace fastdelegate;
 
 	__super::OnHook(src);
-
-	//pSource->EvUnhook += MakeDelegate(this, &JEngine::JPage::OnUnhook);
 }
 
 void JClient::JPage::OnUnhook(JEventable* src)
@@ -195,9 +193,9 @@ void JClient::JPage::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
-	//pSource->EvUnhook -= MakeDelegate(this, &JEngine::JPage::OnUnhook);
-
 	__super::OnUnhook(src);
+
+	SetSource(0);
 }
 
 //-----------------------------------------------------------------------------
@@ -223,6 +221,8 @@ void CALLBACK JClient::JPageLog::AppendRtf(const std::string& content) const
 	CHARRANGE crMark; // Selection position
 	int nTextLen; // Length of text in control
 
+	SendMessage(m_hwndLog, EM_HIDESELECTION, TRUE, 0);
+
 	SendMessage(m_hwndLog, EM_EXGETSEL, 0, (LPARAM)&crMark);
 	nTextLen = GetWindowTextLength(m_hwndLog);
 
@@ -232,6 +232,8 @@ void CALLBACK JClient::JPageLog::AppendRtf(const std::string& content) const
 	// Restore caret position
 	if (crMark.cpMin == crMark.cpMax && crMark.cpMin == nTextLen) SendMessage(m_hwndLog, EM_SETSEL, -1, -1);
 	else SendMessage(m_hwndLog, EM_EXSETSEL, 0, (LPARAM)&crMark);
+
+	SendMessage(m_hwndLog, EM_HIDESELECTION, FALSE, 0);
 
 	if (GetFocus() != m_hwndLog) SendMessage(m_hwndLog, WM_VSCROLL, SB_BOTTOM, 0);
 }
@@ -401,6 +403,7 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, 2, TEXT("Busy"), -1, 2, 2, 0, 0, 0},
 				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, 3, TEXT("N/A"), -1, 3, 3, 0, 0, 0},
 				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, 4, TEXT("Away"), -1, 4, 4, 0, 0, 0},
+				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, 5, TEXT("Glass"), -1, 5, 5, 0, 0, 0},
 			};
 			for (int i = 0; i < _countof(cbei); i++)
 				SendMessage(m_hwndStatus, CBEM_INSERTITEM, 0, (LPARAM)&cbei[i]);
@@ -1128,6 +1131,8 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 
 	case WM_DESTROY:
 		{
+			pSource->EvPageClose.Invoke(getID());
+
 			pSource->Send_Cmd_PART(pSource->clientsock, m_ID, PART_LEAVE);
 			pSource->UnlinkUser(m_ID, pSource->m_idOwn);
 			pSource->EvReport(tformat(TEXT("parts from [b]%s[/b] private talk"), m_user.name.c_str()), netengine::eInformation, netengine::eHigher);
@@ -1348,6 +1353,19 @@ CALLBACK JClient::JPageChannel::JPageChannel(DWORD id, const std::tstring& nick)
 	m_channel.name = nick;
 }
 
+std::tstring JClient::JPageChannel::gettopic() const
+{
+	ASSERT(pSource);
+
+	if (m_channel.topic.empty()) {
+		return tformat(TEXT("#%s"), m_channel.name.c_str());
+	} else if (pSource->mUser.find(m_channel.idTopicWriter) == pSource->mUser.end()) {
+		return tformat(TEXT("#%s: %s"), m_channel.name.c_str(), m_channel.topic.c_str());
+	} else {
+		return tformat(TEXT("#%s: %s (%s)"), m_channel.name.c_str(), m_channel.topic.c_str(), pSource->mUser.find(m_channel.idTopicWriter)->second.name.c_str());
+	}
+}
+
 void CALLBACK JClient::JPageChannel::setchannel(const Channel& val)
 {
 	m_channel = val;
@@ -1358,6 +1376,12 @@ void CALLBACK JClient::JPageChannel::setchannel(const Channel& val)
 	}
 
 	AppendScript(tformat(TEXT("[style=Info]now talking in [b]#%s[/b][/style]"), m_channel.name.c_str()));
+}
+
+void CALLBACK JClient::JPageChannel::settopic(const std::tstring& topic, DWORD id)
+{
+	m_channel.topic = topic;
+	m_channel.idTopicWriter = id;
 }
 
 void CALLBACK JClient::JPageChannel::rename(DWORD idNew, const std::tstring& newname)
@@ -1391,25 +1415,33 @@ bool CALLBACK JClient::JPageChannel::replace(DWORD idOld, DWORD idNew)
 	}
 
 	// replace content of channels access rights
-	if (idOld == m_channel.idFounder) {
-		m_channel.idFounder = idNew;
+	switch (m_channel.getStatus(idOld))
+	{
+	case eFounder:
+		m_channel.founder.insert(idNew);
+		m_channel.founder.erase(idOld);
 		retval = true;
-	} else if (m_channel.admin.find(idOld) != m_channel.admin.end()) {
+		break;
+	case eAdmin:
 		m_channel.admin.insert(idNew);
 		m_channel.admin.erase(idOld);
 		retval = true;
-	} else if (m_channel.moderator.find(idOld) != m_channel.moderator.end()) {
+		break;
+	case eModerator:
 		m_channel.moderator.insert(idNew);
 		m_channel.moderator.erase(idOld);
 		retval = true;
-	} else if (m_channel.member.find(idOld) != m_channel.member.end()) {
+		break;
+	case eMember:
 		m_channel.member.insert(idNew);
 		m_channel.member.erase(idOld);
 		retval = true;
-	} else if (m_channel.writer.find(idOld) != m_channel.writer.end()) {
+		break;
+	case eWriter:
 		m_channel.writer.insert(idNew);
 		m_channel.writer.erase(idOld);
 		retval = true;
+		break;
 	}
 
 	return retval;
@@ -1460,17 +1492,23 @@ int  CALLBACK JClient::JPageChannel::indexIcon(DWORD idUser) const
 	MapUser::const_iterator iu = pSource->m_mUser.find(idUser);
 	if (iu == pSource->m_mUser.end()) return IML_MANVOID;
 	int offset = iu->second.isOnline ? 0 : 6;
-	if (idUser == m_channel.idFounder)
+	switch (m_channel.getStatus(idUser))
+	{
+	case eFounder:
 		return IML_MANMAGENTAON + offset;
-	else if (m_channel.admin.find(idUser) != m_channel.admin.end())
+	case eAdmin:
 		return IML_MANREDON + offset;
-	else if (m_channel.moderator.find(idUser) != m_channel.moderator.end())
-		return IML_MANBLUEON;
-	else if (m_channel.member.find(idUser) != m_channel.member.end())
+	case eModerator:
+		return IML_MANBLUEON + offset;
+	case eMember:
 		return IML_MANGREENON + offset;
-	else if (m_channel.writer.find(idUser) != m_channel.writer.end())
+	case eWriter:
 		return IML_MANCYANON + offset;
-	else return IML_MANYELLOWON + offset;
+	case eReader:
+		return IML_MANYELLOWON + offset;
+	default:
+		return IML_MANVOID;
+	}
 }
 
 LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -1576,6 +1614,8 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			crSheet = GetSysColor(COLOR_WINDOW);
 			SendMessage(hwndEdit, EM_SETEVENTMASK, 0, EN_DRAGDROPDONE | ENM_SELCHANGE);
 			SendMessage(hwndEdit, EM_SETBKGNDCOLOR, FALSE, (LPARAM)crSheet);
+			// Init Log control
+			SendMessage(m_hwndLog, EM_SETEVENTMASK, 0, ENM_MOUSEEVENTS);
 
 			// Inits Users list
 			ListView_SetExtendedListViewStyle(m_hwndList,
@@ -1611,6 +1651,8 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 	case WM_DESTROY:
 		{
+			pSource->EvPageClose.Invoke(getID());
+
 			pSource->Send_Cmd_PART(pSource->clientsock, m_ID, PART_LEAVE);
 			for each (SetId::value_type const& v in m_channel.opened) {
 				pSource->UnlinkUser(v, m_ID);
@@ -1684,6 +1726,10 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 			case IDC_SELECTALL:
 				SendMessage(hwndEdit, EM_SETSEL, 0, -1);
+				break;
+
+			case IDC_CHANTOPIC:
+				CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_TOPIC), pSource->hwndPage, (DLGPROC)JDialog::DlgProcStub, (LPARAM)(JDialog*)new JTopic(pSource, this));
 				break;
 
 			default:
@@ -1886,6 +1932,17 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					break;
 				}
 
+			case EN_MSGFILTER:
+				{
+					MSGFILTER* pmf = (MSGFILTER*)lParam;
+					if (pnmh->idFrom == IDC_LOG) {
+						if (pmf->msg == WM_LBUTTONDBLCLK && m_channel.getStatus(pSource->m_idOwn) >= eMember) {
+							SendMessage(hWnd, WM_COMMAND, IDC_CHANTOPIC, 0);
+						}
+					}
+					break;
+				}
+
 			case UDN_DELTAPOS:
 				{
 					LPNMUPDOWN lpnmud = (LPNMUPDOWN)lParam;
@@ -1905,7 +1962,13 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 	case WM_CONTEXTMENU:
 		{
-			if ((HWND)wParam == hwndEdit) {
+			if ((HWND)wParam == m_hwndLog) {
+				RECT r;
+				GetWindowRect((HWND)wParam, &r);
+				TrackPopupMenu(GetSubMenu(JClientApp::jpApp->hmenuChannel, 0), TPM_LEFTALIGN | TPM_RIGHTBUTTON,
+					min(max(GET_X_LPARAM(lParam), r.left), r.right),
+					min(max(GET_Y_LPARAM(lParam), r.top), r.bottom), 0, hWnd, 0);
+			} else if ((HWND)wParam == hwndEdit) {
 				RECT r;
 				GetWindowRect((HWND)wParam, &r);
 				TrackPopupMenu(GetSubMenu(JClientApp::jpApp->hmenuRichEdit, 0), TPM_LEFTALIGN | TPM_RIGHTBUTTON,
@@ -1920,7 +1983,18 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 	case WM_INITMENUPOPUP:
 		{
-			if ((HMENU)wParam == GetSubMenu(JClientApp::jpApp->hmenuRichEdit, 0))
+			if ((HMENU)wParam == GetSubMenu(JClientApp::jpApp->hmenuChannel, 0)) {
+				SetMenuDefaultItem((HMENU)wParam, IDC_CHANTOPIC, FALSE);
+				EnableMenuItem((HMENU)wParam, IDC_CHANTOPIC,
+					MF_BYCOMMAND | (m_channel.getStatus(pSource->m_idOwn) >= eMember ? MF_ENABLED : MF_GRAYED));
+
+				CHARRANGE cr;
+				SendMessage(m_hwndLog, EM_EXGETSEL, 0, (LPARAM)&cr);
+				bool cancopy = cr.cpMin != cr.cpMax;
+				EnableMenuItem((HMENU)wParam, IDC_LOGCOPY,
+					MF_BYCOMMAND | (cancopy ? MF_ENABLED : MF_GRAYED));
+				break;
+			} else if ((HMENU)wParam == GetSubMenu(JClientApp::jpApp->hmenuRichEdit, 0))
 			{
 				SetMenuDefaultItem((HMENU)wParam, IDC_SEND, FALSE);
 				CheckMenuRadioItem((HMENU)wParam,
@@ -2043,3 +2117,7 @@ void JClient::JPageChannel::OnLinkDestroy(SOCKET sock)
 	}
 	m_channel.opened.clear(); // no users on disconnected channel
 }
+
+//-----------------------------------------------------------------------------
+
+// The End.

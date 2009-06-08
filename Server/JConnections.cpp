@@ -294,7 +294,6 @@ void JServer::JConnections::OnHook(JEventable* src)
 
 	__super::OnHook(src);
 
-	//pSource->EvUnhook += MakeDelegate(this, &JServer::JConnections::OnUnhook);
 	pSource->EvLinkEstablished += MakeDelegate(this, &JServer::JConnections::OnLinkEstablished);
 	pSource->EvLinkDestroy += MakeDelegate(this, &JServer::JConnections::OnLinkDestroy);
 }
@@ -303,7 +302,6 @@ void JServer::JConnections::OnUnhook(JEventable* src)
 {
 	using namespace fastdelegate;
 
-	//pSource->EvUnhook -= MakeDelegate(this, &JServer::JConnections::OnUnhook);
 	pSource->EvLinkEstablished -= MakeDelegate(this, &JServer::JConnections::OnLinkEstablished);
 	pSource->EvLinkDestroy -= MakeDelegate(this, &JServer::JConnections::OnLinkDestroy);
 

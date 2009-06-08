@@ -129,6 +129,7 @@ namespace colibrichat
 		void CALLBACK Recv_Cmd_ONLINE(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_STATUS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_SAY(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Cmd_TOPIC(SOCKET sock, WORD trnid, io::mem& is);
 
 		// Beowolf Network Protocol Messages sending
 		void CALLBACK Send_Reply_NICK(SOCKET sock, WORD trnid, DWORD result, DWORD id, const std::tstring& nick);
@@ -146,6 +147,7 @@ namespace colibrichat
 		void CALLBACK Broadcast_Notify_STATUS(const SetId& set, DWORD idWho, WORD type, EUserStatus stat, int img, std::tstring msg);
 		void CALLBACK Send_Notify_SAY(SOCKET sock, DWORD idWho, DWORD idWhere, UINT type, const std::string& content);
 		void CALLBACK Broadcast_Notify_SAY(const SetId& set, DWORD idWho, DWORD idWhere, UINT type, const std::string& content);
+		void CALLBACK Broadcast_Notify_TOPIC(const SetId& set, DWORD idWho, DWORD idWhere, const std::tstring& topic);
 
 		void OnHook(JEventable* src);
 		void OnUnhook(JEventable* src);
@@ -163,8 +165,8 @@ namespace colibrichat
 
 		// --- Events ---
 
-		fastdelegate::FastDelegateList1<const Message&>
-			EvMessage;
+		//fastdelegate::FastDelegateList1<const Message&>
+			//EvMessage;
 
 	protected:
 

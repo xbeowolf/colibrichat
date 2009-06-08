@@ -47,11 +47,12 @@ void CALLBACK io::pack(std::ostream& os, const colibrichat::Channel& data)
 	io::pack(os, data.ftCreation);
 	io::pack(os, data.password);
 	io::pack(os, data.topic);
+	io::pack(os, data.idTopicWriter);
 	io::pack(os, data.writer);
 	io::pack(os, data.member);
 	io::pack(os, data.moderator);
 	io::pack(os, data.admin);
-	io::pack(os, data.idFounder);
+	io::pack(os, data.founder);
 	io::pack(os, data.nAutoStatus);
 	io::pack(os, data.nLimit);
 	io::pack(os, data.isHidden);
@@ -89,11 +90,12 @@ void CALLBACK io::unpack(io::mem& is, colibrichat::Channel& data)
 	io::unpack(is, data.ftCreation);
 	io::unpack(is, data.password);
 	io::unpack(is, data.topic);
+	io::unpack(is, data.idTopicWriter);
 	io::unpack(is, data.writer);
 	io::unpack(is, data.member);
 	io::unpack(is, data.moderator);
 	io::unpack(is, data.admin);
-	io::unpack(is, data.idFounder);
+	io::unpack(is, data.founder);
 	io::unpack(is, data.nAutoStatus);
 	io::unpack(is, data.nLimit);
 	io::unpack(is, data.isHidden);
@@ -134,7 +136,7 @@ void CALLBACK User::Init()
 
 EChanStatus CALLBACK Channel::getStatus(DWORD idUser) const
 {
-	if (idUser == idFounder)
+	if (founder.find(idUser) != founder.end())
 		return eFounder;
 	else if (admin.find(idUser) != admin.end())
 		return eAdmin;
@@ -152,7 +154,9 @@ EChanStatus CALLBACK Channel::getStatus(DWORD idUser) const
 void CALLBACK Channel::setStatus(DWORD idUser, EChanStatus val)
 {
 	// Delete previous state if it's not founder
-	if (admin.find(idUser) != admin.end())
+	if (founder.find(idUser) != founder.end())
+		founder.erase(idUser);
+	else if (admin.find(idUser) != admin.end())
 		admin.erase(idUser);
 	else if (moderator.find(idUser) != moderator.end())
 		moderator.erase(idUser);
@@ -164,7 +168,7 @@ void CALLBACK Channel::setStatus(DWORD idUser, EChanStatus val)
 	switch (val)
 	{
 	case eFounder:
-		idFounder = idUser;
+		founder.insert(idUser);
 		break;
 	case eAdmin:
 		admin.insert(idUser);

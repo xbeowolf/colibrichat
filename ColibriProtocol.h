@@ -96,6 +96,9 @@
 // Say to channel or to private talk
 #define CCPM_SAY                       108
 
+// Change channel topic
+#define CCPM_TOPIC                     109
+
 //-----------------------------------------------------------------------------
 
 #endif // _COLIBRIPROTOCOL_

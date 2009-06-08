@@ -25,11 +25,11 @@
 
 #pragma endregion
 
+using namespace colibrichat;
+
 //-----------------------------------------------------------------------------
 
 #define WM_ACTIVATEAPP2                (WM_USER+10)
-
-using namespace colibrichat;
 
 // Global Variables:
 static TCHAR szHelpFile[MAX_PATH];
@@ -51,6 +51,7 @@ jpOnline(0)
 	m_metrics.uNickMaxLength = 20;
 	m_metrics.uChanMaxLength = 20;
 	m_metrics.uPassMaxLength = 32;
+	m_metrics.uTopicMaxLength = 100;
 	m_metrics.uStatusMsgMaxLength = 32;
 	m_metrics.nMsgSpinMaxCount = 20;
 }
@@ -453,11 +454,8 @@ void CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 	tci.iImage = jp->ImageIndex();
 	tci.lParam = jp->getID();
 	TabCtrl_InsertItem(hwndTab, pos, &tci);
-	TabCtrl_SetCurSel(hwndTab, pos);
 
-	ShowWindow(jp->hwndPage, SW_SHOW);
-	if (jpOnline) ShowWindow(jpOnline->hwndPage, SW_HIDE);
-	jpOnline = jp;
+	ContactSel(pos);
 }
 
 void CALLBACK JClient::ContactDel(DWORD id)
@@ -477,8 +475,6 @@ void CALLBACK JClient::ContactDel(DWORD id)
 		mPageChannel.erase(id);
 	} else return;
 	DestroyWindow(jp->hwndPage);
-	jp->ResetHooks();
-	jp->SetSource(0);
 	if (jpOnline == jp) jpOnline = 0;
 	jp = 0;
 
@@ -500,6 +496,11 @@ void CALLBACK JClient::ContactSel(int index)
 	ShowWindow(jp->hwndPage, SW_SHOW);
 	if (jpOnline) ShowWindow(jpOnline->hwndPage, SW_HIDE);
 	jpOnline = jp;
+	// Set main window topic
+	ShowTopic(jp->gettopic());
+	// Set default focus control
+	HWND focus = jp->getDefFocusWnd();
+	if (focus && m_mUser[m_idOwn].isOnline) SetFocus(focus);
 }
 
 void CALLBACK JClient::ContactRename(DWORD idOld, DWORD idNew, const std::tstring& newname)
@@ -544,9 +545,7 @@ void CALLBACK JClient::ContactRename(DWORD idOld, DWORD idNew, const std::tstrin
 		tci.cchTextMax = (int)newname.length();
 		tci.lParam = idNew;
 		VERIFY(TabCtrl_SetItem(hwndTab, i, &tci));
-		if (idNew == jpOnline->getID()) {
-			VERIFY(InvalidateRect(jpOnline->hwndPage, 0, TRUE));
-		}
+		if (jpOnline) VERIFY(InvalidateRect(jpOnline->hwndPage, 0, TRUE));
 	}
 	for each (MapPageChannel::value_type const& v in mPageChannel) {
 		if (v.second->replace(idOld, idNew)) {
@@ -559,7 +558,7 @@ int  CALLBACK JClient::getTabIndex(DWORD id)
 {
 	TCITEM tci;
 	int i;
-	for (i = TabCtrl_GetItemCount(hwndTab) - 1; i <= 0; i--) {
+	for (i = TabCtrl_GetItemCount(hwndTab) - 1; i >= 0; i--) {
 		tci.mask = TCIF_PARAM;
 		VERIFY(TabCtrl_GetItem(hwndTab, i, &tci));
 		if (tci.lParam == id) break;
@@ -596,6 +595,11 @@ bool JClient::CheckNick(std::tstring& nick, std::tstring& msg)
 	}
 	msg = TEXT("Content is valid");
 	return true;
+}
+
+void CALLBACK JClient::ShowTopic(const std::tstring& topic)
+{
+	SetWindowText(m_hwndPage, tformat(TEXT("[%s] - Colibri Chat"), topic.c_str()).c_str());
 }
 
 void JClient::ShowErrorMessage(HWND hwnd, const std::tstring& msg)
@@ -639,26 +643,6 @@ void JClient::OnHook(JEventable* src)
 void JClient::OnUnhook(JEventable* src)
 {
 	using namespace fastdelegate;
-
-	// Reset hooks and pointer to this for dialogs objects at last
-	if (jpPageServer) {
-		jpPageServer->ResetHooks();
-		jpPageServer->SetSource(0);
-	}
-	if (jpPageList) {
-		jpPageList->ResetHooks();
-		jpPageList->SetSource(0);
-	}
-	for each (MapPage::value_type const& v in mPageUser)
-	{
-		v.second->ResetHooks();
-		v.second->SetSource(0);
-	}
-	for each (MapPage::value_type const& v in mPageChannel)
-	{
-		v.second->ResetHooks();
-		v.second->SetSource(0);
-	}
 
 	__super::OnUnhook(src);
 }
@@ -739,6 +723,7 @@ void JClient::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 		{NOTIFY(CCPM_ONLINE), &JClient::Recv_Notify_ONLINE},
 		{NOTIFY(CCPM_STATUS), &JClient::Recv_Notify_STATUS},
 		{NOTIFY(CCPM_SAY), &JClient::Recv_Notify_SAY},
+		{NOTIFY(CCPM_TOPIC), &JClient::Recv_Notify_TOPIC},
 	};
 	for (int i = 0; i < _countof(responseTable); i++)
 	{
@@ -1207,9 +1192,52 @@ void CALLBACK JClient::Recv_Notify_SAY(SOCKET sock, WORD trnid, io::mem& is)
 	if (jp) {
 		MapUser::const_iterator iu = m_mUser.find(idWho);
 		jp->AppendScript(tformat(TEXT(" [color=%s]%s[/color]:"),
-			iu->first != m_idOwn ? TEXT("red") : TEXT("blue"),
+			idWho != m_idOwn ? TEXT("red") : TEXT("blue"),
 			iu->second.name.c_str()));
 		jp->AppendRtf(content);
+	}
+}
+
+void CALLBACK JClient::Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
+{
+	DWORD idWho, idWhere;
+	std::tstring topic;
+
+	try
+	{
+		io::unpack(is, idWho);
+		io::unpack(is, idWhere);
+		io::unpack(is, topic);
+	}
+	catch (io::exception e)
+	{
+		switch (e.count)
+		{
+		case 0:
+		case 1:
+			// Report about message
+			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			return;
+		}
+	}
+
+	JPtr<JPageLog> jp;
+	MapPageUser::iterator iu = mPageUser.find(idWhere);
+	if (iu != mPageUser.end()) { // private talk
+	} else {
+		MapPageChannel::iterator ic = mPageChannel.find(idWhere);
+		if (ic != mPageChannel.end()) { // channel
+			jp = ic->second;
+			ic->second->settopic(topic, idWho);
+		}
+	}
+	if (jp) {
+		MapUser::const_iterator iu = m_mUser.find(idWho);
+		jp->AppendScript(tformat(TEXT("[style=Descr] [color=%s]%s[/color] changes topic to:\n%s[/style]"),
+			idWho != m_idOwn ? TEXT("red") : TEXT("blue"),
+			iu->second.name.c_str(),
+			topic.c_str()));
+		if (jpOnline == jp) ShowTopic(jp->gettopic());
 	}
 }
 
@@ -1298,6 +1326,14 @@ void CALLBACK JClient::Send_Cmd_SAY(SOCKET sock, DWORD idWhere, UINT type, const
 	PushTrn(sock, COMMAND(CCPM_SAY), 0, os.str());
 }
 
+void CALLBACK JClient::Send_Cmd_TOPIC(SOCKET sock, DWORD idWhere, const std::tstring& topic)
+{
+	std::ostringstream os;
+	io::pack(os, idWhere);
+	io::pack(os, topic);
+	PushTrn(sock, COMMAND(CCPM_TOPIC), 0, os.str());
+}
+
 //-----------------------------------------------------------------------------
 
 JPtr<JClientApp> JClientApp::jpApp = new JClientApp();
@@ -1343,6 +1379,7 @@ void CALLBACK JClientApp::Init()
 	// Load popup menus
 	m_hmenuTab = LoadMenu(hinstApp, MAKEINTRESOURCE(IDM_TAB));
 	m_hmenuLog = LoadMenu(hinstApp, MAKEINTRESOURCE(IDM_LOG));
+	m_hmenuChannel = LoadMenu(hinstApp, MAKEINTRESOURCE(IDM_CHANNEL));
 	m_hmenuRichEdit = LoadMenu(hinstApp, MAKEINTRESOURCE(IDM_RICHEDIT));
 	// Create the image list
 	m_himlEdit = ImageList_LoadImage(hinstApp, MAKEINTRESOURCE(IDB_EDIT), 16, 12, CLR_DEFAULT, IMAGE_BITMAP, LR_CREATEDIBSECTION);
@@ -1377,6 +1414,7 @@ void CALLBACK JClientApp::Done()
 	// Free associated resources
 	DestroyMenu(m_hmenuTab);
 	DestroyMenu(m_hmenuLog);
+	DestroyMenu(m_hmenuChannel);
 	DestroyMenu(m_hmenuRichEdit);
 	// Destroy the image list
 	ImageList_Destroy(m_himlEdit);
