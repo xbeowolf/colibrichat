@@ -129,14 +129,17 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 			Run();
 
-			hwndTab = GetDlgItem(hWnd, IDC_CHANNELS);
+			m_hwndTab = GetDlgItem(hWnd, IDC_TAB);
+
+			// Get initial windows sizes
+			MapControl(m_hwndTab, rcTab);
 
 			// Set main window icons
 			SNDMSG(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)JClientApp::jpApp->hiMain16);
 			SNDMSG(hWnd, WM_SETICON, ICON_BIG, (LPARAM)JClientApp::jpApp->hiMain32);
 
 			// Inits Tab control
-			TabCtrl_SetImageList(hwndTab, JClientApp::jpApp->himlTab);
+			TabCtrl_SetImageList(m_hwndTab, JClientApp::jpApp->himlTab);
 
 			ContactAdd(NAME_LIST, CRC_LIST, eList);
 			ContactAdd(NAME_SERVER, CRC_SERVER, eServer);
@@ -162,10 +165,17 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			break;
 		}
 
+	case WM_GETMINMAXINFO:
+		{
+			MINMAXINFO* mmi = (MINMAXINFO*)lParam;
+			mmi->ptMinTrackSize.x = rcPageNC.right - rcPageNC.left;
+			mmi->ptMinTrackSize.y = rcPageNC.bottom - rcPageNC.top;
+			break;
+		}
+
 	case WM_SIZE:
 		{
 			if (wParam == SIZE_MINIMIZED) break;
-			SendDlgItemMessage(hWnd, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
 			SendMessage(hWnd, BEM_ADJUSTSIZE, wParam, lParam);
 		}
 
@@ -178,8 +188,38 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case BEM_ADJUSTSIZE:
 		{
-			//RECT rc;
-			//int cx = LOWORD(lParam), cy = HIWORD(lParam);
+			RECT rc;
+			int cx = LOWORD(lParam), cy = HIWORD(lParam);
+			HDWP hdwp = BeginDeferWindowPos(1 + (jpPageServer ? 1 : 0) + (jpPageList ? 1 : 0) + (int)mPageUser.size() + (int)mPageChannel.size());
+			SetRect(&rc, rcTab.left, rcTab.top,
+				cx - rcPage.right + rcTab.right,
+				cy - rcPage.bottom + rcTab.bottom);
+			DeferWindowPos(hdwp, m_hwndTab, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER);
+			if (jpPageServer) {
+				SetRect(&rc, jpPageServer->rcPageNC.left, jpPageServer->rcPageNC.top,
+					cx - rcPage.right + jpPageServer->rcPageNC.right,
+					cy - rcPage.bottom + jpPageServer->rcPageNC.bottom);
+				DeferWindowPos(hdwp, jpPageServer->hwndPage, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER);
+			}
+			if (jpPageList) {
+				SetRect(&rc, jpPageList->rcPageNC.left, jpPageList->rcPageNC.top,
+					cx - rcPage.right + jpPageList->rcPageNC.right,
+					cy - rcPage.bottom + jpPageList->rcPageNC.bottom);
+				DeferWindowPos(hdwp, jpPageList->hwndPage, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER);
+			}
+			for each (MapPageUser::value_type const& v in mPageUser) {
+				SetRect(&rc, v.second->rcPageNC.left, v.second->rcPageNC.top,
+					cx - rcPage.right + v.second->rcPageNC.right,
+					cy - rcPage.bottom + v.second->rcPageNC.bottom);
+				DeferWindowPos(hdwp, v.second->hwndPage, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER);
+			}
+			for each (MapPageChannel::value_type const& v in mPageChannel) {
+				SetRect(&rc, v.second->rcPageNC.left, v.second->rcPageNC.top,
+					cx - rcPage.right + v.second->rcPageNC.right,
+					cy - rcPage.bottom + v.second->rcPageNC.bottom);
+				DeferWindowPos(hdwp, v.second->hwndPage, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER);
+			}
+			EndDeferWindowPos(hdwp);
 			break;
 		}
 
@@ -260,15 +300,15 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			case IDC_TABCLOSE:
 				{
 					if (jpOnline->IsPermanent()) {
-						ShowErrorMessage(hwndTab, TEXT("This page can not be closed"));
+						ShowErrorMessage(m_hwndTab, TEXT("This page can not be closed"));
 					} else {
 						int sel;
 						TCITEM tci;
-						sel = TabCtrl_GetCurSel(hwndTab);
+						sel = TabCtrl_GetCurSel(m_hwndTab);
 						tci.mask = TCIF_PARAM;
-						VERIFY(TabCtrl_GetItem(hwndTab, sel, &tci));
+						VERIFY(TabCtrl_GetItem(m_hwndTab, sel, &tci));
 						ContactDel((DWORD)tci.lParam);
-						ContactSel(min(sel, TabCtrl_GetItemCount(hwndTab) - 1));
+						ContactSel(min(sel, TabCtrl_GetItemCount(m_hwndTab) - 1));
 					}
 					break;
 				}
@@ -292,9 +332,9 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			{
 			case TCN_SELCHANGE:
 				{
-					if (pnmh->idFrom == IDC_CHANNELS)
+					if (pnmh->idFrom == IDC_TAB)
 					{
-						ContactSel(TabCtrl_GetCurSel(hwndTab));
+						ContactSel(TabCtrl_GetCurSel(m_hwndTab));
 					}
 					break;
 				}
@@ -306,7 +346,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_CONTEXTMENU:
 		{
-			if ((HWND)wParam == hwndTab) {
+			if ((HWND)wParam == m_hwndTab) {
 				RECT r;
 				GetWindowRect((HWND)wParam, &r);
 				TrackPopupMenu(GetSubMenu(JClientApp::jpApp->hmenuTab, 0), TPM_LEFTALIGN | TPM_RIGHTBUTTON,
@@ -445,6 +485,19 @@ void CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 	jp->SetupHooks();
 	CreateDialogParam(JClientApp::jpApp->hinstApp, jp->Template(), m_hwndPage, (DLGPROC)JDialog::DlgProcStub, (LPARAM)(JDialog*)jp);
 
+	RECT rcMain;
+	GetClientRect(m_hwndPage, &rcMain);
+	if (!EqualRect(&m_rcPage, &rcMain)) {
+		RECT rc;
+		int cx = rcMain.right - rcMain.left, cy = rcMain.bottom - rcMain.top;
+		HDWP hdwp = BeginDeferWindowPos(1);
+		SetRect(&rc, jp->rcPageNC.left, jp->rcPageNC.top,
+			cx - rcPage.right + jp->rcPageNC.right,
+			cy - rcPage.bottom + jp->rcPageNC.bottom);
+		DeferWindowPos(hdwp, jp->hwndPage, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER);
+		EndDeferWindowPos(hdwp);
+	}
+
 	TCITEM tci;
 	tci.mask = TCIF_TEXT | TCIF_PARAM | TCIF_IMAGE;
 	tci.dwState = 0;
@@ -453,7 +506,7 @@ void CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 	tci.cchTextMax = (int)name.length();
 	tci.iImage = jp->ImageIndex();
 	tci.lParam = jp->getID();
-	TabCtrl_InsertItem(hwndTab, pos, &tci);
+	TabCtrl_InsertItem(m_hwndTab, pos, &tci);
 
 	ContactSel(pos);
 }
@@ -479,19 +532,19 @@ void CALLBACK JClient::ContactDel(DWORD id)
 	jp = 0;
 
 	int i = getTabIndex(id);
-	if (i >= 0) TabCtrl_DeleteItem(hwndTab, i);
+	if (i >= 0) TabCtrl_DeleteItem(m_hwndTab, i);
 }
 
 void CALLBACK JClient::ContactSel(int index)
 {
-	ASSERT(index >= 0 && index < TabCtrl_GetItemCount(hwndTab));
+	ASSERT(index >= 0 && index < TabCtrl_GetItemCount(m_hwndTab));
 
-	if (TabCtrl_GetCurSel(hwndTab) != index)
-		TabCtrl_SetCurSel(hwndTab, index);
+	if (TabCtrl_GetCurSel(m_hwndTab) != index)
+		TabCtrl_SetCurSel(m_hwndTab, index);
 
 	TCITEM tci;
 	tci.mask = TCIF_PARAM;
-	VERIFY(TabCtrl_GetItem(hwndTab, index, &tci));
+	VERIFY(TabCtrl_GetItem(m_hwndTab, index, &tci));
 	JPtr<JPage> jp = getPage((DWORD)tci.lParam);
 	ShowWindow(jp->hwndPage, SW_SHOW);
 	if (jpOnline) ShowWindow(jpOnline->hwndPage, SW_HIDE);
@@ -544,7 +597,7 @@ void CALLBACK JClient::ContactRename(DWORD idOld, DWORD idNew, const std::tstrin
 		tci.pszText = (TCHAR*)newname.c_str();
 		tci.cchTextMax = (int)newname.length();
 		tci.lParam = idNew;
-		VERIFY(TabCtrl_SetItem(hwndTab, i, &tci));
+		VERIFY(TabCtrl_SetItem(m_hwndTab, i, &tci));
 		if (jpOnline) VERIFY(InvalidateRect(jpOnline->hwndPage, 0, TRUE));
 	}
 	for each (MapPageChannel::value_type const& v in mPageChannel) {
@@ -558,9 +611,9 @@ int  CALLBACK JClient::getTabIndex(DWORD id)
 {
 	TCITEM tci;
 	int i;
-	for (i = TabCtrl_GetItemCount(hwndTab) - 1; i >= 0; i--) {
+	for (i = TabCtrl_GetItemCount(m_hwndTab) - 1; i >= 0; i--) {
 		tci.mask = TCIF_PARAM;
-		VERIFY(TabCtrl_GetItem(hwndTab, i, &tci));
+		VERIFY(TabCtrl_GetItem(m_hwndTab, i, &tci));
 		if (tci.lParam == id) break;
 	}
 	return i;

@@ -384,6 +384,21 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 			m_hwndStatusImg = GetDlgItem(hWnd, IDC_STATUSIMG);
 			m_hwndStatusMsg = GetDlgItem(hWnd, IDC_STATUSMSG);
 
+			// Get initial windows sizes
+			MapControl(m_hwndHost, rcHost);
+			MapControl(m_hwndPort, rcPort);
+			MapControl(m_hwndPass, rcPass);
+			MapControl(m_hwndNick, rcNick);
+			MapControl(m_hwndStatus, rcStatus);
+			MapControl(m_hwndStatusImg, rcStatusImg);
+			MapControl(m_hwndStatusMsg, rcStatusMsg);
+			MapControl(IDC_STATIC1, rcStatic1);
+			MapControl(IDC_STATIC2, rcStatic2);
+			MapControl(IDC_STATIC3, rcStatic3);
+			MapControl(IDC_STATIC4, rcStatic4);
+			MapControl(IDC_STATIC5, rcStatic5);
+			MapControl(IDC_CONNECT, rcConnect);
+
 			// Init Host control
 			SetWindowTextA(m_hwndHost, pSource->m_hostname.c_str());
 			SendMessage(m_hwndHost, EM_LIMITTEXT, 100, 0);
@@ -439,10 +454,103 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 			break;
 		}
 
+	case WM_SIZE:
+		{
+			if (wParam == SIZE_MINIMIZED) break;
+			SendMessage(hWnd, BEM_ADJUSTSIZE, wParam, lParam);
+		}
+
 	case BEM_ADJUSTSIZE:
 		{
-			//RECT rc;
-			//int cx = LOWORD(lParam), cy = HIWORD(lParam);
+			RECT rc;
+			int cx = LOWORD(lParam), cy = HIWORD(lParam);
+			HDWP hdwp = BeginDeferWindowPos(14);
+			SetRect(&rc,
+				rcLog.left,
+				rcLog.top,
+				cx - rcPage.right + rcLog.right,
+				cy - rcPage.bottom + rcLog.bottom);
+			DeferWindowPos(hdwp, m_hwndLog, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				rcStatic1.left,
+				cy - rcPage.bottom + rcStatic1.top,
+				rcStatic1.right,
+				cy - rcPage.bottom + rcStatic1.bottom);
+			DeferWindowPos(hdwp, GetDlgItem(hWnd, IDC_STATIC1), 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				rcHost.left,
+				cy - rcPage.bottom + rcHost.top,
+				cx - rcPage.right + rcHost.right,
+				cy - rcPage.bottom + rcHost.bottom);
+			DeferWindowPos(hdwp, m_hwndHost, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				cx - rcPage.right + rcStatic2.left,
+				cy - rcPage.bottom + rcStatic2.top,
+				cx - rcPage.right + rcStatic2.right,
+				cy - rcPage.bottom + rcStatic2.bottom);
+			DeferWindowPos(hdwp, GetDlgItem(hWnd, IDC_STATIC2), 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				cx - rcPage.right + rcPort.left,
+				cy - rcPage.bottom + rcPort.top,
+				cx - rcPage.right + rcPort.right,
+				cy - rcPage.bottom + rcPort.bottom);
+			DeferWindowPos(hdwp, m_hwndPort, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				cx - rcPage.right + rcStatic3.left,
+				cy - rcPage.bottom + rcStatic3.top,
+				cx - rcPage.right + rcStatic3.right,
+				cy - rcPage.bottom + rcStatic3.bottom);
+			DeferWindowPos(hdwp, GetDlgItem(hWnd, IDC_STATIC3), 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				cx - rcPage.right + rcPass.left,
+				cy - rcPage.bottom + rcPass.top,
+				cx - rcPage.right + rcPass.right,
+				cy - rcPage.bottom + rcPass.bottom);
+			DeferWindowPos(hdwp, m_hwndPass, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				rcConnect.left,
+				cy - rcPage.bottom + rcConnect.top,
+				cx - rcPage.right + rcConnect.right,
+				cy - rcPage.bottom + rcConnect.bottom);
+			DeferWindowPos(hdwp, GetDlgItem(hWnd, IDC_CONNECT), 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOREPOSITION | SWP_NOZORDER);
+			int dx = (cx - rcPage.right + rcPage.left)/2;
+			SetRect(&rc,
+				rcStatic4.left + dx,
+				cy - rcPage.bottom + rcStatic4.top,
+				rcStatic4.right + dx,
+				cy - rcPage.bottom + rcStatic4.bottom);
+			DeferWindowPos(hdwp, GetDlgItem(hWnd, IDC_STATIC4), 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				rcNick.left + dx,
+				cy - rcPage.bottom + rcNick.top,
+				rcNick.right + dx,
+				cy - rcPage.bottom + rcNick.bottom);
+			DeferWindowPos(hdwp, m_hwndNick, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				rcStatus.left + dx,
+				cy - rcPage.bottom + rcStatus.top,
+				rcStatus.right + dx,
+				cy - rcPage.bottom + rcStatus.bottom);
+			DeferWindowPos(hdwp, m_hwndStatus, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				rcStatic5.left + dx,
+				cy - rcPage.bottom + rcStatic5.top,
+				rcStatic5.right + dx,
+				cy - rcPage.bottom + rcStatic5.bottom);
+			DeferWindowPos(hdwp, GetDlgItem(hWnd, IDC_STATIC5), 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				rcStatusImg.left + dx,
+				cy - rcPage.bottom + rcStatusImg.top,
+				rcStatusImg.right + dx,
+				cy - rcPage.bottom + rcStatusImg.bottom);
+			DeferWindowPos(hdwp, m_hwndStatusImg, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				rcStatusMsg.left + dx,
+				cy - rcPage.bottom + rcStatusMsg.top,
+				rcStatusMsg.right + dx,
+				cy - rcPage.bottom + rcStatusMsg.bottom);
+			DeferWindowPos(hdwp, m_hwndStatusMsg, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOREPOSITION | SWP_NOZORDER);
+			EndDeferWindowPos(hdwp);
 			break;
 		}
 
@@ -616,6 +724,12 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 
 			// Get initial windows sizes
 			MapControl(m_hwndList, rcList);
+			MapControl(m_hwndChan, rcChan);
+			MapControl(m_hwndPass, rcPass);
+			MapControl(IDC_STATIC1, rcStatic1);
+			MapControl(IDC_STATIC2, rcStatic2);
+			MapControl(IDC_JOIN, rcJoin);
+			MapControl(IDC_REFRESHLIST, rcRefresh);
 
 			// Inits Channels list
 			ListView_SetExtendedListViewStyle(m_hwndList,
@@ -658,10 +772,60 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 			break;
 		}
 
+	case WM_SIZE:
+		{
+			if (wParam == SIZE_MINIMIZED) break;
+			SendMessage(hWnd, BEM_ADJUSTSIZE, wParam, lParam);
+		}
+
 	case BEM_ADJUSTSIZE:
 		{
-			//RECT rc;
-			//int cx = LOWORD(lParam), cy = HIWORD(lParam);
+			RECT rc;
+			int cx = LOWORD(lParam), cy = HIWORD(lParam);
+			HDWP hdwp = BeginDeferWindowPos(7);
+			SetRect(&rc,
+				rcList.left,
+				rcList.top,
+				cx - rcPage.right + rcList.right,
+				cy - rcPage.bottom + rcList.bottom);
+			DeferWindowPos(hdwp, m_hwndList, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				rcStatic1.left,
+				cy - rcPage.bottom + rcStatic1.top,
+				rcStatic1.right,
+				cy - rcPage.bottom + rcStatic1.bottom);
+			DeferWindowPos(hdwp, GetDlgItem(hWnd, IDC_STATIC1), 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				rcChan.left,
+				cy - rcPage.bottom + rcChan.top,
+				cx - rcPage.right + rcChan.right,
+				cy - rcPage.bottom + rcChan.bottom);
+			DeferWindowPos(hdwp, m_hwndChan, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				cx - rcPage.right + rcStatic2.left,
+				cy - rcPage.bottom + rcStatic2.top,
+				cx - rcPage.right + rcStatic2.right,
+				cy - rcPage.bottom + rcStatic2.bottom);
+			DeferWindowPos(hdwp, GetDlgItem(hWnd, IDC_STATIC2), 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				cx - rcPage.right + rcPass.left,
+				cy - rcPage.bottom + rcPass.top,
+				cx - rcPage.right + rcPass.right,
+				cy - rcPage.bottom + rcPass.bottom);
+			DeferWindowPos(hdwp, m_hwndPass, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				cx - rcPage.right + rcJoin.left,
+				cy - rcPage.bottom + rcJoin.top,
+				cx - rcPage.right + rcJoin.right,
+				cy - rcPage.bottom + rcJoin.bottom);
+			DeferWindowPos(hdwp, GetDlgItem(hWnd, IDC_JOIN), 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				cx - rcPage.right + rcRefresh.left,
+				cy - rcPage.bottom + rcRefresh.top,
+				cx - rcPage.right + rcRefresh.right,
+				cy - rcPage.bottom + rcRefresh.bottom);
+			DeferWindowPos(hdwp, GetDlgItem(hWnd, IDC_REFRESHLIST), 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			EndDeferWindowPos(hdwp);
 			break;
 		}
 
@@ -1096,6 +1260,7 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 
 			// Get initial windows sizes
 			MapControl(hwndEdit, rcEdit);
+			MapControl(m_hwndMsgSpin, rcMsgSpin);
 			MapControl(m_hwndSend, rcSend);
 
 			fTransparent = true;
@@ -1142,10 +1307,42 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 			break;
 		}
 
+	case WM_SIZE:
+		{
+			if (wParam == SIZE_MINIMIZED) break;
+			SendDlgItemMessage(hWnd, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
+			SendMessage(hWnd, BEM_ADJUSTSIZE, wParam, lParam);
+		}
+
 	case BEM_ADJUSTSIZE:
 		{
-			//RECT rc;
-			//int cx = LOWORD(lParam), cy = HIWORD(lParam);
+			RECT rc;
+			int cx = LOWORD(lParam), cy = HIWORD(lParam);
+			HDWP hdwp = BeginDeferWindowPos(4);
+			SetRect(&rc,
+				rcLog.left,
+				rcLog.top,
+				cx - rcPage.right + rcLog.right,
+				cy - rcPage.bottom + rcLog.bottom);
+			DeferWindowPos(hdwp, m_hwndLog, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				rcEdit.left,
+				cy - rcPage.bottom + rcEdit.top,
+				cx - rcPage.right + rcEdit.right,
+				cy - rcPage.bottom + rcEdit.bottom);
+			DeferWindowPos(hdwp, hwndEdit, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				cx - rcPage.right + rcMsgSpin.left,
+				cy - rcPage.bottom + rcMsgSpin.top,
+				cx - rcPage.right + rcMsgSpin.right,
+				cy - rcPage.bottom + rcMsgSpin.bottom);
+			DeferWindowPos(hdwp, m_hwndMsgSpin, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				cx - rcPage.right + rcSend.left,
+				cy - rcPage.bottom + rcSend.top,
+				cx - rcPage.right + rcSend.right,
+				cy - rcPage.bottom + rcSend.bottom);
+			DeferWindowPos(hdwp, m_hwndSend, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
 			break;
 		}
 
@@ -1594,6 +1791,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			// Get initial windows sizes
 			MapControl(hwndEdit, rcEdit);
 			MapControl(m_hwndList, rcList);
+			MapControl(m_hwndMsgSpin, rcMsgSpin);
 			MapControl(m_hwndSend, rcSend);
 
 			fTransparent = true;
@@ -1664,10 +1862,49 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			break;
 		}
 
+	case WM_SIZE:
+		{
+			if (wParam == SIZE_MINIMIZED) break;
+			SendDlgItemMessage(hWnd, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
+			SendMessage(hWnd, BEM_ADJUSTSIZE, wParam, lParam);
+		}
+
 	case BEM_ADJUSTSIZE:
 		{
-			//RECT rc;
-			//int cx = LOWORD(lParam), cy = HIWORD(lParam);
+			RECT rc;
+			int cx = LOWORD(lParam), cy = HIWORD(lParam);
+			HDWP hdwp = BeginDeferWindowPos(5);
+			SetRect(&rc,
+				rcLog.left,
+				rcLog.top,
+				cx - rcPage.right + rcLog.right,
+				cy - rcPage.bottom + rcLog.bottom);
+			DeferWindowPos(hdwp, m_hwndLog, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				rcEdit.left,
+				cy - rcPage.bottom + rcEdit.top,
+				cx - rcPage.right + rcEdit.right,
+				cy - rcPage.bottom + rcEdit.bottom);
+			DeferWindowPos(hdwp, hwndEdit, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				cx - rcPage.right + rcList.left,
+				rcList.top,
+				cx - rcPage.right + rcList.right,
+				cy - rcPage.bottom + rcList.bottom);
+			DeferWindowPos(hdwp, m_hwndList, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				cx - rcPage.right + rcMsgSpin.left,
+				cy - rcPage.bottom + rcMsgSpin.top,
+				cx - rcPage.right + rcMsgSpin.right,
+				cy - rcPage.bottom + rcMsgSpin.bottom);
+			DeferWindowPos(hdwp, m_hwndMsgSpin, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			SetRect(&rc,
+				cx - rcPage.right + rcSend.left,
+				cy - rcPage.bottom + rcSend.top,
+				cx - rcPage.right + rcSend.right,
+				cy - rcPage.bottom + rcSend.bottom);
+			DeferWindowPos(hdwp, m_hwndSend, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			EndDeferWindowPos(hdwp);
 			break;
 		}
 

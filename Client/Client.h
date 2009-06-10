@@ -247,6 +247,9 @@ namespace colibrichat
 			JPROPERTY_R(HWND, hwndStatus);
 			JPROPERTY_R(HWND, hwndStatusImg);
 			JPROPERTY_R(HWND, hwndStatusMsg);
+
+			RECT rcHost, rcPort, rcPass, rcNick, rcStatus, rcStatusImg, rcStatusMsg;
+			RECT rcStatic1, rcStatic2, rcStatic3, rcStatic4, rcStatic5, rcConnect;
 		};
 
 		class JPageList : public JPage
@@ -293,7 +296,8 @@ namespace colibrichat
 			JPROPERTY_R(HWND, hwndList);
 			JPROPERTY_R(HWND, hwndChan);
 			JPROPERTY_R(HWND, hwndPass);
-			RECT rcList;
+			RECT rcList, rcChan, rcPass;
+			RECT rcStatic1, rcStatic2, rcJoin, rcRefresh;
 
 			JPROPERTY_RREF_CONST(MapChannel, mChannel);
 		};
@@ -333,7 +337,7 @@ namespace colibrichat
 
 			JPROPERTY_R(HWND, hwndMsgSpin);
 			JPROPERTY_R(HWND, hwndSend);
-			RECT rcSend;
+			RECT rcMsgSpin, rcSend;
 
 			std::vector<std::string> vecMsgSpin;
 		};
@@ -387,7 +391,7 @@ namespace colibrichat
 			JPROPERTY_R(HWND, hwndList);
 			JPROPERTY_R(HWND, hwndMsgSpin);
 			JPROPERTY_R(HWND, hwndSend);
-			RECT rcList, rcSend;
+			RECT rcList, rcMsgSpin, rcSend;
 
 			std::vector<std::string> vecMsgSpin;
 		};
@@ -527,7 +531,8 @@ namespace colibrichat
 		MapPageChannel mPageChannel;
 
 		// HWND tabs
-		HWND hwndTab;
+		JPROPERTY_R(HWND, hwndTab);
+		RECT rcTab;
 
 		JPROPERTY_RREF_CONST(Metrics, metrics);
 	};
