@@ -458,6 +458,7 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 		{
 			if (wParam == SIZE_MINIMIZED) break;
 			SendMessage(hWnd, BEM_ADJUSTSIZE, wParam, lParam);
+			break;
 		}
 
 	case BEM_ADJUSTSIZE:
@@ -776,6 +777,7 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 		{
 			if (wParam == SIZE_MINIMIZED) break;
 			SendMessage(hWnd, BEM_ADJUSTSIZE, wParam, lParam);
+			break;
 		}
 
 	case BEM_ADJUSTSIZE:
@@ -1312,6 +1314,7 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 			if (wParam == SIZE_MINIMIZED) break;
 			SendDlgItemMessage(hWnd, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
 			SendMessage(hWnd, BEM_ADJUSTSIZE, wParam, lParam);
+			break;
 		}
 
 	case BEM_ADJUSTSIZE:
@@ -1343,6 +1346,7 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 				cx - rcPage.right + rcSend.right,
 				cy - rcPage.bottom + rcSend.bottom);
 			DeferWindowPos(hdwp, m_hwndSend, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOSIZE | SWP_NOREPOSITION | SWP_NOZORDER);
+			EndDeferWindowPos(hdwp);
 			break;
 		}
 
@@ -1867,6 +1871,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			if (wParam == SIZE_MINIMIZED) break;
 			SendDlgItemMessage(hWnd, IDC_TOOLBAR, TB_AUTOSIZE, 0, 0);
 			SendMessage(hWnd, BEM_ADJUSTSIZE, wParam, lParam);
+			break;
 		}
 
 	case BEM_ADJUSTSIZE:

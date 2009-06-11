@@ -177,6 +177,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		{
 			if (wParam == SIZE_MINIMIZED) break;
 			SendMessage(hWnd, BEM_ADJUSTSIZE, wParam, lParam);
+			break;
 		}
 
 	case BEM_NETWORK:
