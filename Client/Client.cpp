@@ -235,6 +235,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		break;
 
 	case WM_ACTIVATEAPP2:
+		if (jpOnline) jpOnline->activate();
 		if (m_clientsock) Send_Cmd_ONLINE(m_clientsock, wParam != 0, jpOnline ? jpOnline->getID() : 0);
 		break;
 
@@ -265,7 +266,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 							if (CheckNick(nick, msg)) { // check content
 								SendMessage(jpOnline->hwndPage, WM_COMMAND, IDC_CONNECT, 0);
 							} else {
-								ShowErrorMessage(jpPageServer->hwndNick, msg);
+								DisplayMessage(jpPageServer->hwndNick, msg);
 							}
 							break;
 						}
@@ -277,7 +278,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 							if (CheckNick(nick, msg)) { // check content
 								Send_Quest_NICK(m_clientsock, nick);
 							} else {
-								ShowErrorMessage(jpPageServer->hwndNick, msg);
+								DisplayMessage(jpPageServer->hwndNick, msg);
 							}
 							break;
 						}
@@ -301,7 +302,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			case IDC_TABCLOSE:
 				{
 					if (jpOnline->IsPermanent()) {
-						ShowErrorMessage(m_hwndTab, TEXT("This page can not be closed"));
+						DisplayMessage(m_hwndTab, TEXT("This page can not be closed"));
 					} else {
 						int sel;
 						TCITEM tci;
@@ -510,6 +511,7 @@ void CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 	TabCtrl_InsertItem(m_hwndTab, pos, &tci);
 
 	ContactSel(pos);
+	jp->setAlert(eRed);
 }
 
 void CALLBACK JClient::ContactDel(DWORD id)
@@ -549,7 +551,9 @@ void CALLBACK JClient::ContactSel(int index)
 	JPtr<JPage> jp = getPage((DWORD)tci.lParam);
 	ShowWindow(jp->hwndPage, SW_SHOW);
 	if (jpOnline) ShowWindow(jpOnline->hwndPage, SW_HIDE);
+	jp->activate();
 	jpOnline = jp;
+
 	// Set main window topic
 	ShowTopic(jp->gettopic());
 	// Set default focus control
@@ -581,13 +585,15 @@ void CALLBACK JClient::ContactRename(DWORD idOld, DWORD idNew, const std::tstrin
 		mPageUser[idNew] = ipu->second;
 		mPageUser.erase(idOld);
 		ipu->second->AppendScript(tformat(TEXT("[style=Info][b]%s[/b] is now known as [b]%s[/b][/style]"), oldname.c_str(), newname.c_str()));
+		ipu->second->setAlert(eYellow);
 	} else {
 		MapPageChannel::iterator ipc = mPageChannel.find(idOld);
 		if (ipc != mPageChannel.end()) {
 			ipc->second->rename(idNew, newname);
 			mPageChannel[idNew] = ipc->second;
 			mPageChannel.erase(idOld);
-			ipu->second->AppendScript(tformat(TEXT("[style=Info]channel name is now [b]%s[/b][/style]"), newname.c_str()));
+			ipc->second->AppendScript(tformat(TEXT("[style=Info]channel name is now [b]%s[/b][/style]"), newname.c_str()));
+			ipc->second->setAlert(eYellow);
 		}
 	}
 
@@ -656,7 +662,7 @@ void CALLBACK JClient::ShowTopic(const std::tstring& topic)
 	SetWindowText(m_hwndPage, tformat(TEXT("[%s] - Colibri Chat"), topic.c_str()).c_str());
 }
 
-void JClient::ShowErrorMessage(HWND hwnd, const std::tstring& msg)
+void JClient::DisplayMessage(HWND hwnd, const std::tstring& msg)
 {
 	MessageBeep(MB_ICONHAND);
 	SetFocus(hwnd);
@@ -1003,6 +1009,7 @@ void CALLBACK JClient::Recv_Notify_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
 		if (ipc != mPageChannel.end()) {
 			ipc->second->Join(idWho);
+			ipc->second->setAlert(eYellow);
 		} else {
 			Send_Cmd_PART(sock, idWhere, PART_LEAVE);
 		}
@@ -1054,6 +1061,7 @@ void CALLBACK JClient::Recv_Notify_PART(SOCKET sock, WORD trnid, io::mem& is)
 		MapPageUser::iterator ipu = mPageUser.find(idWho);
 		if (ipu != mPageUser.end()) { // private talk can be already closed
 			ipu->second->AppendScript(TEXT("[style=Info]")+msg+TEXT("[/style]"));
+			ipu->second->setAlert(eYellow);
 		}
 
 		EvReport(msg, netengine::eInformation, netengine::eHigher);
@@ -1061,6 +1069,7 @@ void CALLBACK JClient::Recv_Notify_PART(SOCKET sock, WORD trnid, io::mem& is)
 		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
 		if (ipc != mPageChannel.end()) {
 			ipc->second->Part(idWho, reason);
+			ipc->second->setAlert(eYellow);
 		} // no else matters
 	}
 	UnlinkUser(idWho, idWhere);
@@ -1233,12 +1242,14 @@ void CALLBACK JClient::Recv_Notify_SAY(SOCKET sock, WORD trnid, io::mem& is)
 	MapPageUser::iterator iu = mPageUser.find(idWhere);
 	if (iu != mPageUser.end()) { // private talk
 		jp = iu->second;
+		jp->setAlert(eRed);
 		if (Profile::GetInt(RF_CLIENT, RK_FLASHPAGESAYPRIVATE, TRUE) && !m_mUser[m_idOwn].isOnline)
 			FlashWindow(m_hwndPage, TRUE);
 	} else {
 		MapPageChannel::iterator ic = mPageChannel.find(idWhere);
 		if (ic != mPageChannel.end()) { // channel
 			jp = ic->second;
+			jp->setAlert(eRed);
 			if (Profile::GetInt(RF_CLIENT, RK_FLASHPAGESAYCHANNEL, TRUE) && !m_mUser[m_idOwn].isOnline)
 				FlashWindow(m_hwndPage, TRUE);
 		}
@@ -1283,6 +1294,7 @@ void CALLBACK JClient::Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 		if (ic != mPageChannel.end()) { // channel
 			jp = ic->second;
 			ic->second->settopic(topic, idWho);
+			ic->second->setAlert(eRed);
 		}
 	}
 	if (jp) {

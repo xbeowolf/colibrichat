@@ -89,11 +89,12 @@
 #define IML_CHANNELBLUE        5
 #define IML_CHANNELMAGENTA     6
 #define IML_PRIVATEGREEN       7
-#define IML_PRIVATEBLUE        8
+#define IML_PRIVATEYELLOW      8
 #define IML_PRIVATERED         9
 #define IML_SERVERGREEN        10
 #define IML_SERVERBLUE         11
-#define IML_SERVERRED          12
+#define IML_SERVERYELLOW       12
+#define IML_SERVERRED          13
 // Man icons
 #define IML_MANREDON           0
 #define IML_MANYELLOWON        1
@@ -117,6 +118,8 @@
 namespace colibrichat
 {
 	enum ETimeFormat {etimeNone, etimeHHMM, etimeHHMMSS};
+	enum EAlert {eGreen, eBlue, eYellow, eRed};
+
 	struct Tab
 	{
 		std::tstring name;
@@ -177,12 +180,19 @@ namespace colibrichat
 			virtual DWORD CALLBACK getID() const = 0;
 			virtual std::tstring CALLBACK getname() const = 0;
 
+			void CALLBACK activate();
+			virtual void CALLBACK setAlert(EAlert a);
+
 		protected:
 
 			//LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
+
+		protected:
+
+			JPROPERTY_R(EAlert, alert);
 		};
 
 		class JPageLog : public JPage
@@ -216,7 +226,7 @@ namespace colibrichat
 
 			CALLBACK JPageServer();
 
-			int CALLBACK ImageIndex() const {return IML_SERVERGREEN;}
+			int CALLBACK ImageIndex() const;
 			LPCTSTR CALLBACK Template() const {return MAKEINTRESOURCE(IDD_SERVER);}
 			bool CALLBACK IsPermanent() const {return true;}
 			HWND getDefFocusWnd() const {return m_hwndNick;}
@@ -308,7 +318,7 @@ namespace colibrichat
 
 			CALLBACK JPageUser(DWORD id, const std::tstring& nick);
 
-			int CALLBACK ImageIndex() const {return IML_PRIVATEGREEN;}
+			int CALLBACK ImageIndex() const;
 			LPCTSTR CALLBACK Template() const {return MAKEINTRESOURCE(IDD_USER);}
 			bool CALLBACK IsPermanent() const {return false;}
 			HWND getDefFocusWnd() const {return hwndEdit;}
@@ -348,7 +358,7 @@ namespace colibrichat
 
 			CALLBACK JPageChannel(DWORD id, const std::tstring& nick);
 
-			int CALLBACK ImageIndex() const {return IML_CHANNELGREEN;}
+			int CALLBACK ImageIndex() const;
 			LPCTSTR CALLBACK Template() const {return MAKEINTRESOURCE(IDD_CHANNEL);}
 			bool CALLBACK IsPermanent() const {return false;}
 			std::tstring gettopic() const;
@@ -458,7 +468,7 @@ namespace colibrichat
 		void CALLBACK ShowTopic(const std::tstring& topic);
 
 		// Error provider
-		void ShowErrorMessage(HWND hwnd, const std::tstring& msg);
+		void DisplayMessage(HWND hwnd, const std::tstring& msg);
 
 		// Users managment
 		void CALLBACK InsertUser(DWORD idUser, const User& user);

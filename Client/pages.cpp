@@ -178,6 +178,27 @@ bool CALLBACK JClient::JPage::Write(HWND hwnd, const TCHAR* str)
 CALLBACK JClient::JPage::JPage()
 : JAttachedDialog<JClient>()
 {
+	m_alert = eGreen;
+}
+
+void CALLBACK JClient::JPage::activate()
+{
+	if (m_alert > eGreen) {
+		setAlert(eGreen);
+	}
+}
+
+void CALLBACK JClient::JPage::setAlert(EAlert a)
+{
+	ASSERT(pSource);
+	if ((a > m_alert || a == eGreen) && (pSource->jpOnline != this || !pSource->m_mUser[pSource->m_idOwn].isOnline)) {
+		m_alert = a;
+
+		TCITEM tci;
+		tci.mask = TCIF_IMAGE;
+		tci.iImage = ImageIndex();
+		VERIFY(TabCtrl_SetItem(pSource->m_hwndTab, pSource->getTabIndex(getID()), &tci));
+	}
 }
 
 void JClient::JPage::OnHook(JEventable* src)
@@ -365,6 +386,22 @@ LRESULT WINAPI JClient::JPageLog::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 CALLBACK JClient::JPageServer::JPageServer()
 : JPageLog()
 {
+}
+
+int CALLBACK JClient::JPageServer::ImageIndex() const
+{
+	switch (m_alert)
+	{
+	case eGreen:
+		return IML_SERVERGREEN;
+	case eBlue:
+		return IML_SERVERBLUE;
+	case eYellow:
+		return IML_SERVERYELLOW;
+	case eRed:
+	default:
+		return IML_SERVERRED;
+	}
 }
 
 LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -678,18 +715,23 @@ void JClient::JPageServer::OnReport(const std::tstring& str, netengine::EGroup g
 	{
 	case netengine::eMessage:
 		msg = TEXT("[style=Msg]") + str + TEXT("[/style]");
+		setAlert(eBlue);
 		break;
 	case netengine::eDescription:
 		msg = TEXT("[style=Descr]") + str + TEXT("[/style]");
+		setAlert(eBlue);
 		break;
 	case netengine::eInformation:
 		msg = TEXT("[style=Info]") + str + TEXT("[/style]");
+		setAlert(eBlue);
 		break;
 	case netengine::eWarning:
 		msg = TEXT("[style=Warning]") + str + TEXT("[/style]");
+		setAlert(eYellow);
 		break;
 	case netengine::eError:
 		msg = TEXT("[style=Error]") + str + TEXT("[/style]");
+		setAlert(eRed);
 		break;
 	default:
 		msg = TEXT("[style=Default]") + str + TEXT("[/style]");
@@ -846,7 +888,7 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 						if (pSource->CheckNick(chan, msg)) { // check content
 							pSource->Send_Quest_JOIN(pSource->m_clientsock, chan, passbuf);
 						} else {
-							pSource->ShowErrorMessage(m_hwndChan, msg);
+							pSource->DisplayMessage(m_hwndChan, msg);
 						}
 					}
 					break;
@@ -1173,6 +1215,20 @@ CALLBACK JClient::JPageUser::JPageUser(DWORD id, const std::tstring& nick)
 {
 	m_ID = id;
 	m_user.name = nick;
+}
+
+int CALLBACK JClient::JPageUser::ImageIndex() const
+{
+	switch (m_alert)
+	{
+	case eGreen:
+		return IML_PRIVATEGREEN;
+	case eYellow:
+		return IML_PRIVATEYELLOW;
+	case eRed:
+	default:
+		return IML_PRIVATERED;
+	}
 }
 
 void CALLBACK JClient::JPageUser::rename(DWORD idNew, const std::tstring& newname)
@@ -1552,6 +1608,20 @@ CALLBACK JClient::JPageChannel::JPageChannel(DWORD id, const std::tstring& nick)
 {
 	m_ID = id;
 	m_channel.name = nick;
+}
+
+int CALLBACK JClient::JPageChannel::ImageIndex() const
+{
+	switch (m_alert)
+	{
+	case eGreen:
+		return IML_CHANNELGREEN;
+	case eYellow:
+		return IML_CHANNELYELLOW;
+	case eRed:
+	default:
+		return IML_CHANNELRED;
+	}
 }
 
 std::tstring JClient::JPageChannel::gettopic() const
@@ -2166,7 +2236,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 								if ((DWORD)lvi.lParam != pSource->m_idOwn) {
 									pSource->Send_Quest_JOIN(pSource->m_clientsock, iu->second.name);
 								} else {
-									pSource->ShowErrorMessage(pnmh->hwndFrom, TEXT("It's your own nickname"));
+									pSource->DisplayMessage(pnmh->hwndFrom, TEXT("It's your own nickname"));
 								}
 							}
 						}
