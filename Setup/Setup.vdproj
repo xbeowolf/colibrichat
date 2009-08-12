@@ -69,6 +69,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_AFD5B0E27E3F47589EE93B5B60CCF4B0"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_B4AEDEE2BFFD4AAFB6966CD7C4DB5AD3"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -76,6 +82,12 @@
         "Entry"
         {
         "MsmKey" = "8:_B9C5DF471BB24F8CBEED7BD7EEF0CD4E"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_C05C5C3EBCD14C4592E4A5AEAF0B5E92"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -341,6 +353,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_AFD5B0E27E3F47589EE93B5B60CCF4B0"
+            {
+            "SourcePath" = "8:..\\Client\\Sounds\\topic_change.wav"
+            "TargetName" = "8:topic_change.wav"
+            "Tag" = "8:"
+            "Folder" = "8:_B6F2F99236974BDA9E0EEF48FD8E3CF5"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B4AEDEE2BFFD4AAFB6966CD7C4DB5AD3"
             {
             "SourcePath" = "8:..\\Client\\Sounds\\mass_message.wav"
@@ -365,6 +397,26 @@
             {
             "SourcePath" = "8:..\\Client\\Sounds\\confirm.wav"
             "TargetName" = "8:confirm.wav"
+            "Tag" = "8:"
+            "Folder" = "8:_B6F2F99236974BDA9E0EEF48FD8E3CF5"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C05C5C3EBCD14C4592E4A5AEAF0B5E92"
+            {
+            "SourcePath" = "8:..\\Client\\Sounds\\me_line.wav"
+            "TargetName" = "8:me_line.wav"
             "Tag" = "8:"
             "Folder" = "8:_B6F2F99236974BDA9E0EEF48FD8E3CF5"
             "Condition" = "8:"
@@ -459,7 +511,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Colibri Chat"
         "ProductCode" = "8:{CB4F402C-DC95-4E54-8F11-A91C0416DCAB}"
-        "PackageCode" = "8:{F779264D-A0F4-4424-B10F-B78D9F8D363B}"
+        "PackageCode" = "8:{070D9ABF-6203-40F9-8F30-A8B4B4A1C121}"
         "UpgradeCode" = "8:{9CE85361-B45F-48AE-B43E-D9C165BF7E24}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"

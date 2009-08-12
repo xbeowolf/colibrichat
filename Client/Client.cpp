@@ -1698,7 +1698,7 @@ void CALLBACK JClientApp::Init()
 	m_strWavMeline = Profile::GetString(RF_SOUNDS, RK_WAVMELINE, TEXT("Sounds\\me_line.wav"));
 	m_strWavChatline = Profile::GetString(RF_SOUNDS, RK_WAVCHATLINE, TEXT("Sounds\\chat_line.wav"));
 	m_strWavPrivateline = Profile::GetString(RF_SOUNDS, RK_WAVPRIVATELINE, TEXT("Sounds\\chat_line.wav"));
-	m_strWavTopic = Profile::GetString(RF_SOUNDS, RK_WAVTOPIC, TEXT("Sounds\\mass_message.wav"));
+	m_strWavTopic = Profile::GetString(RF_SOUNDS, RK_WAVTOPIC, TEXT("Sounds\\topic_change.wav"));
 	m_strWavJoin = Profile::GetString(RF_SOUNDS, RK_WAVJOIN, TEXT("Sounds\\channel_join.wav"));
 	m_strWavPart = Profile::GetString(RF_SOUNDS, RK_WAVPART, TEXT("Sounds\\channel_leave.wav"));
 	m_strWavPrivate = Profile::GetString(RF_SOUNDS, RK_WAVPRIVATE, TEXT("Sounds\\private_start.wav"));
