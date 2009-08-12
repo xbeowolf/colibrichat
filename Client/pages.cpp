@@ -207,6 +207,9 @@ void JClient::JPage::OnHook(JEventable* src)
 	using namespace fastdelegate;
 
 	__super::OnHook(src);
+
+	pSource->EvLinkConnect += MakeDelegate(this, &JClient::JPage::OnLinkConnect);
+	pSource->EvLinkDestroy += MakeDelegate(this, &JClient::JPage::OnLinkDestroy);
 }
 
 void JClient::JPage::OnUnhook(JEventable* src)
@@ -214,9 +217,28 @@ void JClient::JPage::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
+	pSource->EvLinkConnect -= MakeDelegate(this, &JClient::JPage::OnLinkConnect);
+	pSource->EvLinkDestroy -= MakeDelegate(this, &JClient::JPage::OnLinkDestroy);
+
 	__super::OnUnhook(src);
 
 	SetSource(0);
+}
+
+void JClient::JPage::OnLinkConnect(SOCKET sock)
+{
+	ASSERT(pSource);
+	if (m_hwndPage) {
+		Enable();
+	}
+}
+
+void JClient::JPage::OnLinkDestroy(SOCKET sock)
+{
+	ASSERT(pSource);
+	if (m_hwndPage) {
+		Disable();
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -386,6 +408,22 @@ LRESULT WINAPI JClient::JPageLog::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 CALLBACK JClient::JPageServer::JPageServer()
 : JPageLog()
 {
+}
+
+void CALLBACK JClient::JPageServer::Enable()
+{
+	EnableWindow(m_hwndHost, FALSE);
+	EnableWindow(m_hwndPort, FALSE);
+	EnableWindow(m_hwndPass, FALSE);
+	m_fEnabled = true;
+}
+
+void CALLBACK JClient::JPageServer::Disable()
+{
+	EnableWindow(m_hwndHost, TRUE);
+	EnableWindow(m_hwndPort, TRUE);
+	EnableWindow(m_hwndPass, TRUE);
+	m_fEnabled = false;
 }
 
 int CALLBACK JClient::JPageServer::ImageIndex() const
@@ -652,8 +690,6 @@ void JClient::JPageServer::OnHook(JEventable* src)
 	__super::OnHook(src);
 
 	pSource->EvLinkConnecting += MakeDelegate(this, &JClient::JPageServer::OnLinkConnecting);
-	pSource->EvLinkConnect += MakeDelegate(this, &JClient::JPageServer::OnLinkConnect);
-	pSource->EvLinkDestroy += MakeDelegate(this, &JClient::JPageServer::OnLinkDestroy);
 	pSource->EvLog += MakeDelegate(this, &JClient::JPageServer::OnLog);
 	pSource->EvReport += MakeDelegate(this, &JClient::JPageServer::OnReport);
 }
@@ -664,8 +700,6 @@ void JClient::JPageServer::OnUnhook(JEventable* src)
 	using namespace fastdelegate;
 
 	pSource->EvLinkConnecting -= MakeDelegate(this, &JClient::JPageServer::OnLinkConnecting);
-	pSource->EvLinkConnect -= MakeDelegate(this, &JClient::JPageServer::OnLinkConnect);
-	pSource->EvLinkDestroy -= MakeDelegate(this, &JClient::JPageServer::OnLinkDestroy);
 	pSource->EvLog -= MakeDelegate(this, &JClient::JPageServer::OnLog);
 	pSource->EvReport -= MakeDelegate(this, &JClient::JPageServer::OnReport);
 
@@ -675,27 +709,8 @@ void JClient::JPageServer::OnUnhook(JEventable* src)
 void JClient::JPageServer::OnLinkConnecting(SOCKET sock)
 {
 	ASSERT(pSource);
-	if (m_hwndPage)
-	{
-		EnableWindow(m_hwndHost, FALSE);
-		EnableWindow(m_hwndPort, FALSE);
-		EnableWindow(m_hwndPass, FALSE);
-	}
-}
-
-void JClient::JPageServer::OnLinkConnect(SOCKET sock)
-{
-	ASSERT(pSource);
-}
-
-void JClient::JPageServer::OnLinkDestroy(SOCKET sock)
-{
-	ASSERT(pSource);
-	if (m_hwndPage)
-	{
-		EnableWindow(m_hwndHost, TRUE);
-		EnableWindow(m_hwndPort, TRUE);
-		EnableWindow(m_hwndPass, TRUE);
+	if (m_hwndPage) {
+		Enable();
 	}
 }
 
@@ -749,6 +764,24 @@ void JClient::JPageServer::OnReport(const std::tstring& str, netengine::EGroup g
 CALLBACK JClient::JPageList::JPageList()
 : JPage()
 {
+}
+
+void CALLBACK JClient::JPageList::Enable()
+{
+	EnableWindow(m_hwndChan, TRUE);
+	EnableWindow(m_hwndPass, TRUE);
+	EnableWindow(GetDlgItem(m_hwndPage, IDC_JOIN), TRUE);
+	EnableWindow(GetDlgItem(m_hwndPage, IDC_REFRESHLIST), TRUE);
+	m_fEnabled = true;
+}
+
+void CALLBACK JClient::JPageList::Disable()
+{
+	EnableWindow(m_hwndChan, FALSE);
+	EnableWindow(m_hwndPass, FALSE);
+	EnableWindow(GetDlgItem(m_hwndPage, IDC_JOIN), FALSE);
+	EnableWindow(GetDlgItem(m_hwndPage, IDC_REFRESHLIST), FALSE);
+	m_fEnabled = false;
 }
 
 LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -1091,8 +1124,6 @@ void JClient::JPageList::OnHook(JEventable* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkConnect += MakeDelegate(this, &JClient::JPageList::OnLinkConnect);
-	pSource->EvLinkDestroy += MakeDelegate(this, &JClient::JPageList::OnLinkDestroy);
 	pSource->EvLinkIdentify += MakeDelegate(this, &JClient::JPageList::OnLinkIdentify);
 	pSource->EvTransactionProcess += MakeDelegate(this, &JClient::JPageList::OnTransactionProcess);
 }
@@ -1102,36 +1133,10 @@ void JClient::JPageList::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
-	pSource->EvLinkConnect -= MakeDelegate(this, &JClient::JPageList::OnLinkConnect);
-	pSource->EvLinkDestroy -= MakeDelegate(this, &JClient::JPageList::OnLinkDestroy);
 	pSource->EvLinkIdentify -= MakeDelegate(this, &JClient::JPageList::OnLinkIdentify);
 	pSource->EvTransactionProcess -= MakeDelegate(this, &JClient::JPageList::OnTransactionProcess);
 
 	__super::OnUnhook(src);
-}
-
-void JClient::JPageList::OnLinkConnect(SOCKET sock)
-{
-	ASSERT(pSource);
-	if (m_hwndPage)
-	{
-		EnableWindow(m_hwndChan, TRUE);
-		EnableWindow(m_hwndPass, TRUE);
-		EnableWindow(GetDlgItem(m_hwndPage, IDC_JOIN), TRUE);
-		EnableWindow(GetDlgItem(m_hwndPage, IDC_REFRESHLIST), TRUE);
-	}
-}
-
-void JClient::JPageList::OnLinkDestroy(SOCKET sock)
-{
-	ASSERT(pSource);
-	if (m_hwndPage)
-	{
-		EnableWindow(m_hwndChan, FALSE);
-		EnableWindow(m_hwndPass, FALSE);
-		EnableWindow(GetDlgItem(m_hwndPage, IDC_JOIN), FALSE);
-		EnableWindow(GetDlgItem(m_hwndPage, IDC_REFRESHLIST), FALSE);
-	}
 }
 
 void JClient::JPageList::OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access)
@@ -1215,6 +1220,18 @@ CALLBACK JClient::JPageUser::JPageUser(DWORD id, const std::tstring& nick)
 {
 	m_ID = id;
 	m_user.name = nick;
+}
+
+void CALLBACK JClient::JPageUser::Enable()
+{
+	EnableWindow(hwndEdit, TRUE);
+	m_fEnabled = true;
+}
+
+void CALLBACK JClient::JPageUser::Disable()
+{
+	EnableWindow(hwndEdit, FALSE);
+	m_fEnabled = false;
 }
 
 int CALLBACK JClient::JPageUser::ImageIndex() const
@@ -1354,9 +1371,9 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 
 	case WM_DESTROY:
 		{
-			pSource->EvPageClose.Invoke(getID());
+			pSource->EvPageClose.Invoke(m_ID);
 
-			pSource->Send_Cmd_PART(pSource->clientsock, m_ID, PART_LEAVE);
+			pSource->Send_Cmd_PART(pSource->clientsock, pSource->m_idOwn, m_ID);
 			pSource->UnlinkUser(m_ID, pSource->m_idOwn);
 			pSource->EvReport(tformat(TEXT("parts from [b]%s[/b] private talk"), m_user.name.c_str()), netengine::eInformation, netengine::eHigher);
 
@@ -1560,7 +1577,6 @@ void JClient::JPageUser::OnHook(JEventable* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkConnect += MakeDelegate(this, &JClient::JPageUser::OnLinkConnect);
 	pSource->EvLinkDestroy += MakeDelegate(this, &JClient::JPageUser::OnLinkDestroy);
 }
 
@@ -1569,30 +1585,17 @@ void JClient::JPageUser::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
-	pSource->EvLinkConnect -= MakeDelegate(this, &JClient::JPageUser::OnLinkConnect);
 	pSource->EvLinkDestroy -= MakeDelegate(this, &JClient::JPageUser::OnLinkDestroy);
 
 	__super::OnUnhook(src);
 }
 
-void JClient::JPageUser::OnLinkConnect(SOCKET sock)
-{
-	ASSERT(pSource);
-	if (m_hwndPage)
-	{
-		EnableWindow(hwndEdit, TRUE);
-	}
-}
-
 void JClient::JPageUser::OnLinkDestroy(SOCKET sock)
 {
 	ASSERT(pSource);
-	if (m_hwndPage)
-	{
+	if (m_hwndPage) {
 		if (m_user.idOnline) // only one disconnect message during connecting
 			AppendScript(TEXT("[style=Info]Disconnected[/style]"));
-
-		EnableWindow(hwndEdit, FALSE);
 	}
 	m_user.idOnline = 0; // no active page on disconnected user
 }
@@ -1608,6 +1611,19 @@ CALLBACK JClient::JPageChannel::JPageChannel(DWORD id, const std::tstring& nick)
 {
 	m_ID = id;
 	m_channel.name = nick;
+}
+
+void CALLBACK JClient::JPageChannel::Enable()
+{
+	EnableWindow(hwndEdit, TRUE);
+	m_fEnabled = true;
+}
+
+void CALLBACK JClient::JPageChannel::Disable()
+{
+	ListView_DeleteAllItems(m_hwndList);
+	EnableWindow(hwndEdit, FALSE);
+	m_fEnabled = false;
 }
 
 int CALLBACK JClient::JPageChannel::ImageIndex() const
@@ -1733,7 +1749,7 @@ void CALLBACK JClient::JPageChannel::Join(DWORD idUser)
 	}
 }
 
-void CALLBACK JClient::JPageChannel::Part(DWORD idUser, DWORD reason)
+void CALLBACK JClient::JPageChannel::Part(DWORD idUser, DWORD idBy)
 {
 	m_channel.opened.erase(idUser);
 	if (m_hwndPage) DelLine(idUser);
@@ -1742,17 +1758,14 @@ void CALLBACK JClient::JPageChannel::Part(DWORD idUser, DWORD reason)
 	MapUser::const_iterator iu = pSource->m_mUser.find(idUser);
 	if (iu != pSource->m_mUser.end() && iu->second.name.length()) {
 		std::tstring msg;
-		switch (reason)
-		{
-		case PART_LEAVE:
+		if (idUser == idBy) {
 			msg = tformat(TEXT("[style=Info]parts: [b]%s[/b][/style]"), iu->second.name.c_str());
-			break;
-		case PART_DISCONNECT:
+		} else if (idBy == CRC_SERVER) {
 			msg = tformat(TEXT("[style=Info]quits: [b]%s[/b][/style]"), iu->second.name.c_str());
-			break;
-		default:
-			msg = tformat(TEXT("[style=Info][b]%s[/b] is out[/style]"), iu->second.name.c_str());
-			break;
+		} else {
+			MapUser::const_iterator iu2 = pSource->m_mUser.find(idBy);
+			std::tstring by = iu2 != pSource->m_mUser.end() ? iu2->second.name : TEXT("unknown");
+			msg = tformat(TEXT("[style=Info][b]%s[/b] was kicked by [b]%s[/b][/style]"), iu->second.name.c_str(), by.c_str());
 		}
 		AppendScript(msg);
 	}
@@ -1780,6 +1793,21 @@ int  CALLBACK JClient::JPageChannel::indexIcon(DWORD idUser) const
 	default:
 		return IML_MANVOID;
 	}
+}
+
+MapUser::const_iterator JClient::JPageChannel::getSelUser() const
+{
+	int index = ListView_GetNextItem(m_hwndList, -1, LVNI_SELECTED);
+	if (index >= 0) {
+		LVITEM lvi;
+		lvi.mask = LVIF_PARAM;
+		lvi.iItem = index;
+		lvi.iSubItem = 0;
+		if (ListView_GetItem(m_hwndList, &lvi)) {
+			return pSource->m_mUser.find((DWORD)lvi.lParam);
+		}
+	}
+	return pSource->m_mUser.end();
 }
 
 LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -1923,9 +1951,9 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 	case WM_DESTROY:
 		{
-			pSource->EvPageClose.Invoke(getID());
+			pSource->EvPageClose.Invoke(m_ID);
 
-			pSource->Send_Cmd_PART(pSource->clientsock, m_ID, PART_LEAVE);
+			pSource->Send_Cmd_PART(pSource->clientsock, pSource->m_idOwn, m_ID);
 			for each (SetId::value_type const& v in m_channel.opened) {
 				pSource->UnlinkUser(v, m_ID);
 			}
@@ -2041,8 +2069,57 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				break;
 
 			case IDC_CHANTOPIC:
-				CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_TOPIC), pSource->hwndPage, (DLGPROC)JDialog::DlgProcStub, (LPARAM)(JDialog*)new JTopic(pSource, this));
+				if (m_channel.getStatus(pSource->m_idOwn) >= eMember)
+					CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_TOPIC), pSource->hwndPage, (DLGPROC)JDialog::DlgProcStub, (LPARAM)(JDialog*)new JTopic(pSource, this));
 				break;
+
+			case IDS_SOUNDSIGNAL:
+				{
+					MapUser::const_iterator iu = getSelUser();
+					if (iu == pSource->m_mUser.end()) break;
+					if (JClient::s_mapAlert[iu->second.nStatus].fCanSignal) {
+						ASSERT(pSource->m_clientsock);
+						pSource->Send_Cmd_BEEP(pSource->m_clientsock, iu->first);
+					} else pSource->DisplayMessage(m_hwndList, TEXT("Sound signal disabled now for this user"));
+					break;
+				}
+
+			case IDC_PRIVATETALK:
+				{
+					MapUser::const_iterator iu = getSelUser();
+					if (iu == pSource->m_mUser.end()) break;
+					if (JClient::s_mapAlert[iu->second.nStatus].fCanOpenPrivate) {
+						ASSERT(pSource->m_clientsock);
+						if (iu->first != pSource->m_idOwn) {
+							pSource->Send_Quest_JOIN(pSource->m_clientsock, iu->second.name);
+						} else {
+							pSource->DisplayMessage(m_hwndList, TEXT("It's your own nickname"));
+						}
+					} else pSource->DisplayMessage(m_hwndList, TEXT("User talk banned"));
+					break;
+				}
+
+			case IDC_SPLASHRTF:
+				{
+					MapUser::const_iterator iu = getSelUser();
+					if (iu == pSource->m_mUser.end()) break;
+					CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_SPLASHRTFEDITOR), hWnd, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JSplashRtfEditor(pSource, iu->first));
+					break;
+				}
+
+			case IDC_KICK:
+				{
+					MapUser::const_iterator iu = getSelUser();
+					if (iu == pSource->m_mUser.end()) break;
+					ASSERT(pSource->m_clientsock);
+
+					bool isModer = m_channel.getStatus(pSource->m_idOwn) >= eModerator;
+					bool canKick = m_channel.getStatus(pSource->m_idOwn) >= m_channel.getStatus(iu->first);
+					if (iu->first == pSource->m_idOwn || (isModer && canKick)) {
+						pSource->Send_Cmd_PART(pSource->m_clientsock, iu->first, m_ID);
+					}
+					break;
+				}
 
 			default:
 				retval =
@@ -2149,97 +2226,10 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			NMHDR* pnmh = (NMHDR*)lParam;
 			switch (pnmh->code)
 			{
-			/*case LVN_GETDISPINFO:
-				{
-					static TCHAR buffer[32];
-					LV_DISPINFO* pnmv = (LV_DISPINFO*)lParam;
-					if (pnmh->idFrom == IDC_USERLIST)
-					{
-						if (pnmv->item.mask & LVIF_TEXT) {
-							MapUser::const_iterator iter = pSource->m_mUser.find((DWORD)pnmv->item.lParam);
-							bool valid = iter != pSource->m_mUser.end() && iter->second.name.length();
-							switch (pnmv->item.iSubItem)
-							{
-							case 0:
-								if (valid) {
-									pnmv->item.pszText = (TCHAR*)iter->second.name.c_str();
-								} else {
-									StringCchPrintf(buffer, _countof(buffer),
-										TEXT("id 0x%08X"), (DWORD)pnmv->item.lParam);
-									pnmv->item.pszText = buffer;
-								}
-								break;
-
-							case 1:
-								if (valid) {
-									StringCchPrintf(buffer, _countof(buffer),
-										TEXT("%i.%i.%i.%i"),
-										iter->second.IP.S_un.S_un_b.s_b1,
-										iter->second.IP.S_un.S_un_b.s_b2,
-										iter->second.IP.S_un.S_un_b.s_b3,
-										iter->second.IP.S_un.S_un_b.s_b4);
-									pnmv->item.pszText = buffer;
-								} else {
-									pnmv->item.pszText = TEXT("N/A");
-								}
-								break;
-
-							case 2:
-								if (valid) {
-									SYSTEMTIME st;
-									FileTimeToLocalTime(iter->second.ftCreation, st);
-
-									StringCchPrintf(buffer, _countof(buffer),
-										TEXT("%02i:%02i:%02i, %02i.%02i.%04i"),
-										st.wHour, st.wMinute, st.wSecond,
-										st.wDay, st.wMonth, st.wYear);
-									pnmv->item.pszText = buffer;
-								} else {
-									pnmv->item.pszText = TEXT("N/A");
-								}
-								break;
-							}
-							pnmv->item.cchTextMax = lstrlen(pnmv->item.pszText);
-						}
-						if (pnmv->item.mask & LVIF_IMAGE) {
-							switch (pnmv->item.iSubItem)
-							{
-							case 0:
-								{
-									pnmv->item.iImage = indexIcon((DWORD)pnmv->item.lParam);
-									break;
-								}
-							case 1:
-								{
-									MapUser::const_iterator iter = pSource->m_mUser.find((DWORD)pnmv->item.lParam);
-									pnmv->item.iImage = IML_MAN_COUNT + iter->second.nStatusImg;
-									break;
-								}
-							}
-						}
-					}
-					break;
-				}*/
-
 			case NM_DBLCLK:
 				{
 					if (pnmh->idFrom == IDC_USERLIST) {
-						LPNMITEMACTIVATE lpnmitem = (LPNMITEMACTIVATE)lParam;
-						LVITEM lvi;
-						lvi.mask = LVIF_PARAM;
-						lvi.iItem = lpnmitem->iItem;
-						lvi.iSubItem = 0;
-						if (lpnmitem->iItem >= 0 && ListView_GetItem(pnmh->hwndFrom, &lvi)) {
-							MapUser::const_iterator iu = pSource->m_mUser.find((DWORD)lvi.lParam);
-							if (iu != pSource->m_mUser.end()) {
-								ASSERT(pSource->m_clientsock);
-								if ((DWORD)lvi.lParam != pSource->m_idOwn) {
-									pSource->Send_Quest_JOIN(pSource->m_clientsock, iu->second.name);
-								} else {
-									pSource->DisplayMessage(pnmh->hwndFrom, TEXT("It's your own nickname"));
-								}
-							}
-						}
+						SendMessage(hWnd, WM_COMMAND, IDC_PRIVATETALK, 0);
 					}
 					break;
 				}
@@ -2284,6 +2274,13 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				RECT r;
 				GetWindowRect((HWND)wParam, &r);
 				TrackPopupMenu(GetSubMenu(JClientApp::jpApp->hmenuRichEdit, 0), TPM_LEFTALIGN | TPM_RIGHTBUTTON,
+					min(max(GET_X_LPARAM(lParam), r.left), r.right),
+					min(max(GET_Y_LPARAM(lParam), r.top), r.bottom), 0, hWnd, 0);
+			} else if ((HWND)wParam == hwndList
+				&& ListView_GetSelectedCount(hwndList)) {
+				RECT r;
+				GetWindowRect((HWND)wParam, &r);
+				TrackPopupMenu(GetSubMenu(JClientApp::jpApp->hmenuUser, 0), TPM_LEFTALIGN | TPM_RIGHTBUTTON,
 					min(max(GET_X_LPARAM(lParam), r.left), r.right),
 					min(max(GET_Y_LPARAM(lParam), r.top), r.bottom), 0, hWnd, 0);
 			} else {
@@ -2331,6 +2328,26 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				EnableMenuItem((HMENU)wParam, IDC_SELECTALL,
 					MF_BYCOMMAND | (canselect ? MF_ENABLED : MF_GRAYED));
 				break;
+			} else if ((HMENU)wParam == GetSubMenu(JClientApp::jpApp->hmenuUser, 0)) {
+				MapUser::const_iterator iu = getSelUser();
+				bool valid = iu != pSource->m_mUser.end();
+
+				SetMenuDefaultItem((HMENU)wParam, IDC_PRIVATETALK, FALSE);
+				EnableMenuItem((HMENU)wParam, IDC_PRIVATETALK,
+					MF_BYCOMMAND | (valid && JClient::s_mapAlert[iu->second.nStatus].fCanOpenPrivate && iu->first != pSource->m_idOwn ? MF_ENABLED : MF_GRAYED));
+				EnableMenuItem((HMENU)wParam, IDC_PRIVATEMESSAGE,
+					MF_BYCOMMAND | (valid && JClient::s_mapAlert[iu->second.nStatus].fCanMessage ? MF_ENABLED : MF_GRAYED));
+				EnableMenuItem((HMENU)wParam, IDS_SOUNDSIGNAL,
+					MF_BYCOMMAND | (valid && JClient::s_mapAlert[iu->second.nStatus].fCanSignal ? MF_ENABLED : MF_GRAYED));
+				EnableMenuItem((HMENU)wParam, IDC_ALERT,
+					MF_BYCOMMAND | (valid && JClient::s_mapAlert[iu->second.nStatus].fCanAlert ? MF_ENABLED : MF_GRAYED));
+				EnableMenuItem((HMENU)wParam, IDC_SPLASHRTF,
+					MF_BYCOMMAND | (valid && JClient::s_mapAlert[iu->second.nStatus].fCanAlert ? MF_ENABLED : MF_GRAYED));
+
+				bool isModer = m_channel.getStatus(pSource->m_idOwn) >= eModerator;
+				bool canKick = m_channel.getStatus(pSource->m_idOwn) >= m_channel.getStatus(iu->first);
+				EnableMenuItem((HMENU)wParam, IDC_KICK,
+					MF_BYCOMMAND | (valid && (pSource->m_idOwn == iu->first || (isModer && canKick)) ? MF_ENABLED : MF_GRAYED));
 			} else {
 				JPageLog::DlgProc(hWnd, message, wParam, lParam);
 				rtf::Editor::DlgProc(hWnd, message, wParam, lParam);
@@ -2392,7 +2409,6 @@ void JClient::JPageChannel::OnHook(JEventable* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkConnect += MakeDelegate(this, &JClient::JPageChannel::OnLinkConnect);
 	pSource->EvLinkDestroy += MakeDelegate(this, &JClient::JPageChannel::OnLinkDestroy);
 }
 
@@ -2401,31 +2417,17 @@ void JClient::JPageChannel::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
-	pSource->EvLinkConnect -= MakeDelegate(this, &JClient::JPageChannel::OnLinkConnect);
 	pSource->EvLinkDestroy -= MakeDelegate(this, &JClient::JPageChannel::OnLinkDestroy);
 
 	__super::OnUnhook(src);
 }
 
-void JClient::JPageChannel::OnLinkConnect(SOCKET sock)
-{
-	ASSERT(pSource);
-	if (m_hwndPage)
-	{
-		EnableWindow(hwndEdit, TRUE);
-	}
-}
-
 void JClient::JPageChannel::OnLinkDestroy(SOCKET sock)
 {
 	ASSERT(pSource);
-	if (m_hwndPage)
-	{
+	if (m_hwndPage) {
 		if (m_channel.opened.size()) // only one disconnect message during connecting
 			AppendScript(TEXT("[style=Info]Disconnected[/style]"));
-		ListView_DeleteAllItems(m_hwndList);
-
-		EnableWindow(hwndEdit, FALSE);
 	}
 	m_channel.opened.clear(); // no users on disconnected channel
 }

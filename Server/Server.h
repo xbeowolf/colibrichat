@@ -75,7 +75,7 @@ namespace colibrichat
 
 		protected:
 
-			HWND hwndList;
+			JPROPERTY_R(HWND, hwndList);
 			RECT rcList;
 		};
 
@@ -130,6 +130,8 @@ namespace colibrichat
 		void CALLBACK Recv_Cmd_STATUS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_SAY(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_TOPIC(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Cmd_BEEP(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is);
 
 		// Beowolf Network Protocol Messages sending
 		void CALLBACK Send_Reply_NICK(SOCKET sock, WORD trnid, DWORD result, DWORD id, const std::tstring& nick);
@@ -140,14 +142,18 @@ namespace colibrichat
 		void CALLBACK Send_Reply_JOIN_Channel(SOCKET sock, WORD trnid, DWORD id, const Channel& chan);
 		void CALLBACK Send_Notify_JOIN(SOCKET sock, DWORD idWho, DWORD idWhere, const User& user);
 		void CALLBACK Broadcast_Notify_JOIN(const SetId& set, DWORD idWho, DWORD idWhere, const User& user);
-		void CALLBACK Send_Notify_PART(SOCKET sock, DWORD idWho, DWORD idWhere, DWORD reason);
-		void CALLBACK Broadcast_Notify_PART(const SetId& set, DWORD idWho, DWORD idWhere, DWORD reason);
+		void CALLBACK Send_Notify_PART(SOCKET sock, DWORD idWho, DWORD idWhere, DWORD idBy);
+		void CALLBACK Broadcast_Notify_PART(const SetId& set, DWORD idWho, DWORD idWhere, DWORD idBy);
 		void CALLBACK Send_Reply_USERINFO(SOCKET sock, WORD trnid, const SetId& set);
 		void CALLBACK Broadcast_Notify_ONLINE(const SetId& set, DWORD idWho, bool on, DWORD id);
 		void CALLBACK Broadcast_Notify_STATUS(const SetId& set, DWORD idWho, WORD type, EUserStatus stat, int img, std::tstring msg);
 		void CALLBACK Send_Notify_SAY(SOCKET sock, DWORD idWho, DWORD idWhere, UINT type, const std::string& content);
 		void CALLBACK Broadcast_Notify_SAY(const SetId& set, DWORD idWho, DWORD idWhere, UINT type, const std::string& content);
 		void CALLBACK Broadcast_Notify_TOPIC(const SetId& set, DWORD idWho, DWORD idWhere, const std::tstring& topic);
+		void CALLBACK Send_Notify_BEEP(SOCKET sock, DWORD idBy);
+		void CALLBACK Send_Notify_SPLASHRTF(SOCKET sock, DWORD idBy, DWORD dwRtfSize, const char* text,
+			const RECT& rcPos, bool bCloseOnDisconnect, DWORD dwCanclose, DWORD dwAutoclose,
+			bool fTransparent, COLORREF crSheet);
 
 		void OnHook(JEventable* src);
 		void OnUnhook(JEventable* src);

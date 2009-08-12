@@ -81,6 +81,7 @@
 
 // Part channel or private talk
 #define CCPM_PART                      105
+#define PART_KICK                      0
 #define PART_LEAVE                     1
 #define PART_DISCONNECT                2
 
@@ -98,6 +99,12 @@
 
 // Change channel topic
 #define CCPM_TOPIC                     109
+
+// Beep
+#define CCPM_BEEP                      110
+
+// Creates splash-window with given text content
+#define CCPM_SPLASHRTF                 111
 
 //-----------------------------------------------------------------------------
 

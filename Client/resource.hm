@@ -1,0 +1,10 @@
+// Microsoft Visual C++ generated Help ID include file.
+// Used by Client.rc
+//
+#define HIDCANCEL                       0x809e0002    // IDD_SPLASHRTFEDITOR [English (United States)]
+#define HIDC_AUTOCLOSE                  0x809e041c    // IDD_SPLASHRTFEDITOR [English (United States)]
+#define HIDC_AUTOCLOSESPIN              0x809e041d    // IDD_SPLASHRTFEDITOR [English (United States)]
+#define HIDC_SPLASHRTF                  0x809e9c74    // IDD_SPLASHRTFEDITOR [English (United States)]
+#define HIDC_TOOLBAR                    0x809e0064    // IDD_SPLASHRTFEDITOR [English (United States)]
+#define HIDC_TOPICTEXT                  0x80990415    // IDD_TOPIC [English (United States)]
+#define HIDOK                           0x809e0001    // IDD_SPLASHRTFEDITOR [English (United States)]

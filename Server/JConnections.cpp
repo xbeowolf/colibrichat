@@ -62,10 +62,10 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 	{
 	case WM_INITDIALOG:
 		{
-			hwndList = GetDlgItem(hWnd, IDC_LIST);
+			m_hwndList = GetDlgItem(hWnd, IDC_LIST);
 
 			// Get initial windows sizes
-			MapControl(hwndList, rcList);
+			MapControl(m_hwndList, rcList);
 
 			if (!pSource)
 			{
@@ -73,10 +73,10 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				break;
 			}
 
-			ListView_SetExtendedListViewStyle(hwndList,
+			ListView_SetExtendedListViewStyle(m_hwndList,
 				LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_HEADERDRAGDROP | LVS_EX_ONECLICKACTIVATE | LVS_EX_SUBITEMIMAGES);
-			//ListView_SetImageList(hwndList, JServerApp::jpApp->himlTree, LVSIL_SMALL);
-			ListView_SetItemCount(hwndList, 16);
+			//ListView_SetImageList(m_hwndList, JServerApp::jpApp->himlTree, LVSIL_SMALL);
+			ListView_SetItemCount(m_hwndList, 16);
 			static LV_COLUMN lvc[] = {
 				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
 				80, TEXT("Nickname"), -1, 0},
@@ -90,7 +90,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				120, TEXT("Time"), -1, 4},
 			};
 			for (int i = 0; i < _countof(lvc); ++i)
-				ListView_InsertColumn(hwndList, i, &lvc[i]);
+				ListView_InsertColumn(m_hwndList, i, &lvc[i]);
 
 			BuildView();
 
@@ -100,7 +100,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 	case WM_DESTROY:
 		{
-			hwndList = 0;
+			m_hwndList = 0;
 			break;
 		}
 
@@ -119,7 +119,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			SetRect(&rc, rcList.left, rcList.top,
 				cx - rcPage.right + rcList.right,
 				cy - rcPage.bottom + rcList.bottom);
-			DeferWindowPos(hdwp, hwndList, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER);
+			DeferWindowPos(hdwp, m_hwndList, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER);
 			EndDeferWindowPos(hdwp);
 			break;
 		}
@@ -265,11 +265,11 @@ int CALLBACK JServer::JConnections::AddLine(SOCKET sock)
 	lvi.iImage = I_IMAGECALLBACK;
 	lvi.lParam = (LPARAM)sock;
 
-	index = ListView_InsertItem(hwndList, &lvi);
-	ListView_SetItemText(hwndList, index, 1, LPSTR_TEXTCALLBACK);
-	ListView_SetItemText(hwndList, index, 2, LPSTR_TEXTCALLBACK);
-	ListView_SetItemText(hwndList, index, 3, LPSTR_TEXTCALLBACK);
-	ListView_SetItemText(hwndList, index, 4, LPSTR_TEXTCALLBACK);
+	index = ListView_InsertItem(m_hwndList, &lvi);
+	ListView_SetItemText(m_hwndList, index, 1, LPSTR_TEXTCALLBACK);
+	ListView_SetItemText(m_hwndList, index, 2, LPSTR_TEXTCALLBACK);
+	ListView_SetItemText(m_hwndList, index, 3, LPSTR_TEXTCALLBACK);
+	ListView_SetItemText(m_hwndList, index, 4, LPSTR_TEXTCALLBACK);
 	return index;
 }
 
@@ -278,7 +278,7 @@ void CALLBACK JServer::JConnections::DelLine(SOCKET sock)
 	LVFINDINFO lvfi;
 	lvfi.flags = LVFI_PARAM;
 	lvfi.lParam = (LPARAM)sock;
-	ListView_DeleteItem(hwndList, ListView_FindItem(hwndList, -1, &lvfi));
+	ListView_DeleteItem(m_hwndList, ListView_FindItem(m_hwndList, -1, &lvfi));
 }
 
 void CALLBACK JServer::JConnections::BuildView()

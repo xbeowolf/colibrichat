@@ -17,6 +17,8 @@
 #define IDD_USER                        103
 #define IDD_CHANNEL                     104
 #define IDC_JOIN                        104
+#define IDD_TOPIC                       110
+#define IDD_SPLASHRTFEDITOR             111
 #define IDB_MAN                         133
 #define IDM_LOG                         134
 #define IDM_TAB                         136
@@ -25,9 +27,13 @@
 #define IDB_STATUSIMG                   148
 #define IDB_UL_BG                       149
 #define IDB_UL_SEL                      150
+#define IDD_SPLASHRTF                   150
 #define IDB_UL_HOT                      151
 #define IDB_UL_FOC                      152
-#define IDD_TOPIC                       153
+#define IDR_USER                        157
+#define IDM_USER                        157
+#define IDR_ACCELERATOR1                159
+#define IDA_RICHEDIT                    159
 #define IDC_LOG                         1001
 #define IDC_USERLIST                    1002
 #define IDC_RICHEDIT                    1003
@@ -51,6 +57,9 @@
 #define IDC_STATIC3                     1048
 #define IDC_STATIC4                     1049
 #define IDC_STATIC5                     1050
+#define IDC_AUTOCLOSE                   1052
+#define IDC_AUTOCLOSESPIN               1053
+#define IDC_RICHEDIT21                  1054
 #define IDC_NICK                        40002
 #define IDC_CONNECT                     40004
 #define IDC_SENDBYENTER                 40017
@@ -68,14 +77,44 @@
 #define IDC_LOGCOPY                     40041
 #define IDC_TABCLOSE                    40043
 #define IDC_CHANTOPIC                   40048
+#define ID_OVERLAP_PRIVATETALK          40049
+#define ID_OVERLAP_SPLASHMESSAGE        40050
+#define IDC_PRIVATETALK                 40051
+#define IDC_SPLASHRTF                   40052
+#define ID_OVERLAP_ACCESSRIGHTS         40053
+#define ID_ACCESSRIGHTS_FOUNDER         40054
+#define ID_ACCESSRIGHTS_FOUNDER40055    40055
+#define ID_ACCESSRIGHTS_ADMINISTRATOR   40056
+#define ID_ACCESSRIGHTS_ADMINISTRATOR40057 40057
+#define ID_ACCESSRIGHTS_MODERATOR       40058
+#define ID_ACCESSRIGHTS_MEMBER          40059
+#define ID_ACCESSRIGHTS_WRITER          40060
+#define ID_ACCESSRIGHTS_READER          40061
+#define ID_OVERLAP_KICK                 40062
+#define ID_ACCESSRIGHTS_OUTSIDER        40063
+#define IDC_FOUNDER                     40064
+#define IDC_ADMIN                       40065
+#define IDC_MODERATOR                   40066
+#define IDC_MEMBER                      40067
+#define IDC_WRITER                      40068
+#define IDC_READER                      40069
+#define IDC_OUTSIDER                    40070
+#define ID_OVERLAP_SOUNDSIGNAL          40071
+#define ID_OVERLAP_SOUNDSIGNAL40072     40072
+#define IDS_SOUNDSIGNAL                 40073
+#define ID_OVERLAP_ALERT                40074
+#define IDC_ALERT                       40075
+#define ID_OVERLAP_PRIVATEMESSAGE       40076
+#define IDC_PRIVATEMESSAGE              40077
+#define IDC_KICK                        40078
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        154
-#define _APS_NEXT_COMMAND_VALUE         40049
-#define _APS_NEXT_CONTROL_VALUE         1051
+#define _APS_NEXT_RESOURCE_VALUE        161
+#define _APS_NEXT_COMMAND_VALUE         40080
+#define _APS_NEXT_CONTROL_VALUE         1055
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

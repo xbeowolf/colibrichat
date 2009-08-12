@@ -86,12 +86,11 @@ void CALLBACK JServer::Done()
 
 HWND CALLBACK JServer::CreateMsgWindow()
 {
-	JWindow* wnd = this;
 	if (!IsWindow(m_hwndPage)) m_hwndPage = CreateWindow(WC_MSG, WT_MSG,
 		WS_OVERLAPPEDWINDOW,
 		0, 0, 100, 100,
 		HWND_MESSAGE,
-		0, 0, (JWindow*)wnd);
+		0, 0, (JWindow*)this);
 	return m_hwndPage;
 }
 
@@ -396,11 +395,11 @@ void JServer::OnLinkDestroy(SOCKET sock)
 			unlinkCRC(idSrc, v);
 			MapUser::const_iterator iu = m_mUser.find(v);
 			if (iu != m_mUser.end()) { // private talk
-				Send_Notify_PART(m_mIdSocket[v], idSrc, v, PART_DISCONNECT);
+				Send_Notify_PART(m_mIdSocket[v], idSrc, v, CRC_SERVER);
 			} else {
 				MapChannel::const_iterator ic = m_mChannel.find(v);
 				if (ic != m_mChannel.end()) { // channel
-					Broadcast_Notify_PART(ic->second.opened, idSrc, v, PART_DISCONNECT);
+					Broadcast_Notify_PART(ic->second.opened, idSrc, v, CRC_SERVER);
 				}
 			}
 		}
@@ -458,6 +457,8 @@ void JServer::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 		{COMMAND(CCPM_STATUS), &JServer::Recv_Cmd_STATUS},
 		{COMMAND(CCPM_SAY), &JServer::Recv_Cmd_SAY},
 		{COMMAND(CCPM_TOPIC), &JServer::Recv_Cmd_TOPIC},
+		{COMMAND(CCPM_BEEP), &JServer::Recv_Cmd_BEEP},
+		{COMMAND(CCPM_SPLASHRTF), &JServer::Recv_Cmd_SPLASHRTF},
 	};
 	for (int i = 0; i < _countof(responseTable); i++)
 	{
@@ -659,46 +660,52 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 
 void CALLBACK JServer::Recv_Cmd_PART(SOCKET sock, WORD trnid, io::mem& is)
 {
-	DWORD idDst;
-	DWORD reason;
+	DWORD idWho, idWhere;
 
 	try
 	{
-		io::unpack(is, idDst);
-		io::unpack(is, reason);
+		io::unpack(is, idWho);
+		io::unpack(is, idWhere);
 	}
 	catch (io::exception e)
 	{
 		switch (e.count)
 		{
 		case 0:
+		case 1:
 			// Report about message
 			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
 			return;
-
-		case 1:
-			reason = PART_DISCONNECT;
 		}
 	}
 
-	DWORD idSrc = m_mSocketId[sock];
-	MapUser::iterator iu = m_mUser.find(idDst);
+	DWORD idBy = m_mSocketId[sock];
+	MapUser::iterator iuWho = m_mUser.find(idWho), iuBy = m_mUser.find(idBy);
+	ASSERT(iuWho != m_mUser.end());
+	ASSERT(iuBy != m_mUser.end());
+
+	MapUser::iterator iu = m_mUser.find(idWhere);
 	if (iu != m_mUser.end()) { // private talk
 		// Report about message
-		EvReport(tformat(TEXT("parts %s from %s"), m_mUser[idSrc].name.c_str(), iu->second.name.c_str()), netengine::eInformation, netengine::eNormal);
+		EvReport(tformat(TEXT("parts %s from %s"), iuWho->second.name.c_str(), iu->second.name.c_str()), netengine::eInformation, netengine::eNormal);
 
-		unlinkCRC(idSrc, idDst);
-		Send_Notify_PART(m_mIdSocket[idDst], idSrc, idDst, reason);
+		Send_Notify_PART(m_mIdSocket[idWhere], idWho, idWhere, idBy);
+		Send_Notify_PART(sock, idBy, idWhere, idBy);
+		unlinkCRC(idWho, idWhere);
 	} else {
-		MapChannel::const_iterator ic = m_mChannel.find(idDst);
+		MapChannel::const_iterator ic = m_mChannel.find(idWhere);
 		if (ic != m_mChannel.end()) { // channel
-			// Report about message
-			EvReport(tformat(TEXT("parts %s from %s"), m_mUser[idSrc].name.c_str(), ic->second.name.c_str()), netengine::eInformation, netengine::eNormal);
+			bool isModer = ic->second.getStatus(idBy) >= eModerator;
+			bool canKick = ic->second.getStatus(idBy) >= ic->second.getStatus(idWho);
+			if (idWho == idBy || (isModer && canKick)) {
+				// Report about message
+				EvReport(tformat(TEXT("parts %s from %s"), iuWho->second.name.c_str(), ic->second.name.c_str()), netengine::eInformation, netengine::eNormal);
 
-			unlinkCRC(idSrc, idDst);
-			ic = m_mChannel.find(idDst);
-			if (ic != m_mChannel.end()) { // check that channel still exist
-				Broadcast_Notify_PART(ic->second.opened, idSrc, idDst, reason);
+				ic = m_mChannel.find(idWhere);
+				if (ic != m_mChannel.end()) { // check that channel still exist
+					Broadcast_Notify_PART(ic->second.opened, idWho, idWhere, idBy);
+				}
+				unlinkCRC(idWho, idWhere);
 			}
 		}
 	}
@@ -896,6 +903,96 @@ void CALLBACK JServer::Recv_Cmd_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
+void CALLBACK JServer::Recv_Cmd_BEEP(SOCKET sock, WORD trnid, io::mem& is)
+{
+	DWORD idWho;
+
+	try
+	{
+		io::unpack(is, idWho);
+	}
+	catch (io::exception e)
+	{
+		switch (e.count)
+		{
+		case 0:
+			// Report about message
+			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			return;
+		}
+	}
+
+	DWORD idBy = m_mSocketId[sock];
+	MapUser::const_iterator iu = m_mUser.find(idWho);
+	if (iu != m_mUser.end()) { // private talk
+		Send_Notify_BEEP(m_mIdSocket[idWho], idBy);
+	} else {
+		MapChannel::iterator ic = m_mChannel.find(idWho);
+		if (ic != m_mChannel.end()) { // channel
+		}
+	}
+}
+
+void CALLBACK JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is)
+{
+	DWORD idWho;
+	DWORD dwRtfSize;
+	const void* ptr;
+	RECT rcPos;
+	bool bCloseOnDisconnect;
+	DWORD dwCanclose, dwAutoclose;
+	bool fTransparent;
+	COLORREF crSheet;
+	try
+	{
+		io::unpack(is, idWho);
+		io::unpack(is, dwRtfSize);
+		io::unpackptr(is, ptr, dwRtfSize);
+		io::unpack(is, rcPos);
+		io::unpack(is, bCloseOnDisconnect);
+		io::unpack(is, dwCanclose);
+		io::unpack(is, dwAutoclose);
+		io::unpack(is, fTransparent);
+		io::unpack(is, crSheet);
+	}
+	catch (io::exception e)
+	{
+		switch (e.count)
+		{
+		case 0:
+		case 1:
+		case 2:
+			// Report about message
+			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			return;
+
+		case 3:
+			rcPos.left = rcPos.top = rcPos.right = rcPos.bottom = 0;
+		case 4:
+			bCloseOnDisconnect = true;
+		case 5:
+			dwCanclose = 2500;
+		case 6:
+			dwAutoclose = INFINITE;
+		case 7:
+			fTransparent = true;
+		case 8:
+			crSheet = GetSysColor(COLOR_WINDOW);
+		}
+	}
+
+	DWORD idBy = m_mSocketId[sock];
+	MapUser::const_iterator iu = m_mUser.find(idWho);
+	if (iu != m_mUser.end()) { // private talk
+		Send_Notify_SPLASHRTF(m_mIdSocket[idWho], idBy, dwRtfSize, (const char*)ptr, rcPos,
+			bCloseOnDisconnect, dwCanclose, dwAutoclose, fTransparent, crSheet);
+	} else {
+		MapChannel::iterator ic = m_mChannel.find(idWho);
+		if (ic != m_mChannel.end()) { // channel
+		}
+	}
+}
+
 //
 // Beowolf Network Protocol Messages sending
 //
@@ -977,21 +1074,21 @@ void CALLBACK JServer::Broadcast_Notify_JOIN(const SetId& set, DWORD idWho, DWOR
 	BroadcastTrn(set, false, NOTIFY(CCPM_JOIN), os.str());
 }
 
-void CALLBACK JServer::Send_Notify_PART(SOCKET sock, DWORD idWho, DWORD idWhere, DWORD reason)
+void CALLBACK JServer::Send_Notify_PART(SOCKET sock, DWORD idWho, DWORD idWhere, DWORD idBy)
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, idWhere);
-	io::pack(os, reason);
+	io::pack(os, idBy);
 	PushTrn(sock, NOTIFY(CCPM_PART), 0, os.str());
 }
 
-void CALLBACK JServer::Broadcast_Notify_PART(const SetId& set, DWORD idWho, DWORD idWhere, DWORD reason)
+void CALLBACK JServer::Broadcast_Notify_PART(const SetId& set, DWORD idWho, DWORD idWhere, DWORD idBy)
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, idWhere);
-	io::pack(os, reason);
+	io::pack(os, idBy);
 	BroadcastTrn(set, false, NOTIFY(CCPM_PART), os.str());
 }
 
@@ -1067,6 +1164,28 @@ void CALLBACK JServer::Broadcast_Notify_TOPIC(const SetId& set, DWORD idWho, DWO
 	io::pack(os, idWhere);
 	io::pack(os, topic);
 	BroadcastTrn(set, false, NOTIFY(CCPM_TOPIC), os.str());
+}
+
+void CALLBACK JServer::Send_Notify_BEEP(SOCKET sock, DWORD idBy)
+{
+	std::ostringstream os;
+	io::pack(os, idBy);
+	PushTrn(sock, NOTIFY(CCPM_BEEP), 0, os.str());
+}
+
+void CALLBACK JServer::Send_Notify_SPLASHRTF(SOCKET sock, DWORD idBy, DWORD dwRtfSize, const char* text, const RECT& rcPos, bool bCloseOnDisconnect, DWORD dwCanclose, DWORD dwAutoclose, bool fTransparent, COLORREF crSheet)
+{
+	std::ostringstream os;
+	io::pack(os, idBy);
+	io::pack(os, dwRtfSize);
+	os.write(text, (std::streamsize)dwRtfSize);
+	io::pack(os, rcPos);
+	io::pack(os, bCloseOnDisconnect);
+	io::pack(os, dwCanclose);
+	io::pack(os, dwAutoclose);
+	io::pack(os, fTransparent);
+	io::pack(os, crSheet);
+	PushTrn(sock, NOTIFY(CCPM_SPLASHRTF), 0, os.str());
 }
 
 void CALLBACK JServer::Connections()

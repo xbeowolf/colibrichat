@@ -41,9 +41,10 @@ namespace colibrichat
 	struct User;
 	struct Channel;
 
-	enum EContact {eServer, eList, eUser, eChannel, eBoard};
+	enum EContact {eServer = 0x01U, eList = 0x02U, eUser = 0x04U, eChannel = 0x08U, eBoard = 0x10U};
 	enum EChanStatus {eOutsider, eReader, eWriter, eMember, eModerator, eAdmin, eFounder};
 	enum EUserStatus {eReady, eDND, eBusy, eNA, eAway, eInvisible};
+	enum EObjType {eObjCommon, eDialogRtf, eDialogImg};
 
 	typedef std::set<DWORD> SetId;
 

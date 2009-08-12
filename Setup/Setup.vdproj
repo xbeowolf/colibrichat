@@ -15,13 +15,67 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_12A06AF8EA544DCBBD83EF904952A542"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_3072868D8DC244A48A72C0DF8ADBD201"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_3350EEF8D7F2438591BB9927A5B98531"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_4CAA1739898846709C1D26F6C296BC3F"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_6348A4B18EA748F3BB0EA76FAF306D9B"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_8FD1A68DAB3D4640A13C8BC623C3816D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
+        "MsmKey" = "8:_9DBF4AC66B474C0CB39B85D306770C89"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_9FA9B5C00A034DC98A5107822243BE12"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_A64C7C2393D6470EB044FE4CCD88EAD1"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_B4AEDEE2BFFD4AAFB6966CD7C4DB5AD3"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_B9C5DF471BB24F8CBEED7BD7EEF0CD4E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -107,6 +161,106 @@
         }
         "File"
         {
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_12A06AF8EA544DCBBD83EF904952A542"
+            {
+            "SourcePath" = "8:..\\Client\\Sounds\\channel_join.wav"
+            "TargetName" = "8:channel_join.wav"
+            "Tag" = "8:"
+            "Folder" = "8:_B6F2F99236974BDA9E0EEF48FD8E3CF5"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3072868D8DC244A48A72C0DF8ADBD201"
+            {
+            "SourcePath" = "8:..\\Client\\Sounds\\beep.wav"
+            "TargetName" = "8:beep.wav"
+            "Tag" = "8:"
+            "Folder" = "8:_B6F2F99236974BDA9E0EEF48FD8E3CF5"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3350EEF8D7F2438591BB9927A5B98531"
+            {
+            "SourcePath" = "8:..\\Client\\Sounds\\channel_leave.wav"
+            "TargetName" = "8:channel_leave.wav"
+            "Tag" = "8:"
+            "Folder" = "8:_B6F2F99236974BDA9E0EEF48FD8E3CF5"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4CAA1739898846709C1D26F6C296BC3F"
+            {
+            "SourcePath" = "8:..\\Client\\Sounds\\chat_line.wav"
+            "TargetName" = "8:chat_line.wav"
+            "Tag" = "8:"
+            "Folder" = "8:_B6F2F99236974BDA9E0EEF48FD8E3CF5"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6348A4B18EA748F3BB0EA76FAF306D9B"
+            {
+            "SourcePath" = "8:..\\Client\\Sounds\\user_online.wav"
+            "TargetName" = "8:user_online.wav"
+            "Tag" = "8:"
+            "Folder" = "8:_B6F2F99236974BDA9E0EEF48FD8E3CF5"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_8FD1A68DAB3D4640A13C8BC623C3816D"
             {
             "SourcePath" = "8:..\\bin\\release\\ColibriClient.exe"
@@ -127,12 +281,92 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_9DBF4AC66B474C0CB39B85D306770C89"
+            {
+            "SourcePath" = "8:..\\Client\\Sounds\\message.wav"
+            "TargetName" = "8:message.wav"
+            "Tag" = "8:"
+            "Folder" = "8:_B6F2F99236974BDA9E0EEF48FD8E3CF5"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_9FA9B5C00A034DC98A5107822243BE12"
+            {
+            "SourcePath" = "8:..\\Client\\Sounds\\private_start.wav"
+            "TargetName" = "8:private_start.wav"
+            "Tag" = "8:"
+            "Folder" = "8:_B6F2F99236974BDA9E0EEF48FD8E3CF5"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A64C7C2393D6470EB044FE4CCD88EAD1"
             {
             "SourcePath" = "8:..\\bin\\release\\ColibriServer.exe"
             "TargetName" = "8:ColibriServer.exe"
             "Tag" = "8:"
             "Folder" = "8:_A4E6BE004F624883A4C7B71D3F587997"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B4AEDEE2BFFD4AAFB6966CD7C4DB5AD3"
+            {
+            "SourcePath" = "8:..\\Client\\Sounds\\mass_message.wav"
+            "TargetName" = "8:mass_message.wav"
+            "Tag" = "8:"
+            "Folder" = "8:_B6F2F99236974BDA9E0EEF48FD8E3CF5"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B9C5DF471BB24F8CBEED7BD7EEF0CD4E"
+            {
+            "SourcePath" = "8:..\\Client\\Sounds\\confirm.wav"
+            "TargetName" = "8:confirm.wav"
+            "Tag" = "8:"
+            "Folder" = "8:_B6F2F99236974BDA9E0EEF48FD8E3CF5"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -196,6 +430,17 @@
             "Property" = "8:TARGETDIR"
                 "Folders"
                 {
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_B6F2F99236974BDA9E0EEF48FD8E3CF5"
+                    {
+                    "Name" = "8:Sounds"
+                    "AlwaysCreate" = "11:FALSE"
+                    "Condition" = "8:"
+                    "Transitive" = "11:FALSE"
+                    "Property" = "8:_E3F6D12F8B3C4086ABB566B8E5F5B9E6"
+                        "Folders"
+                        {
+                        }
+                    }
                 }
             }
         }
@@ -214,13 +459,13 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Colibri Chat"
         "ProductCode" = "8:{CB4F402C-DC95-4E54-8F11-A91C0416DCAB}"
-        "PackageCode" = "8:{0E547AF3-B3A0-4C70-A8BA-28237DBA97CC}"
+        "PackageCode" = "8:{F779264D-A0F4-4424-B10F-B78D9F8D363B}"
         "UpgradeCode" = "8:{9CE85361-B45F-48AE-B43E-D9C165BF7E24}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.0"
+        "ProductVersion" = "8:1.0.6"
         "Manufacturer" = "8:BEOWOLF"
         "ARPHELPTELEPHONE" = "8:+380684862837, icq 320-329-575"
         "ARPHELPLINK" = "8:"
@@ -348,7 +593,7 @@
                                     "Name" = "8:Colibri Chat"
                                     "Condition" = "8:"
                                     "AlwaysCreate" = "11:FALSE"
-                                    "DeleteAtUninstall" = "11:FALSE"
+                                    "DeleteAtUninstall" = "11:TRUE"
                                     "Transitive" = "11:FALSE"
                                         "Keys"
                                         {
@@ -361,6 +606,84 @@
                                             "Transitive" = "11:FALSE"
                                                 "Keys"
                                                 {
+                                                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_2EDB204F11FF454288E8C4EEF5F9A0B3"
+                                                    {
+                                                    "Name" = "8:Sounds"
+                                                    "Condition" = "8:"
+                                                    "AlwaysCreate" = "11:FALSE"
+                                                    "DeleteAtUninstall" = "11:TRUE"
+                                                    "Transitive" = "11:FALSE"
+                                                        "Keys"
+                                                        {
+                                                        }
+                                                        "Values"
+                                                        {
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_1D7C307F86B3431C96A8E7BD2504551B"
+                                                            {
+                                                            "Name" = "8:Part"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:1"
+                                                            "Value" = "8:[TARGETDIR]Sounds\\channel_leave.wav"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_21E4832DEDA64CA1AFFAC46A5B8EBFAE"
+                                                            {
+                                                            "Name" = "8:PrivateLine"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:1"
+                                                            "Value" = "8:[TARGETDIR]Sounds\\chat_line.wav"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_2C011C54BE6944ED955F846D36E23452"
+                                                            {
+                                                            "Name" = "8:Private"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:1"
+                                                            "Value" = "8:[TARGETDIR]Sounds\\private_start.wav"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_5388495208F1412A92E035E6FA0FED52"
+                                                            {
+                                                            "Name" = "8:Beep"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:1"
+                                                            "Value" = "8:[TARGETDIR]Sounds\\beep.wav"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_54F9738BC7F5419CBD8154DFEE69BEFE"
+                                                            {
+                                                            "Name" = "8:ChatLine"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:1"
+                                                            "Value" = "8:[TARGETDIR]Sounds\\chat_line.wav"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_5B9F79933BA041CA8AE8E8D8A2E45460"
+                                                            {
+                                                            "Name" = "8:Join"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:1"
+                                                            "Value" = "8:[TARGETDIR]Sounds\\channel_join.wav"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_AFCAC1310CE14D97910CAFE14BE623A9"
+                                                            {
+                                                            "Name" = "8:Topic"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:1"
+                                                            "Value" = "8:[TARGETDIR]Sounds\\mass_message.wav"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_D08432A9855E486AA5CA92ECF0C7EF76"
+                                                            {
+                                                            "Name" = "8:MeLine"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:1"
+                                                            "Value" = "8:[TARGETDIR]Sounds\\me_line.wav"
+                                                            }
+                                                        }
+                                                    }
                                                 }
                                                 "Values"
                                                 {
@@ -387,6 +710,14 @@
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:1"
                                                     "Value" = "8:127.0.0.1"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_5C59EADBA524460AB4F53F4CCD9925F9"
+                                                    {
+                                                    "Name" = "8:FlashPageChangeTopic"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:1"
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_6C7D07DF80DC4324B0BEB631F12F9B76"
                                                     {
