@@ -511,13 +511,13 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Colibri Chat"
         "ProductCode" = "8:{CB4F402C-DC95-4E54-8F11-A91C0416DCAB}"
-        "PackageCode" = "8:{070D9ABF-6203-40F9-8F30-A8B4B4A1C121}"
+        "PackageCode" = "8:{DAB3FEB6-CD46-4F25-A6A9-AEC3A1E7DD9C}"
         "UpgradeCode" = "8:{9CE85361-B45F-48AE-B43E-D9C165BF7E24}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.6"
+        "ProductVersion" = "8:1.0.8"
         "Manufacturer" = "8:BEOWOLF"
         "ARPHELPTELEPHONE" = "8:+380684862837, icq 320-329-575"
         "ARPHELPLINK" = "8:"
@@ -694,6 +694,14 @@
                                                             "ValueTypes" = "3:1"
                                                             "Value" = "8:[TARGETDIR]Sounds\\private_start.wav"
                                                             }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_2EF13DC158994D2E941A24430B3815AC"
+                                                            {
+                                                            "Name" = "8:Message"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:1"
+                                                            "Value" = "8:[TARGETDIR]Sounds\\message.wav"
+                                                            }
                                                             "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_5388495208F1412A92E035E6FA0FED52"
                                                             {
                                                             "Name" = "8:Beep"
@@ -725,6 +733,22 @@
                                                             "Transitive" = "11:FALSE"
                                                             "ValueTypes" = "3:1"
                                                             "Value" = "8:[TARGETDIR]Sounds\\mass_message.wav"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_CDB32404932B4AA3B4842C43BE9C98A7"
+                                                            {
+                                                            "Name" = "8:Alert"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:1"
+                                                            "Value" = "8:[TARGETDIR]Sounds\\alert.wav"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_CDE71BC016A14EEBB065708C36AF36F9"
+                                                            {
+                                                            "Name" = "8:Confirm"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:1"
+                                                            "Value" = "8:[TARGETDIR]Sounds\\confirm.wav"
                                                             }
                                                             "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_D08432A9855E486AA5CA92ECF0C7EF76"
                                                             {
@@ -785,7 +809,7 @@
                                                     "Condition" = "8:"
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:1"
-                                                    "Value" = "8:User"
+                                                    "Value" = "8:Noname"
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_AA13D1B85DD54D83B276B36ED14055E3"
                                                     {
@@ -894,6 +918,20 @@
             "Folder" = "8:_2AA7B1339B234A6DA3BC07C689A50D6A"
             "WorkingFolder" = "8:_A4E6BE004F624883A4C7B71D3F587997"
             "Icon" = "8:_A64C7C2393D6470EB044FE4CCD88EAD1"
+            "Feature" = "8:"
+            }
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_FD95DB04EEBC4400B1856AA746809DEE"
+            {
+            "Name" = "8:Colibri Chat"
+            "Arguments" = "8:"
+            "Description" = "8:Colibri Chat client application"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:100"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_8FD1A68DAB3D4640A13C8BC623C3816D"
+            "Folder" = "8:_6B00F10C54D14B48B63B27AF9780463B"
+            "WorkingFolder" = "8:_A4E6BE004F624883A4C7B71D3F587997"
+            "Icon" = "8:_8FD1A68DAB3D4640A13C8BC623C3816D"
             "Feature" = "8:"
             }
         }

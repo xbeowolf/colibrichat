@@ -63,8 +63,8 @@
 #define NICK_TAKENCHANNEL              2
 #define NICK_TAKENUSER                 3
 
-// Rename contact
-#define CCPM_RENAME                    101
+// Changing password
+#define CCPM_PASSWORD                  101
 
 // Channels list
 #define CCPM_LIST                      102
@@ -100,11 +100,23 @@
 // Change channel topic
 #define CCPM_TOPIC                     109
 
+// Changing background colors
+#define CCPM_BACKGROUND                110
+
+// Change user status on channel
+#define CCPM_ACCESS                    111
+
 // Beep
-#define CCPM_BEEP                      110
+#define CCPM_BEEP                      112
+
+// Message or alert
+#define CCPM_MESSAGE                   113
+#define MESSAGE_IGNORE                 0
+#define MESSAGE_SENT                   1
+#define MESSAGE_SAVED                  2
 
 // Creates splash-window with given text content
-#define CCPM_SPLASHRTF                 111
+#define CCPM_SPLASHRTF                 114
 
 //-----------------------------------------------------------------------------
 

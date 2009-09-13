@@ -31,7 +31,7 @@
 #define BEM_NOTIFYICON         (WM_USER + 100)
 #define BEM_NETWORK            (WM_USER + 101)
 #define BEM_ADJUSTSIZE         (WM_USER + 102)
-#define BEM_JOBJECT            (WM_USER + 103)
+#define BEM_JDIALOG            (WM_USER + 103)
 
 //-----------------------------------------------------------------------------
 
@@ -44,13 +44,13 @@ namespace colibrichat
 	enum EContact {eServer = 0x01U, eList = 0x02U, eUser = 0x04U, eChannel = 0x08U, eBoard = 0x10U};
 	enum EChanStatus {eOutsider, eReader, eWriter, eMember, eModerator, eAdmin, eFounder};
 	enum EUserStatus {eReady, eDND, eBusy, eNA, eAway, eInvisible};
-	enum EObjType {eObjCommon, eDialogRtf, eDialogImg};
 
 	typedef std::set<DWORD> SetId;
 
 	struct Contact
 	{
 		std::tstring name; // unical contact name
+		std::tstring password; // password for join into channel
 		SetId opened; // identifiers of opened contacts
 		FILETIME ftCreation; // contact creation time
 	};
@@ -71,7 +71,6 @@ namespace colibrichat
 
 	struct Channel : Contact
 	{
-		std::tstring password; // password for join into channel
 		std::tstring topic; // channel topic
 		DWORD idTopicWriter;
 		SetId writer, member, moderator, admin, founder; // users identifiers with access rights

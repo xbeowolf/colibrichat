@@ -114,14 +114,14 @@ namespace colibrichat
 		// --- Support ---
 
 		std::tstring CALLBACK getNearestName(const std::tstring& nick) const;
-		void CALLBACK RenameContact(DWORD idOld, DWORD idNew, const std::tstring& newname);
+		void CALLBACK RenameContact(SOCKET sock, DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname);
 
 	protected:
 
 		int  CALLBACK BroadcastTrn(const SetId& set, bool nested, WORD message, const std::string& str, size_t ssi = 0) throw();
 
 		// Beowolf Network Protocol Messages reciving
-		void CALLBACK Recv_Quest_NICK(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Cmd_NICK(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Quest_LIST(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_PART(SOCKET sock, WORD trnid, io::mem& is);
@@ -130,12 +130,13 @@ namespace colibrichat
 		void CALLBACK Recv_Cmd_STATUS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_SAY(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_TOPIC(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Cmd_ACCESS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_BEEP(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is);
 
 		// Beowolf Network Protocol Messages sending
-		void CALLBACK Send_Reply_NICK(SOCKET sock, WORD trnid, DWORD result, DWORD id, const std::tstring& nick);
-		void CALLBACK Broadcast_Notify_RENAME(const SetId& set, DWORD idOld, DWORD idNew, const std::tstring& newname);
+		void CALLBACK Broadcast_Notify_NICK(const SetId& set, DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname);
 		void CALLBACK Send_Reply_LIST(SOCKET sock, WORD trnid);
 		void CALLBACK Send_Reply_JOIN_Result(SOCKET sock, WORD trnid, DWORD result, EContact type, DWORD id);
 		void CALLBACK Send_Reply_JOIN_User(SOCKET sock, WORD trnid, DWORD id, const User& user);
@@ -150,7 +151,10 @@ namespace colibrichat
 		void CALLBACK Send_Notify_SAY(SOCKET sock, DWORD idWho, DWORD idWhere, UINT type, const std::string& content);
 		void CALLBACK Broadcast_Notify_SAY(const SetId& set, DWORD idWho, DWORD idWhere, UINT type, const std::string& content);
 		void CALLBACK Broadcast_Notify_TOPIC(const SetId& set, DWORD idWho, DWORD idWhere, const std::tstring& topic);
+		void CALLBACK Broadcast_Notify_ACCESS(const SetId& set, DWORD idWho, DWORD idWhere, EChanStatus stat, DWORD idBy);
 		void CALLBACK Send_Notify_BEEP(SOCKET sock, DWORD idBy);
+		void CALLBACK Send_Notify_MESSAGE(SOCKET sock, DWORD idBy, DWORD dwRtfSize, const char* text, bool bCloseOnDisconnect, bool fAlert, COLORREF crSheet, const FILETIME& ft);
+		void CALLBACK Send_Reply_MESSAGE(SOCKET sock, WORD trnid, DWORD idWho, UINT type);
 		void CALLBACK Send_Notify_SPLASHRTF(SOCKET sock, DWORD idBy, DWORD dwRtfSize, const char* text,
 			const RECT& rcPos, bool bCloseOnDisconnect, DWORD dwCanclose, DWORD dwAutoclose,
 			bool fTransparent, COLORREF crSheet);

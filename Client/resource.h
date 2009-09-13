@@ -34,6 +34,8 @@
 #define IDM_USER                        157
 #define IDR_ACCELERATOR1                159
 #define IDA_RICHEDIT                    159
+#define IDD_MSGSEND                     161
+#define IDD_MSGRECV                     162
 #define IDC_LOG                         1001
 #define IDC_USERLIST                    1002
 #define IDC_RICHEDIT                    1003
@@ -60,6 +62,10 @@
 #define IDC_AUTOCLOSE                   1052
 #define IDC_AUTOCLOSESPIN               1053
 #define IDC_RICHEDIT21                  1054
+#define IDC_CHECK1                      1056
+#define IDC_DATETIMEPICKER1             1058
+#define IDC_RECVTIME                    1058
+#define IDC_REPLY                       1059
 #define IDC_NICK                        40002
 #define IDC_CONNECT                     40004
 #define IDC_SENDBYENTER                 40017
@@ -112,9 +118,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        161
+#define _APS_NEXT_RESOURCE_VALUE        163
 #define _APS_NEXT_COMMAND_VALUE         40080
-#define _APS_NEXT_CONTROL_VALUE         1055
+#define _APS_NEXT_CONTROL_VALUE         1060
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

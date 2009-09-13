@@ -1,10 +1,17 @@
 // Microsoft Visual C++ generated Help ID include file.
 // Used by Client.rc
 //
-#define HIDCANCEL                       0x809e0002    // IDD_SPLASHRTFEDITOR [English (United States)]
+#define HIDCANCEL                       0x80a20002    // IDD_MSGRECV [English (United States)]
+#define HIDC_ALERT                      0x80a19c8b    // IDD_MSGSEND [English (United States)]
 #define HIDC_AUTOCLOSE                  0x809e041c    // IDD_SPLASHRTFEDITOR [English (United States)]
 #define HIDC_AUTOCLOSESPIN              0x809e041d    // IDD_SPLASHRTFEDITOR [English (United States)]
+#define HIDC_NICK                       0x80a19c42    // IDD_MSGSEND [English (United States)]
+#define HIDC_PRIVATETALK                0x80a29c73    // IDD_MSGRECV [English (United States)]
+#define HIDC_RECVTIME                   0x80a20422    // IDD_MSGRECV [English (United States)]
+#define HIDC_REPLY                      0x80a20423    // IDD_MSGRECV [English (United States)]
+#define HIDC_RICHEDIT                   0x80a203eb    // IDD_MSGRECV [English (United States)]
 #define HIDC_SPLASHRTF                  0x809e9c74    // IDD_SPLASHRTFEDITOR [English (United States)]
-#define HIDC_TOOLBAR                    0x809e0064    // IDD_SPLASHRTFEDITOR [English (United States)]
+#define HIDC_STATIC1                    0x80a10416    // IDD_MSGSEND [English (United States)]
+#define HIDC_TOOLBAR                    0x80a10064    // IDD_MSGSEND [English (United States)]
 #define HIDC_TOPICTEXT                  0x80990415    // IDD_TOPIC [English (United States)]
-#define HIDOK                           0x809e0001    // IDD_SPLASHRTFEDITOR [English (United States)]
+#define HIDOK                           0x80a20001    // IDD_MSGSEND [English (United States)]

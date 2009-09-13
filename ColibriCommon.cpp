@@ -43,9 +43,9 @@ void CALLBACK io::pack(std::ostream& os, const colibrichat::User& data)
 void CALLBACK io::pack(std::ostream& os, const colibrichat::Channel& data)
 {
 	io::pack(os, data.name);
+	io::pack(os, data.password);
 	io::pack(os, data.opened);
 	io::pack(os, data.ftCreation);
-	io::pack(os, data.password);
 	io::pack(os, data.topic);
 	io::pack(os, data.idTopicWriter);
 	io::pack(os, data.writer);
@@ -86,9 +86,9 @@ void CALLBACK io::unpack(io::mem& is, colibrichat::User& data)
 void CALLBACK io::unpack(io::mem& is, colibrichat::Channel& data)
 {
 	io::unpack(is, data.name);
+	io::unpack(is, data.password);
 	io::unpack(is, data.opened);
 	io::unpack(is, data.ftCreation);
-	io::unpack(is, data.password);
 	io::unpack(is, data.topic);
 	io::unpack(is, data.idTopicWriter);
 	io::unpack(is, data.writer);

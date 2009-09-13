@@ -252,20 +252,20 @@ bool CALLBACK JServer::hasCRC(DWORD crc) const
 bool CALLBACK JServer::linkCRC(DWORD crc1, DWORD crc2)
 {
 	Contact *cont1, *cont2;
-	MapUser::iterator iter1;
-	MapChannel::iterator iter2;
-	iter1 = m_mUser.find(crc1);
-	if (iter1 == m_mUser.end()) {
-		iter2 = m_mChannel.find(crc1);
-		if (iter2 == m_mChannel.end()) return false;
-		else cont1 = &iter2->second;
-	} else cont1 = &iter1->second;
-	iter1 = m_mUser.find(crc2);
-	if (iter1 == m_mUser.end()) {
-		iter2 = m_mChannel.find(crc2);
-		if (iter2 == m_mChannel.end()) return false;
-		else cont2 = &iter2->second;
-	} else cont2 = &iter1->second;
+	MapUser::iterator iu;
+	MapChannel::iterator ic;
+	iu = m_mUser.find(crc1);
+	if (iu == m_mUser.end()) {
+		ic = m_mChannel.find(crc1);
+		if (ic == m_mChannel.end()) return false;
+		else cont1 = &ic->second;
+	} else cont1 = &iu->second;
+	iu = m_mUser.find(crc2);
+	if (iu == m_mUser.end()) {
+		ic = m_mChannel.find(crc2);
+		if (ic == m_mChannel.end()) return false;
+		else cont2 = &ic->second;
+	} else cont2 = &iu->second;
 	cont1->opened.insert(crc2);
 	cont2->opened.insert(crc1);
 	return true;
@@ -273,25 +273,25 @@ bool CALLBACK JServer::linkCRC(DWORD crc1, DWORD crc2)
 
 void CALLBACK JServer::unlinkCRC(DWORD crc1, DWORD crc2)
 {
-	MapUser::iterator iter1;
-	MapChannel::iterator iter2;
-	iter1 = m_mUser.find(crc1);
-	if (iter1 != m_mUser.end()) iter1->second.opened.erase(crc2);
+	MapUser::iterator iu;
+	MapChannel::iterator ic;
+	iu = m_mUser.find(crc1);
+	if (iu != m_mUser.end()) iu->second.opened.erase(crc2);
 	else {
-		iter2 = m_mChannel.find(crc1);
-		if (iter2 != m_mChannel.end()) {
-			iter2->second.opened.erase(crc2);
-			if (iter2->second.opened.empty())
+		ic = m_mChannel.find(crc1);
+		if (ic != m_mChannel.end()) {
+			ic->second.opened.erase(crc2);
+			if (ic->second.opened.empty())
 				m_mChannel.erase(crc1);
 		}
 	}
-	iter1 = m_mUser.find(crc2);
-	if (iter1 != m_mUser.end()) iter1->second.opened.erase(crc1);
+	iu = m_mUser.find(crc2);
+	if (iu != m_mUser.end()) iu->second.opened.erase(crc1);
 	else {
-		iter2 = m_mChannel.find(crc2);
-		if (iter2 != m_mChannel.end()) {
-			iter2->second.opened.erase(crc1);
-			if (iter2->second.opened.empty())
+		ic = m_mChannel.find(crc2);
+		if (ic != m_mChannel.end()) {
+			ic->second.opened.erase(crc1);
+			if (ic->second.opened.empty())
 				m_mChannel.erase(crc2);
 		}
 	}
@@ -310,17 +310,17 @@ std::tstring CALLBACK JServer::getNearestName(const std::tstring& nick) const
 	return buffer;
 }
 
-void CALLBACK JServer::RenameContact(DWORD idOld, DWORD idNew, const std::tstring& newname)
+void CALLBACK JServer::RenameContact(SOCKET sock, DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname)
 {
 	ASSERT(idNew != idOld);
 	SetId opened;
-	MapUser::iterator iter1 = m_mUser.find(idOld);
-	if (iter1 != m_mUser.end()) { // private talk
-		opened = iter1->second.opened;
-		iter1->second.name = newname;
-		m_mUser[idNew] = iter1->second;
-		m_mSocketId[m_mIdSocket[idOld]] = idNew;
-		m_mIdSocket[idNew] = m_mIdSocket[idOld];
+	MapUser::iterator iu = m_mUser.find(idOld);
+	if (iu != m_mUser.end()) { // private talk
+		opened = iu->second.opened;
+		iu->second.name = newname;
+		m_mUser[idNew] = iu->second;
+		m_mSocketId[sock] = idNew;
+		m_mIdSocket[idNew] = sock;
 		for each (SetId::value_type const& v in opened) {
 			linkCRC(idNew, v);
 			unlinkCRC(idOld, v);
@@ -329,36 +329,16 @@ void CALLBACK JServer::RenameContact(DWORD idOld, DWORD idNew, const std::tstrin
 		m_mIdSocket.erase(idOld);
 		// replace content of channels access rights
 		for (MapChannel::iterator ic = m_mChannel.begin(); ic != m_mChannel.end(); ic++) {
-			switch (ic->second.getStatus(idOld))
-			{
-			case eFounder:
-				ic->second.founder.insert(idNew);
-				ic->second.founder.erase(idOld);
-				break;
-			case eAdmin:
-				ic->second.admin.insert(idNew);
-				ic->second.admin.erase(idOld);
-				break;
-			case eModerator:
-				ic->second.moderator.insert(idNew);
-				ic->second.moderator.erase(idOld);
-				break;
-			case eMember:
-				ic->second.member.insert(idNew);
-				ic->second.member.erase(idOld);
-				break;
-			case eWriter:
-				ic->second.writer.insert(idNew);
-				ic->second.writer.erase(idOld);
-				break;
-			}
+			ic->second.setStatus(idNew, ic->second.getStatus(idOld));
+			ic->second.setStatus(idOld, eOutsider);
 		}
+		opened.insert(idNew); // send reply to sender
 	} else {
-		MapChannel::iterator iter2 = m_mChannel.find(idOld);
-		if (iter2 != m_mChannel.end()) { // channel
-			opened = iter2->second.opened;
-			iter2->second.name = newname;
-			m_mChannel[idNew] = iter2->second;
+		MapChannel::iterator ic = m_mChannel.find(idOld);
+		if (ic != m_mChannel.end()) { // channel
+			opened = ic->second.opened;
+			ic->second.name = newname;
+			m_mChannel[idNew] = ic->second;
 			for each (SetId::value_type const& v in opened) {
 				linkCRC(idNew, v);
 				unlinkCRC(idOld, v);
@@ -366,7 +346,7 @@ void CALLBACK JServer::RenameContact(DWORD idOld, DWORD idNew, const std::tstrin
 			m_mChannel.erase(idOld);
 		} else return;
 	}
-	Broadcast_Notify_RENAME(opened, idOld, idNew, newname);
+	Broadcast_Notify_NICK(opened, result, idOld, idNew, newname);
 }
 
 void JServer::OnHook(JEventable* src)
@@ -395,7 +375,7 @@ void JServer::OnLinkDestroy(SOCKET sock)
 			unlinkCRC(idSrc, v);
 			MapUser::const_iterator iu = m_mUser.find(v);
 			if (iu != m_mUser.end()) { // private talk
-				Send_Notify_PART(m_mIdSocket[v], idSrc, v, CRC_SERVER);
+				Send_Notify_PART(m_mIdSocket[v], idSrc, idSrc, CRC_SERVER);
 			} else {
 				MapChannel::const_iterator ic = m_mChannel.find(v);
 				if (ic != m_mChannel.end()) { // channel
@@ -448,7 +428,7 @@ void JServer::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 		TrnParser parser;
 	} responseTable[] =
 	{
-		{QUEST(CCPM_NICK), &JServer::Recv_Quest_NICK},
+		{COMMAND(CCPM_NICK), &JServer::Recv_Cmd_NICK},
 		{QUEST(CCPM_LIST), &JServer::Recv_Quest_LIST},
 		{QUEST(CCPM_JOIN), &JServer::Recv_Quest_JOIN},
 		{COMMAND(CCPM_PART), &JServer::Recv_Cmd_PART},
@@ -457,13 +437,13 @@ void JServer::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 		{COMMAND(CCPM_STATUS), &JServer::Recv_Cmd_STATUS},
 		{COMMAND(CCPM_SAY), &JServer::Recv_Cmd_SAY},
 		{COMMAND(CCPM_TOPIC), &JServer::Recv_Cmd_TOPIC},
+		{COMMAND(CCPM_ACCESS), &JServer::Recv_Cmd_ACCESS},
 		{COMMAND(CCPM_BEEP), &JServer::Recv_Cmd_BEEP},
+		{QUEST(CCPM_MESSAGE), &JServer::Recv_Quest_MESSAGE},
 		{COMMAND(CCPM_SPLASHRTF), &JServer::Recv_Cmd_SPLASHRTF},
 	};
-	for (int i = 0; i < _countof(responseTable); i++)
-	{
-		if (responseTable[i].message == message)
-		{
+	for (int i = 0; i < _countof(responseTable); i++) {
+		if (responseTable[i].message == message) {
 			(this->*responseTable[i].parser)(sock, trnid, is);
 			return;
 		}
@@ -509,7 +489,7 @@ int  CALLBACK JServer::BroadcastTrn(const SetId& set, bool nested, WORD message,
 // Beowolf Network Protocol Messages reciving
 //
 
-void CALLBACK JServer::Recv_Quest_NICK(SOCKET sock, WORD trnid, io::mem& is)
+void CALLBACK JServer::Recv_Cmd_NICK(SOCKET sock, WORD trnid, io::mem& is)
 {
 	std::tstring name;
 
@@ -557,14 +537,11 @@ void CALLBACK JServer::Recv_Quest_NICK(SOCKET sock, WORD trnid, io::mem& is)
 		user.name = name;
 		user.IP = si.sin_addr;
 
-		m_mUser[idNew] = user;
-		m_mSocketId[sock] = idNew;
-		m_mIdSocket[idNew] = sock;
-	} else {
-		RenameContact(idOld, idNew, name);
+		m_mUser[idOld] = user;
+		m_mSocketId[sock] = idOld;
+		m_mIdSocket[idOld] = sock;
 	}
-
-	Send_Reply_NICK(sock, trnid, result, idNew, name);
+	RenameContact(sock, result, idOld, idNew, name);
 
 	// Report about message
 	EvReport(tformat(TEXT("nickname added: %s"), name.c_str()), netengine::eInformation, netengine::eNormal);
@@ -689,7 +666,7 @@ void CALLBACK JServer::Recv_Cmd_PART(SOCKET sock, WORD trnid, io::mem& is)
 		// Report about message
 		EvReport(tformat(TEXT("parts %s from %s"), iuWho->second.name.c_str(), iu->second.name.c_str()), netengine::eInformation, netengine::eNormal);
 
-		Send_Notify_PART(m_mIdSocket[idWhere], idWho, idWhere, idBy);
+		Send_Notify_PART(m_mIdSocket[idWhere], idWho, idWho, idBy); // recieves to close private with idWho
 		Send_Notify_PART(sock, idBy, idWhere, idBy);
 		unlinkCRC(idWho, idWhere);
 	} else {
@@ -861,7 +838,8 @@ void CALLBACK JServer::Recv_Cmd_SAY(SOCKET sock, WORD trnid, io::mem& is)
 	} else {
 		MapChannel::const_iterator ic = m_mChannel.find(idWhere);
 		if (ic != m_mChannel.end()) { // channel
-			Broadcast_Notify_SAY(ic->second.opened, idSrc, idWhere, type, content);
+			if (ic->second.getStatus(idSrc) > eReader)
+				Broadcast_Notify_SAY(ic->second.opened, idSrc, idWhere, type, content);
 		}
 	}
 }
@@ -903,6 +881,40 @@ void CALLBACK JServer::Recv_Cmd_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
+void CALLBACK JServer::Recv_Cmd_ACCESS(SOCKET sock, WORD trnid, io::mem& is)
+{
+	DWORD idWho, idWhere;
+	EChanStatus stat;
+
+	try
+	{
+		io::unpack(is, idWho);
+		io::unpack(is, idWhere);
+		io::unpack(is, stat);
+	}
+	catch (io::exception e)
+	{
+		switch (e.count)
+		{
+		case 0:
+			// Report about message
+			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			return;
+		}
+	}
+
+	DWORD idSrc = m_mSocketId[sock];
+	MapUser::const_iterator iu = m_mUser.find(idWhere);
+	if (iu != m_mUser.end()) { // private talk
+	} else {
+		MapChannel::iterator ic = m_mChannel.find(idWhere);
+		if (ic != m_mChannel.end()) { // channel
+			ic->second.setStatus(idWho, stat);
+			Broadcast_Notify_ACCESS(ic->second.opened, idWho, idWhere, stat, idSrc);
+		}
+	}
+}
+
 void CALLBACK JServer::Recv_Cmd_BEEP(SOCKET sock, WORD trnid, io::mem& is)
 {
 	DWORD idWho;
@@ -933,6 +945,58 @@ void CALLBACK JServer::Recv_Cmd_BEEP(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
+void CALLBACK JServer::Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
+{
+	DWORD idWho;
+	DWORD dwRtfSize;
+	const void* ptr;
+	bool bCloseOnDisconnect;
+	bool fAlert;
+	COLORREF crSheet;
+
+	try
+	{
+		io::unpack(is, idWho);
+		io::unpack(is, dwRtfSize);
+		io::unpackptr(is, ptr, dwRtfSize);
+		io::unpack(is, bCloseOnDisconnect);
+		io::unpack(is, fAlert);
+		io::unpack(is, crSheet);
+	}
+	catch (io::exception e)
+	{
+		switch (e.count)
+		{
+		case 0:
+		case 1:
+		case 2:
+			// Report about message
+			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			return;
+
+		case 3:
+			fAlert = false;
+		}
+	}
+
+	FILETIME ft;
+	GetSystemFileTime(ft);
+
+	DWORD idBy = m_mSocketId[sock];
+	MapUser::const_iterator iu = m_mUser.find(idWho);
+	if (iu != m_mUser.end()) { // private talk
+		Send_Notify_MESSAGE(m_mIdSocket[idWho], idBy, dwRtfSize, (const char*)ptr, bCloseOnDisconnect, fAlert, crSheet, ft);
+		Send_Reply_MESSAGE(sock, trnid, idWho, MESSAGE_SENT);
+	} else {
+		MapChannel::iterator ic = m_mChannel.find(idWho);
+		if (ic != m_mChannel.end()) { // channel
+			Send_Reply_MESSAGE(sock, trnid, idWho, MESSAGE_IGNORE);
+		} else {
+			Send_Reply_MESSAGE(sock, trnid, idWho, MESSAGE_IGNORE);
+		}
+	}
+}
+
 void CALLBACK JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is)
 {
 	DWORD idWho;
@@ -943,6 +1007,7 @@ void CALLBACK JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is)
 	DWORD dwCanclose, dwAutoclose;
 	bool fTransparent;
 	COLORREF crSheet;
+
 	try
 	{
 		io::unpack(is, idWho);
@@ -997,22 +1062,14 @@ void CALLBACK JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is)
 // Beowolf Network Protocol Messages sending
 //
 
-void CALLBACK JServer::Send_Reply_NICK(SOCKET sock, WORD trnid, DWORD result, DWORD id, const std::tstring& nick)
+void CALLBACK JServer::Broadcast_Notify_NICK(const SetId& set, DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname)
 {
 	std::ostringstream os;
 	io::pack(os, result);
-	io::pack(os, id);
-	io::pack(os, nick);
-	PushTrn(sock, REPLY(CCPM_NICK), trnid, os.str());
-}
-
-void CALLBACK JServer::Broadcast_Notify_RENAME(const SetId& set, DWORD idOld, DWORD idNew, const std::tstring& newname)
-{
-	std::ostringstream os;
 	io::pack(os, idOld);
 	io::pack(os, idNew);
 	io::pack(os, newname);
-	BroadcastTrn(set, true, NOTIFY(CCPM_RENAME), os.str());
+	BroadcastTrn(set, true, NOTIFY(CCPM_NICK), os.str());
 }
 
 void CALLBACK JServer::Send_Reply_LIST(SOCKET sock, WORD trnid)
@@ -1166,11 +1223,42 @@ void CALLBACK JServer::Broadcast_Notify_TOPIC(const SetId& set, DWORD idWho, DWO
 	BroadcastTrn(set, false, NOTIFY(CCPM_TOPIC), os.str());
 }
 
+void CALLBACK JServer::Broadcast_Notify_ACCESS(const SetId& set, DWORD idWho, DWORD idWhere, EChanStatus stat, DWORD idBy)
+{
+	std::ostringstream os;
+	io::pack(os, idWho);
+	io::pack(os, idWhere);
+	io::pack(os, stat);
+	io::pack(os, idBy);
+	BroadcastTrn(set, false, NOTIFY(CCPM_ACCESS), os.str());
+}
+
 void CALLBACK JServer::Send_Notify_BEEP(SOCKET sock, DWORD idBy)
 {
 	std::ostringstream os;
 	io::pack(os, idBy);
 	PushTrn(sock, NOTIFY(CCPM_BEEP), 0, os.str());
+}
+
+void CALLBACK JServer::Send_Notify_MESSAGE(SOCKET sock, DWORD idBy, DWORD dwRtfSize, const char* text, bool bCloseOnDisconnect, bool fAlert, COLORREF crSheet, const FILETIME& ft)
+{
+	std::ostringstream os;
+	io::pack(os, idBy);
+	io::pack(os, dwRtfSize);
+	os.write(text, (std::streamsize)dwRtfSize);
+	io::pack(os, bCloseOnDisconnect);
+	io::pack(os, fAlert);
+	io::pack(os, crSheet);
+	io::pack(os, ft);
+	PushTrn(sock, NOTIFY(CCPM_MESSAGE), 0, os.str());
+}
+
+void CALLBACK JServer::Send_Reply_MESSAGE(SOCKET sock, WORD trnid, DWORD idWho, UINT type)
+{
+	std::ostringstream os;
+	io::pack(os, idWho);
+	io::pack(os, type);
+	PushTrn(sock, REPLY(CCPM_MESSAGE), trnid, os.str());
 }
 
 void CALLBACK JServer::Send_Notify_SPLASHRTF(SOCKET sock, DWORD idBy, DWORD dwRtfSize, const char* text, const RECT& rcPos, bool bCloseOnDisconnect, DWORD dwCanclose, DWORD dwAutoclose, bool fTransparent, COLORREF crSheet)

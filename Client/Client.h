@@ -66,12 +66,15 @@
 // Sounds
 #define RK_WAVMELINE           TEXT("MeLine")
 #define RK_WAVCHATLINE         TEXT("ChatLine")
+#define RK_WAVCONFIRM          TEXT("Confirm")
 #define RK_WAVPRIVATELINE      TEXT("PrivateLine")
 #define RK_WAVTOPIC            TEXT("Topic")
 #define RK_WAVJOIN             TEXT("Join")
 #define RK_WAVPART             TEXT("Part")
 #define RK_WAVPRIVATE          TEXT("Private")
 #define RK_WAVBEEP             TEXT("Beep")
+#define RK_WAVALERT            TEXT("Alert")
+#define RK_WAVMESSAGE          TEXT("Message")
 
 // --- Toolbar's image list indexes ---
 
@@ -170,6 +173,11 @@ namespace colibrichat
 		typedef std::map<DWORD, JPtr<JPageBoard>> MapPageBoard;
 
 		class JTopic;
+		class JSplashRtfEditor;
+		class JSplash;
+		class JSplashRtf;
+		class JMessageEditor;
+		class JMessage;
 
 		//
 		// Pages
@@ -338,6 +346,8 @@ namespace colibrichat
 		{
 		public:
 
+			friend class JClient;
+
 			CALLBACK JPageUser(DWORD id, const std::tstring& nick);
 
 			int CALLBACK ImageIndex() const;
@@ -380,6 +390,8 @@ namespace colibrichat
 		{
 		public:
 
+			friend class JClient;
+
 			CALLBACK JPageChannel(DWORD id, const std::tstring& nick);
 
 			int CALLBACK ImageIndex() const;
@@ -396,9 +408,9 @@ namespace colibrichat
 			void CALLBACK Disable();
 
 			void CALLBACK setchannel(const Channel& val);
-			void CALLBACK settopic(const std::tstring& topic, DWORD id);
 			void CALLBACK rename(DWORD idNew, const std::tstring& newname);
 			bool CALLBACK replace(DWORD idOld, DWORD idNew);
+			void CALLBACK redrawUser(DWORD idUser);
 
 			void CALLBACK Join(DWORD idUser);
 			void CALLBACK Part(DWORD idUser, DWORD idBy);
@@ -477,7 +489,7 @@ namespace colibrichat
 
 		protected:
 
-			DWORD dwWho;
+			DWORD idWho;
 			RECT rcAutoclose, rcAutocloseSpin, rcSend, rcCancel;
 		};
 
@@ -534,6 +546,58 @@ namespace colibrichat
 			std::string content;
 		};
 
+		class JMessageEditor : public JDialog, public rtf::Editor, public JAttachment<JClient>
+		{
+		public:
+
+			CALLBACK JMessageEditor(JClient* p, const std::tstring& who, bool alert = false);
+
+		protected:
+
+			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
+
+			void OnHook(JEventable* src);
+			void OnUnhook(JEventable* src);
+
+			void OnLinkEstablished(SOCKET sock);
+			void OnLinkDestroy(SOCKET sock);
+
+		protected:
+
+			std::tstring strWho;
+			bool fAlert;
+			RECT rcStatic1, rcNick, rcAlert, rcSend, rcCancel;
+		};
+
+		class JMessage : public JAttachedDialog<JClient>
+		{
+		public:
+
+			CALLBACK JMessage(JClient* p);
+
+		protected:
+
+			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
+
+			void OnHook(JEventable* src);
+			void OnUnhook(JEventable* src);
+
+			void OnLinkEstablished(SOCKET sock);
+			void OnLinkDestroy(SOCKET sock);
+
+		protected:
+
+			JPROPERTY_RW(DWORD, idWho);
+			JPROPERTY_RW(std::string, content);
+
+			JPROPERTY_RW(bool, bCloseOnDisconnect);
+			JPROPERTY_RW(bool, fAlert);
+			JPROPERTY_RW(COLORREF, crSheet);
+			JPROPERTY_RW(FILETIME, ftRecv);
+
+			RECT rcText, rcTime, rcReply, rcPrivate, rcCancel;
+		};
+
 	public:
 
 		// Constructor
@@ -574,6 +638,7 @@ namespace colibrichat
 		void CALLBACK PlaySound(const TCHAR* snd);
 
 		// Users managment
+		std::tstring getSafeName(DWORD idUser) const;
 		void CALLBACK InsertUser(DWORD idUser, const User& user);
 		void CALLBACK LinkUser(DWORD idUser, DWORD idLink);
 		void CALLBACK UnlinkUser(DWORD idUser, DWORD idLink);
@@ -581,8 +646,7 @@ namespace colibrichat
 	protected:
 
 		// Beowolf Network Protocol Messages reciving
-		void CALLBACK Recv_Reply_NICK(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Notify_RENAME(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Notify_NICK(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_JOIN(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_PART(SOCKET sock, WORD trnid, io::mem& is);
@@ -591,11 +655,14 @@ namespace colibrichat
 		void CALLBACK Recv_Notify_STATUS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_SAY(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Notify_ACCESS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_BEEP(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Notify_MESSAGE(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is);
 
 		// Beowolf Network Protocol Messages sending
-		void CALLBACK Send_Quest_NICK(SOCKET sock, const std::tstring& nick);
+		void CALLBACK Send_Cmd_NICK(SOCKET sock, const std::tstring& nick);
 		void CALLBACK Send_Quest_JOIN(SOCKET sock, const std::tstring& name, const std::tstring& pass = TEXT(""));
 		void CALLBACK Send_Cmd_PART(SOCKET sock, DWORD idWho, DWORD idWhere);
 		void CALLBACK Send_Quest_USERINFO(SOCKET sock, const SetId& set);
@@ -606,7 +673,9 @@ namespace colibrichat
 		void CALLBACK Send_Cmd_STATUS(SOCKET sock, EUserStatus stat, int img, const std::tstring& msg);
 		void CALLBACK Send_Cmd_SAY(SOCKET sock, DWORD idWhere, UINT type, const std::string& content);
 		void CALLBACK Send_Cmd_TOPIC(SOCKET sock, DWORD idWhere, const std::tstring& topic);
+		void CALLBACK Send_Cmd_ACCESS(SOCKET sock, DWORD idWho, DWORD idWhere, EChanStatus stat);
 		void CALLBACK Send_Cmd_BEEP(SOCKET sock, DWORD idWho);
+		void CALLBACK Send_Quest_MESSAGE(SOCKET sock, DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet);
 		void CALLBACK Send_Cmd_SPLASHRTF(SOCKET sock, DWORD idWho, const std::string& text,
 			const RECT& rcPos, bool bCloseOnDisconnect = true, DWORD dwCanclose = 2500, DWORD dwAutoclose = 30000,
 			bool fTransparent = true, COLORREF crSheet = RGB(255, 255, 255));
@@ -622,6 +691,7 @@ namespace colibrichat
 
 	public:
 
+		static std::map<EChanStatus, std::tstring> s_mapChanStatName;
 		static Alert s_mapAlert[];
 
 		// --- Events ---
@@ -665,6 +735,9 @@ namespace colibrichat
 	{
 	public:
 
+		static void CALLBACK s_Init();
+		static void CALLBACK s_Done();
+
 		virtual void CALLBACK Init();
 		virtual bool CALLBACK InitInstance();
 		virtual void CALLBACK Done();
@@ -705,6 +778,7 @@ namespace colibrichat
 		// Waves
 		JPROPERTY_R(std::tstring, strWavMeline);
 		JPROPERTY_R(std::tstring, strWavChatline);
+		JPROPERTY_R(std::tstring, strWavConfirm);
 		JPROPERTY_R(std::tstring, strWavPrivateline);
 		JPROPERTY_R(std::tstring, strWavTopic);
 		JPROPERTY_R(std::tstring, strWavJoin);
