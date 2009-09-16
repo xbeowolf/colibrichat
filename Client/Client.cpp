@@ -914,6 +914,7 @@ void JClient::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 		{NOTIFY(CCPM_STATUS), &JClient::Recv_Notify_STATUS},
 		{NOTIFY(CCPM_SAY), &JClient::Recv_Notify_SAY},
 		{NOTIFY(CCPM_TOPIC), &JClient::Recv_Notify_TOPIC},
+		{NOTIFY(CCPM_BACKGROUND), &JClient::Recv_Notify_BACKGROUND},
 		{NOTIFY(CCPM_ACCESS), &JClient::Recv_Notify_ACCESS},
 		{NOTIFY(CCPM_BEEP), &JClient::Recv_Notify_BEEP},
 		{REPLY(CCPM_MESSAGE), &JClient::Recv_Reply_MESSAGE},
@@ -1425,6 +1426,60 @@ void CALLBACK JClient::Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
+void CALLBACK JClient::Recv_Notify_BACKGROUND(SOCKET sock, WORD trnid, io::mem& is)
+{
+	DWORD idWho, idWhere;
+	COLORREF cr;
+
+	try
+	{
+		io::unpack(is, idWho);
+		io::unpack(is, idWhere);
+		io::unpack(is, cr);
+	}
+	catch (io::exception e)
+	{
+		switch (e.count)
+		{
+		case 0:
+		case 1:
+			// Report about message
+			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			return;
+
+		case 2:
+			cr = GetSysColor(COLOR_WINDOW);
+		}
+	}
+
+	JPtr<JPageLog> jp;
+	MapPageUser::iterator ipu = mPageUser.find(idWhere);
+	if (ipu != mPageUser.end()) { // private talk
+		jp = ipu->second;
+
+		SendMessage(ipu->second->hwndEdit, EM_SETBKGNDCOLOR, FALSE, (LPARAM)cr);
+		SendMessage(ipu->second->hwndLog, EM_SETBKGNDCOLOR, FALSE, (LPARAM)cr);
+	} else {
+		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
+		if (ipc != mPageChannel.end()) { // channel
+			jp = ipc->second;
+			ipc->second->m_channel.crBackground = cr;
+
+			SendMessage(ipc->second->hwndEdit, EM_SETBKGNDCOLOR, FALSE, (LPARAM)cr);
+			SendMessage(ipc->second->hwndLog, EM_SETBKGNDCOLOR, FALSE, (LPARAM)cr);
+			ListView_SetBkColor(ipc->second->hwndList, cr);
+			InvalidateRect(ipc->second->hwndList, 0, TRUE);
+		}
+	}
+	if (jp) {
+		jp->AppendScript(tformat(TEXT("[style=Descr][color=%s]%s[/color] changes sheet color[/style]"),
+			idWho != m_idOwn ? TEXT("red") : TEXT("blue"),
+			getSafeName(idWho).c_str()));
+		if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fPlayChatSounds)
+			PlaySound(JClientApp::jpApp->strWavTopic.c_str());
+	}
+}
+
 void CALLBACK JClient::Recv_Notify_ACCESS(SOCKET sock, WORD trnid, io::mem& is)
 {
 	DWORD idWho, idWhere, idBy;
@@ -1749,6 +1804,14 @@ void CALLBACK JClient::Send_Cmd_TOPIC(SOCKET sock, DWORD idWhere, const std::tst
 	io::pack(os, idWhere);
 	io::pack(os, topic);
 	PushTrn(sock, COMMAND(CCPM_TOPIC), 0, os.str());
+}
+
+void CALLBACK JClient::Send_Cmd_BACKGROUND(SOCKET sock, DWORD idWhere, COLORREF cr)
+{
+	std::ostringstream os;
+	io::pack(os, idWhere);
+	io::pack(os, cr);
+	PushTrn(sock, COMMAND(CCPM_BACKGROUND), 0, os.str());
 }
 
 void CALLBACK JClient::Send_Cmd_ACCESS(SOCKET sock, DWORD idWho, DWORD idWhere, EChanStatus stat)

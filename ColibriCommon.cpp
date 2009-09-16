@@ -57,6 +57,7 @@ void CALLBACK io::pack(std::ostream& os, const colibrichat::Channel& data)
 	io::pack(os, data.nLimit);
 	io::pack(os, data.isHidden);
 	io::pack(os, data.isAnonymous);
+	io::pack(os, data.crBackground);
 }
 
 void CALLBACK io::unpack(io::mem& is, colibrichat::SetId& data)
@@ -100,6 +101,7 @@ void CALLBACK io::unpack(io::mem& is, colibrichat::Channel& data)
 	io::unpack(is, data.nLimit);
 	io::unpack(is, data.isHidden);
 	io::unpack(is, data.isAnonymous);
+	io::unpack(is, data.crBackground);
 }
 
 //-----------------------------------------------------------------------------

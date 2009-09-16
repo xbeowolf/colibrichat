@@ -1228,6 +1228,14 @@ int CALLBACK JClient::JPageUser::ImageIndex() const
 	}
 }
 
+void CALLBACK JClient::JPageUser::OnSheetColor(COLORREF cr)
+{
+	__super::OnSheetColor(cr);
+
+	ASSERT(pSource);
+	pSource->Send_Cmd_BACKGROUND(pSource->m_clientsock, m_ID, cr);
+}
+
 void CALLBACK JClient::JPageUser::rename(DWORD idNew, const std::tstring& newname)
 {
 	m_ID = idNew;
@@ -1590,6 +1598,7 @@ CALLBACK JClient::JPageChannel::JPageChannel(DWORD id, const std::tstring& nick)
 {
 	m_ID = id;
 	m_channel.name = nick;
+	m_channel.crBackground = GetSysColor(COLOR_WINDOW);
 }
 
 void CALLBACK JClient::JPageChannel::Enable()
@@ -1629,6 +1638,16 @@ std::tstring JClient::JPageChannel::gettopic() const
 		return tformat(TEXT("#%s: %s"), m_channel.name.c_str(), m_channel.topic.c_str());
 	} else {
 		return tformat(TEXT("#%s: %s (%s)"), m_channel.name.c_str(), m_channel.topic.c_str(), pSource->mUser.find(m_channel.idTopicWriter)->second.name.c_str());
+	}
+}
+
+void CALLBACK JClient::JPageChannel::OnSheetColor(COLORREF cr)
+{
+	__super::OnSheetColor(cr);
+
+	ASSERT(pSource);
+	if (m_channel.getStatus(pSource->m_idOwn) >= eMember) {
+		pSource->Send_Cmd_BACKGROUND(pSource->m_clientsock, m_ID, cr);
 	}
 }
 
@@ -2428,8 +2447,18 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 void CALLBACK JClient::JPageChannel::BuildView()
 {
+	SendMessage(m_hwndList, WM_SETREDRAW, FALSE, 0);
+
+	// Set background color
+	SendMessage(m_hwndEdit, EM_SETBKGNDCOLOR, FALSE, (LPARAM)m_channel.crBackground);
+	SendMessage(m_hwndLog, EM_SETBKGNDCOLOR, FALSE, (LPARAM)m_channel.crBackground);
+	ListView_SetBkColor(m_hwndList, m_channel.crBackground);
+
 	for each (SetId::value_type const& v in m_channel.opened)
 		AddLine(v);
+
+	SendMessage(m_hwndList, WM_SETREDRAW, TRUE, 0);
+	InvalidateRect(m_hwndList, 0, TRUE);
 }
 
 void CALLBACK JClient::JPageChannel::ClearView()

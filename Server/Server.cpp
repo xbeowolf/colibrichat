@@ -437,6 +437,7 @@ void JServer::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 		{COMMAND(CCPM_STATUS), &JServer::Recv_Cmd_STATUS},
 		{COMMAND(CCPM_SAY), &JServer::Recv_Cmd_SAY},
 		{COMMAND(CCPM_TOPIC), &JServer::Recv_Cmd_TOPIC},
+		{COMMAND(CCPM_BACKGROUND), &JServer::Recv_Cmd_BACKGROUND},
 		{COMMAND(CCPM_ACCESS), &JServer::Recv_Cmd_ACCESS},
 		{COMMAND(CCPM_BEEP), &JServer::Recv_Cmd_BEEP},
 		{QUEST(CCPM_MESSAGE), &JServer::Recv_Quest_MESSAGE},
@@ -624,6 +625,7 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 			chan.nLimit = -1;
 			chan.isHidden = false;
 			chan.isAnonymous = false;
+			chan.crBackground = RGB(0xFF, 0xFF, 0xFF);
 			m_mChannel[idDst] = chan;
 
 			linkCRC(idDst, idSrc);
@@ -876,6 +878,43 @@ void CALLBACK JServer::Recv_Cmd_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 				ic->second.idTopicWriter = idSrc;
 
 				Broadcast_Notify_TOPIC(ic->second.opened, idSrc, idWhere, topic);
+			}
+		}
+	}
+}
+
+void CALLBACK JServer::Recv_Cmd_BACKGROUND(SOCKET sock, WORD trnid, io::mem& is)
+{
+	DWORD idWhere;
+	COLORREF cr;
+
+	try
+	{
+		io::unpack(is, idWhere);
+		io::unpack(is, cr);
+	}
+	catch (io::exception e)
+	{
+		switch (e.count)
+		{
+		case 0:
+			// Report about message
+			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			return;
+		}
+	}
+
+	DWORD idSrc = m_mSocketId[sock];
+	MapUser::const_iterator iu = m_mUser.find(idWhere);
+	if (iu != m_mUser.end()) { // private talk
+		Send_Notify_BACKGROUND(m_mIdSocket[idWhere], idSrc, idSrc, cr);
+	} else {
+		MapChannel::iterator ic = m_mChannel.find(idWhere);
+		if (ic != m_mChannel.end()) { // channel
+			if (ic->second.getStatus(idSrc) >= eMember) {
+				ic->second.crBackground = cr;
+
+				Broadcast_Notify_BACKGROUND(ic->second.opened, idSrc, idWhere, cr);
 			}
 		}
 	}
@@ -1221,6 +1260,24 @@ void CALLBACK JServer::Broadcast_Notify_TOPIC(const SetId& set, DWORD idWho, DWO
 	io::pack(os, idWhere);
 	io::pack(os, topic);
 	BroadcastTrn(set, false, NOTIFY(CCPM_TOPIC), os.str());
+}
+
+void CALLBACK JServer::Send_Notify_BACKGROUND(SOCKET sock, DWORD idWho, DWORD idWhere, COLORREF cr)
+{
+	std::ostringstream os;
+	io::pack(os, idWho);
+	io::pack(os, idWhere);
+	io::pack(os, cr);
+	PushTrn(sock, NOTIFY(CCPM_BACKGROUND), 0, os.str());
+}
+
+void CALLBACK JServer::Broadcast_Notify_BACKGROUND(const SetId& set, DWORD idWho, DWORD idWhere, COLORREF cr)
+{
+	std::ostringstream os;
+	io::pack(os, idWho);
+	io::pack(os, idWhere);
+	io::pack(os, cr);
+	BroadcastTrn(set, false, NOTIFY(CCPM_BACKGROUND), os.str());
 }
 
 void CALLBACK JServer::Broadcast_Notify_ACCESS(const SetId& set, DWORD idWho, DWORD idWhere, EChanStatus stat, DWORD idBy)

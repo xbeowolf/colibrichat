@@ -362,6 +362,8 @@ namespace colibrichat
 			void CALLBACK Enable();
 			void CALLBACK Disable();
 
+			void CALLBACK OnSheetColor(COLORREF cr);
+
 			void CALLBACK setuser(const User& val) {m_user = val;}
 			void CALLBACK rename(DWORD idNew, const std::tstring& newname);
 
@@ -406,6 +408,8 @@ namespace colibrichat
 
 			void CALLBACK Enable();
 			void CALLBACK Disable();
+
+			void CALLBACK OnSheetColor(COLORREF cr);
 
 			void CALLBACK setchannel(const Channel& val);
 			void CALLBACK rename(DWORD idNew, const std::tstring& newname);
@@ -655,6 +659,7 @@ namespace colibrichat
 		void CALLBACK Recv_Notify_STATUS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_SAY(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Notify_BACKGROUND(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_ACCESS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_BEEP(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is);
@@ -673,6 +678,7 @@ namespace colibrichat
 		void CALLBACK Send_Cmd_STATUS(SOCKET sock, EUserStatus stat, int img, const std::tstring& msg);
 		void CALLBACK Send_Cmd_SAY(SOCKET sock, DWORD idWhere, UINT type, const std::string& content);
 		void CALLBACK Send_Cmd_TOPIC(SOCKET sock, DWORD idWhere, const std::tstring& topic);
+		void CALLBACK Send_Cmd_BACKGROUND(SOCKET sock, DWORD idWhere, COLORREF cr);
 		void CALLBACK Send_Cmd_ACCESS(SOCKET sock, DWORD idWho, DWORD idWhere, EChanStatus stat);
 		void CALLBACK Send_Cmd_BEEP(SOCKET sock, DWORD idWho);
 		void CALLBACK Send_Quest_MESSAGE(SOCKET sock, DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet);

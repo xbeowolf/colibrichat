@@ -130,6 +130,7 @@ namespace colibrichat
 		void CALLBACK Recv_Cmd_STATUS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_SAY(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_TOPIC(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Cmd_BACKGROUND(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_ACCESS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_BEEP(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is);
@@ -151,6 +152,8 @@ namespace colibrichat
 		void CALLBACK Send_Notify_SAY(SOCKET sock, DWORD idWho, DWORD idWhere, UINT type, const std::string& content);
 		void CALLBACK Broadcast_Notify_SAY(const SetId& set, DWORD idWho, DWORD idWhere, UINT type, const std::string& content);
 		void CALLBACK Broadcast_Notify_TOPIC(const SetId& set, DWORD idWho, DWORD idWhere, const std::tstring& topic);
+		void CALLBACK Send_Notify_BACKGROUND(SOCKET sock, DWORD idWho, DWORD idWhere, COLORREF cr);
+		void CALLBACK Broadcast_Notify_BACKGROUND(const SetId& set, DWORD idWho, DWORD idWhere, COLORREF cr);
 		void CALLBACK Broadcast_Notify_ACCESS(const SetId& set, DWORD idWho, DWORD idWhere, EChanStatus stat, DWORD idBy);
 		void CALLBACK Send_Notify_BEEP(SOCKET sock, DWORD idBy);
 		void CALLBACK Send_Notify_MESSAGE(SOCKET sock, DWORD idBy, DWORD dwRtfSize, const char* text, bool bCloseOnDisconnect, bool fAlert, COLORREF crSheet, const FILETIME& ft);

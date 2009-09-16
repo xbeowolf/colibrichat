@@ -77,6 +77,7 @@ namespace colibrichat
 		EChanStatus nAutoStatus; // default access right for incomer
 		UINT nLimit; // maximum users on channel
 		bool isHidden, isAnonymous;
+		COLORREF crBackground; // color of editor, log and list sheet
 
 		EChanStatus CALLBACK getStatus(DWORD idUser) const;
 		void CALLBACK setStatus(DWORD idUser, EChanStatus val);
