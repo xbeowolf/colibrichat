@@ -202,7 +202,7 @@ LRESULT WINAPI JServer::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 					SetMenuDefaultItem(GetSubMenu(hmenu, 0), IDC_SHELL_CONNECTIONS, FALSE);
 					TrackPopupMenu(GetSubMenu(hmenu, 0), TPM_RIGHTALIGN | TPM_BOTTOMALIGN | TPM_RIGHTBUTTON,
 						p.x, p.y, 0, hWnd, 0);
-					DestroyMenu(hmenu);
+					VERIFY(DestroyMenu(hmenu));
 					break;
 				}
 
@@ -440,6 +440,7 @@ void JServer::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 		{COMMAND(CCPM_BACKGROUND), &JServer::Recv_Cmd_BACKGROUND},
 		{COMMAND(CCPM_ACCESS), &JServer::Recv_Cmd_ACCESS},
 		{COMMAND(CCPM_BEEP), &JServer::Recv_Cmd_BEEP},
+		{COMMAND(CCPM_CLIPBOARD), &JServer::Recv_Cmd_CLIPBOARD},
 		{QUEST(CCPM_MESSAGE), &JServer::Recv_Quest_MESSAGE},
 		{COMMAND(CCPM_SPLASHRTF), &JServer::Recv_Cmd_SPLASHRTF},
 	};
@@ -984,23 +985,17 @@ void CALLBACK JServer::Recv_Cmd_BEEP(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JServer::Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
+void CALLBACK JServer::Recv_Cmd_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& is)
 {
 	DWORD idWho;
-	DWORD dwRtfSize;
 	const void* ptr;
-	bool bCloseOnDisconnect;
-	bool fAlert;
-	COLORREF crSheet;
+	size_t size;
 
 	try
 	{
 		io::unpack(is, idWho);
-		io::unpack(is, dwRtfSize);
-		io::unpackptr(is, ptr, dwRtfSize);
-		io::unpack(is, bCloseOnDisconnect);
-		io::unpack(is, fAlert);
-		io::unpack(is, crSheet);
+		size = is.getsize();
+		io::unpackptr(is, ptr, size);
 	}
 	catch (io::exception e)
 	{
@@ -1008,13 +1003,44 @@ void CALLBACK JServer::Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 		{
 		case 0:
 		case 1:
-		case 2:
 			// Report about message
 			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
 			return;
+		}
+	}
 
-		case 3:
-			fAlert = false;
+	DWORD idBy = m_mSocketId[sock];
+	MapUser::const_iterator iu = m_mUser.find(idWho);
+	if (iu != m_mUser.end()) { // private talk
+		Send_Notify_CLIPBOARD(m_mIdSocket[idWho], idBy, (const char*)ptr, size);
+	} else {
+		MapChannel::iterator ic = m_mChannel.find(idWho);
+		if (ic != m_mChannel.end()) { // channel
+		}
+	}
+}
+
+void CALLBACK JServer::Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
+{
+	DWORD idWho;
+	const void* ptr;
+	size_t size;
+
+	try
+	{
+		io::unpack(is, idWho);
+		size = is.getsize();
+		io::unpackptr(is, ptr, size);
+	}
+	catch (io::exception e)
+	{
+		switch (e.count)
+		{
+		case 0:
+		case 1:
+			// Report about message
+			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			return;
 		}
 	}
 
@@ -1024,7 +1050,7 @@ void CALLBACK JServer::Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 	DWORD idBy = m_mSocketId[sock];
 	MapUser::const_iterator iu = m_mUser.find(idWho);
 	if (iu != m_mUser.end()) { // private talk
-		Send_Notify_MESSAGE(m_mIdSocket[idWho], idBy, dwRtfSize, (const char*)ptr, bCloseOnDisconnect, fAlert, crSheet, ft);
+		Send_Notify_MESSAGE(m_mIdSocket[idWho], idBy, ft, (const char*)ptr, size);
 		Send_Reply_MESSAGE(sock, trnid, idWho, MESSAGE_SENT);
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWho);
@@ -1039,25 +1065,14 @@ void CALLBACK JServer::Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 void CALLBACK JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is)
 {
 	DWORD idWho;
-	DWORD dwRtfSize;
 	const void* ptr;
-	RECT rcPos;
-	bool bCloseOnDisconnect;
-	DWORD dwCanclose, dwAutoclose;
-	bool fTransparent;
-	COLORREF crSheet;
+	size_t size;
 
 	try
 	{
 		io::unpack(is, idWho);
-		io::unpack(is, dwRtfSize);
-		io::unpackptr(is, ptr, dwRtfSize);
-		io::unpack(is, rcPos);
-		io::unpack(is, bCloseOnDisconnect);
-		io::unpack(is, dwCanclose);
-		io::unpack(is, dwAutoclose);
-		io::unpack(is, fTransparent);
-		io::unpack(is, crSheet);
+		size = is.getsize();
+		io::unpackptr(is, ptr, size);
 	}
 	catch (io::exception e)
 	{
@@ -1065,31 +1080,16 @@ void CALLBACK JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is)
 		{
 		case 0:
 		case 1:
-		case 2:
 			// Report about message
 			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
 			return;
-
-		case 3:
-			rcPos.left = rcPos.top = rcPos.right = rcPos.bottom = 0;
-		case 4:
-			bCloseOnDisconnect = true;
-		case 5:
-			dwCanclose = 2500;
-		case 6:
-			dwAutoclose = INFINITE;
-		case 7:
-			fTransparent = true;
-		case 8:
-			crSheet = GetSysColor(COLOR_WINDOW);
 		}
 	}
 
 	DWORD idBy = m_mSocketId[sock];
 	MapUser::const_iterator iu = m_mUser.find(idWho);
 	if (iu != m_mUser.end()) { // private talk
-		Send_Notify_SPLASHRTF(m_mIdSocket[idWho], idBy, dwRtfSize, (const char*)ptr, rcPos,
-			bCloseOnDisconnect, dwCanclose, dwAutoclose, fTransparent, crSheet);
+		Send_Notify_SPLASHRTF(m_mIdSocket[idWho], idBy, (const char*)ptr, size);
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWho);
 		if (ic != m_mChannel.end()) { // channel
@@ -1297,16 +1297,20 @@ void CALLBACK JServer::Send_Notify_BEEP(SOCKET sock, DWORD idBy)
 	PushTrn(sock, NOTIFY(CCPM_BEEP), 0, os.str());
 }
 
-void CALLBACK JServer::Send_Notify_MESSAGE(SOCKET sock, DWORD idBy, DWORD dwRtfSize, const char* text, bool bCloseOnDisconnect, bool fAlert, COLORREF crSheet, const FILETIME& ft)
+void CALLBACK JServer::Send_Notify_CLIPBOARD(SOCKET sock, DWORD idBy, const char* ptr, size_t size)
 {
 	std::ostringstream os;
 	io::pack(os, idBy);
-	io::pack(os, dwRtfSize);
-	os.write(text, (std::streamsize)dwRtfSize);
-	io::pack(os, bCloseOnDisconnect);
-	io::pack(os, fAlert);
-	io::pack(os, crSheet);
+	os.write(ptr, (std::streamsize)size);
+	PushTrn(sock, NOTIFY(CCPM_CLIPBOARD), 0, os.str());
+}
+
+void CALLBACK JServer::Send_Notify_MESSAGE(SOCKET sock, DWORD idBy, const FILETIME& ft, const char* ptr, size_t size)
+{
+	std::ostringstream os;
+	io::pack(os, idBy);
 	io::pack(os, ft);
+	os.write(ptr, (std::streamsize)size);
 	PushTrn(sock, NOTIFY(CCPM_MESSAGE), 0, os.str());
 }
 
@@ -1318,18 +1322,11 @@ void CALLBACK JServer::Send_Reply_MESSAGE(SOCKET sock, WORD trnid, DWORD idWho, 
 	PushTrn(sock, REPLY(CCPM_MESSAGE), trnid, os.str());
 }
 
-void CALLBACK JServer::Send_Notify_SPLASHRTF(SOCKET sock, DWORD idBy, DWORD dwRtfSize, const char* text, const RECT& rcPos, bool bCloseOnDisconnect, DWORD dwCanclose, DWORD dwAutoclose, bool fTransparent, COLORREF crSheet)
+void CALLBACK JServer::Send_Notify_SPLASHRTF(SOCKET sock, DWORD idBy, const char* ptr, size_t size)
 {
 	std::ostringstream os;
 	io::pack(os, idBy);
-	io::pack(os, dwRtfSize);
-	os.write(text, (std::streamsize)dwRtfSize);
-	io::pack(os, rcPos);
-	io::pack(os, bCloseOnDisconnect);
-	io::pack(os, dwCanclose);
-	io::pack(os, dwAutoclose);
-	io::pack(os, fTransparent);
-	io::pack(os, crSheet);
+	os.write(ptr, (std::streamsize)size);
 	PushTrn(sock, NOTIFY(CCPM_SPLASHRTF), 0, os.str());
 }
 

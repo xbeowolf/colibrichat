@@ -133,6 +133,7 @@ namespace colibrichat
 		void CALLBACK Recv_Cmd_BACKGROUND(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_ACCESS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_BEEP(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Cmd_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is);
 
@@ -156,11 +157,10 @@ namespace colibrichat
 		void CALLBACK Broadcast_Notify_BACKGROUND(const SetId& set, DWORD idWho, DWORD idWhere, COLORREF cr);
 		void CALLBACK Broadcast_Notify_ACCESS(const SetId& set, DWORD idWho, DWORD idWhere, EChanStatus stat, DWORD idBy);
 		void CALLBACK Send_Notify_BEEP(SOCKET sock, DWORD idBy);
-		void CALLBACK Send_Notify_MESSAGE(SOCKET sock, DWORD idBy, DWORD dwRtfSize, const char* text, bool bCloseOnDisconnect, bool fAlert, COLORREF crSheet, const FILETIME& ft);
+		void CALLBACK Send_Notify_CLIPBOARD(SOCKET sock, DWORD idBy, const char* ptr, size_t size);
+		void CALLBACK Send_Notify_MESSAGE(SOCKET sock, DWORD idBy, const FILETIME& ft, const char* ptr, size_t size);
 		void CALLBACK Send_Reply_MESSAGE(SOCKET sock, WORD trnid, DWORD idWho, UINT type);
-		void CALLBACK Send_Notify_SPLASHRTF(SOCKET sock, DWORD idBy, DWORD dwRtfSize, const char* text,
-			const RECT& rcPos, bool bCloseOnDisconnect, DWORD dwCanclose, DWORD dwAutoclose,
-			bool fTransparent, COLORREF crSheet);
+		void CALLBACK Send_Notify_SPLASHRTF(SOCKET sock, DWORD idBy, const char* ptr, size_t size);
 
 		void OnHook(JEventable* src);
 		void OnUnhook(JEventable* src);

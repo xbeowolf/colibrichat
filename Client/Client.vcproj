@@ -403,6 +403,10 @@
 				Name="Sounds"
 				>
 				<File
+					RelativePath=".\Sounds\alert.wav"
+					>
+				</File>
+				<File
 					RelativePath=".\Sounds\beep.wav"
 					>
 				</File>
@@ -419,6 +423,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Sounds\clipboard.wav"
+					>
+				</File>
+				<File
 					RelativePath=".\Sounds\confirm.wav"
 					>
 				</File>
@@ -427,11 +435,19 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Sounds\me_line.wav"
+					>
+				</File>
+				<File
 					RelativePath=".\Sounds\message.wav"
 					>
 				</File>
 				<File
 					RelativePath=".\Sounds\private_start.wav"
+					>
+				</File>
+				<File
+					RelativePath=".\Sounds\topic_change.wav"
 					>
 				</File>
 				<File

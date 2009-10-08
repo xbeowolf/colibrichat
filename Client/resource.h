@@ -113,13 +113,15 @@
 #define ID_OVERLAP_PRIVATEMESSAGE       40076
 #define IDC_PRIVATEMESSAGE              40077
 #define IDC_KICK                        40078
+#define ID_OVERLAP_SENDCLIPBOARD        40080
+#define IDC_CLIPBOARD                   40081
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        163
-#define _APS_NEXT_COMMAND_VALUE         40080
+#define _APS_NEXT_COMMAND_VALUE         40082
 #define _APS_NEXT_CONTROL_VALUE         1060
 #define _APS_NEXT_SYMED_VALUE           102
 #endif

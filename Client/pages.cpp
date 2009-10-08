@@ -1637,7 +1637,7 @@ std::tstring JClient::JPageChannel::gettopic() const
 	} else if (pSource->mUser.find(m_channel.idTopicWriter) == pSource->mUser.end()) {
 		return tformat(TEXT("#%s: %s"), m_channel.name.c_str(), m_channel.topic.c_str());
 	} else {
-		return tformat(TEXT("#%s: %s (%s)"), m_channel.name.c_str(), m_channel.topic.c_str(), pSource->mUser.find(m_channel.idTopicWriter)->second.name.c_str());
+		return tformat(TEXT("#%s: %s (%s)"), m_channel.name.c_str(), m_channel.topic.c_str(), pSource->getSafeName(m_channel.idTopicWriter).c_str());
 	}
 }
 
@@ -2075,17 +2075,6 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_TOPIC), pSource->hwndPage, (DLGPROC)JDialog::DlgProcStub, (LPARAM)(JDialog*)new JTopic(pSource, this));
 				break;
 
-			case IDS_SOUNDSIGNAL:
-				{
-					MapUser::const_iterator iu = getSelUser();
-					if (iu == pSource->m_mUser.end()) break;
-					if (JClient::s_mapAlert[iu->second.nStatus].fCanSignal) {
-						ASSERT(pSource->m_clientsock);
-						pSource->Send_Cmd_BEEP(pSource->m_clientsock, iu->first);
-					} else pSource->DisplayMessage(m_hwndList, TEXT("Sound signal disabled now for this user"));
-					break;
-				}
-
 			case IDC_PRIVATETALK:
 				{
 					MapUser::const_iterator iu = getSelUser();
@@ -2093,7 +2082,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					if (JClient::s_mapAlert[iu->second.nStatus].fCanOpenPrivate) {
 						ASSERT(pSource->m_clientsock);
 						pSource->Send_Quest_JOIN(pSource->m_clientsock, iu->second.name);
-					} else pSource->DisplayMessage(m_hwndList, TEXT("User talk banned"));
+					} else pSource->DisplayMessage(m_hwndList, TEXT("User bans to open private talks"));
 					break;
 				}
 
@@ -2119,6 +2108,28 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					break;
 				}
 
+			case IDS_SOUNDSIGNAL:
+				{
+					MapUser::const_iterator iu = getSelUser();
+					if (iu == pSource->m_mUser.end()) break;
+					if (JClient::s_mapAlert[iu->second.nStatus].fCanSignal) {
+						ASSERT(pSource->m_clientsock);
+						pSource->Send_Cmd_BEEP(pSource->m_clientsock, iu->first);
+					} else pSource->DisplayMessage(m_hwndList, TEXT("Sound signal disabled now for this user"));
+					break;
+				}
+
+			case IDC_CLIPBOARD:
+				{
+					MapUser::const_iterator iu = getSelUser();
+					if (iu == pSource->m_mUser.end()) break;
+					if (JClient::s_mapAlert[iu->second.nStatus].fCanRecvClipboard) {
+						ASSERT(pSource->m_clientsock);
+						pSource->Send_Cmd_CLIPBOARD(pSource->m_clientsock, iu->first);
+					} else pSource->DisplayMessage(m_hwndList, TEXT("User bans recieving windows clipboard content"));
+					break;
+				}
+
 			case IDC_SPLASHRTF:
 				{
 					MapUser::const_iterator iu = getSelUser();
@@ -2126,7 +2137,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					if (JClient::s_mapAlert[iu->second.nStatus].fCanAlert) {
 						ASSERT(pSource->m_clientsock);
 						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_SPLASHRTFEDITOR), pSource->hwndPage, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JSplashRtfEditor(pSource, iu->first));
-					}
+					} else pSource->DisplayMessage(m_hwndList, TEXT("User bans recieving splashes"));
 					break;
 				}
 
@@ -2411,7 +2422,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				bool canKick = m_channel.getStatus(pSource->m_idOwn) >= m_channel.getStatus(iu->first);
 				EnableMenuItem((HMENU)wParam, IDC_KICK,
 					MF_BYCOMMAND | (valid && (pSource->m_idOwn == iu->first || (isModer && canKick)) ? MF_ENABLED : MF_GRAYED));
-			} else if ((HMENU)wParam == GetSubMenu(GetSubMenu(JClientApp::jpApp->hmenuUser, 0), 7)) {
+			} else if ((HMENU)wParam == GetSubMenu(GetSubMenu(JClientApp::jpApp->hmenuUser, 0), 8)) {
 				MapUser::const_iterator iu = getSelUser();
 				bool valid = iu != pSource->m_mUser.end();
 

@@ -106,17 +106,20 @@
 // Change user status on channel
 #define CCPM_ACCESS                    111
 
-// Beep
-#define CCPM_BEEP                      112
-
 // Message or alert
-#define CCPM_MESSAGE                   113
+#define CCPM_MESSAGE                   112
 #define MESSAGE_IGNORE                 0
 #define MESSAGE_SENT                   1
 #define MESSAGE_SAVED                  2
 
+// Beep
+#define CCPM_BEEP                      113
+
+// Send windows clipboard content
+#define CCPM_CLIPBOARD                 114
+
 // Creates splash-window with given text content
-#define CCPM_SPLASHRTF                 114
+#define CCPM_SPLASHRTF                 115
 
 //-----------------------------------------------------------------------------
 

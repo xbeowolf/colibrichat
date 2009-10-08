@@ -87,7 +87,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
 				80, TEXT("IP-address"), -1, 3},
 				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
-				120, TEXT("Time"), -1, 4},
+				120, TEXT("Connected"), -1, 4},
 			};
 			for (int i = 0; i < _countof(lvc); ++i)
 				ListView_InsertColumn(m_hwndList, i, &lvc[i]);

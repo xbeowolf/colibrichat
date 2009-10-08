@@ -474,7 +474,7 @@
             }
             "{3C67513D-01DD-4637-8A68-80971EB9504F}:_A4E6BE004F624883A4C7B71D3F587997"
             {
-            "DefaultLocation" = "8:[ProgramFilesFolder][Manufacturer]\\[ProductName]"
+            "DefaultLocation" = "8:[ProgramFilesFolder]\\[ProductName]"
             "Name" = "8:#1925"
             "AlwaysCreate" = "11:FALSE"
             "Condition" = "8:"
@@ -511,13 +511,13 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Colibri Chat"
         "ProductCode" = "8:{CB4F402C-DC95-4E54-8F11-A91C0416DCAB}"
-        "PackageCode" = "8:{25CE71D1-AE30-4E72-8D57-D72330A371DA}"
+        "PackageCode" = "8:{6BF945F1-D686-458A-8819-B5E46DED80D3}"
         "UpgradeCode" = "8:{9CE85361-B45F-48AE-B43E-D9C165BF7E24}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.9"
+        "ProductVersion" = "8:1.0.10"
         "Manufacturer" = "8:BEOWOLF"
         "ARPHELPTELEPHONE" = "8:+380684862837, icq 320-329-575"
         "ARPHELPLINK" = "8:"
@@ -725,6 +725,14 @@
                                                             "Transitive" = "11:FALSE"
                                                             "ValueTypes" = "3:1"
                                                             "Value" = "8:[TARGETDIR]Sounds\\channel_join.wav"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_88053B9FB00C4A059F46D15101F36439"
+                                                            {
+                                                            "Name" = "8:Clipboard"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:1"
+                                                            "Value" = "8:[TARGETDIR]Sounds\\clipboard.wav"
                                                             }
                                                             "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_AFCAC1310CE14D97910CAFE14BE623A9"
                                                             {

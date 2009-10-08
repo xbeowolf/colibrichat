@@ -45,33 +45,33 @@ std::map<EChanStatus, std::tstring> JClient::s_mapChanStatName;
 Alert JClient::s_mapAlert[] = {
 	{
 		true, true, true, true,
-		true, true, true, true,
 		true, true, true, true, true,
+		true, true, true, true, true, true,
 	}, // eReady
 	{
 		false, false, false, false,
-		false, false, false, false,
 		false, false, false, false, false,
+		false, false, false, false, false, false,
 	}, // eDND
 	{
 		false, true, false, false,
-		true, true, true, true,
-		false, true, true, true, false,
+		true, true, true, true, false,
+		false, true, true, false, true, true,
 	}, // eBusy
 	{
 		false, false, false, false,
-		false, true, true, false,
-		false, true, true, true, false,
+		false, true, false, true, true,
+		false, true, true, false, true, true,
 	}, // eNA
 	{
 		true, true, false, false,
-		true, true, true, true,
-		false, true, true, true, true,
+		true, true, true, true, true,
+		false, true, true, true, true, true,
 	}, // eAway
 	{
 		true, true, false, true,
-		true, true, true, true,
 		true, true, true, true, true,
+		true, true, true, true, true, true,
 	}, // eInvisible
 };
 
@@ -176,8 +176,8 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			// Inits Tab control
 			TabCtrl_SetImageList(m_hwndTab, JClientApp::jpApp->himlTab);
 
+			ContactSel(ContactAdd(NAME_SERVER, CRC_SERVER, eServer));
 			ContactAdd(NAME_LIST, CRC_LIST, eList);
-			ContactAdd(NAME_SERVER, CRC_SERVER, eServer);
 
 			if (Profile::GetInt(RF_CLIENT, RK_STATE, FALSE))
 				Connect();
@@ -198,7 +198,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			MCI_GENERIC_PARMS mci;
 			mci.dwCallback = MAKELONG(m_hwndPage, 0);
 			for each (MCIDEVICEID const& v in m_wDeviceID) {
-				mciSendCommand(v, MCI_CLOSE, MCI_WAIT, (DWORD_PTR)&mci);
+				VERIFY(!mciSendCommand(v, MCI_CLOSE, MCI_WAIT, (DWORD_PTR)&mci));
 			}
 
 			Stop();
@@ -225,7 +225,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	case BEM_NETWORK:
 		{
 			if ((SOCKET)wParam == m_clientsock)
-				EventSelector(m_clientsock, WSAGETSELECTEVENT(lParam));
+				EventSelector(m_clientsock, WSAGETSELECTEVENT(lParam), WSAGETSELECTERROR(lParam));
 			break;
 		}
 
@@ -437,7 +437,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			if (m_wDeviceID.find((MCIDEVICEID)lParam) != m_wDeviceID.end()) {
 				MCI_GENERIC_PARMS mci;
 				mci.dwCallback = MAKELONG(m_hwndPage, 0);
-				mciSendCommand((MCIDEVICEID)lParam, MCI_CLOSE, MCI_WAIT, (DWORD_PTR)&mci);
+				VERIFY(!mciSendCommand((MCIDEVICEID)lParam, MCI_CLOSE, MCI_WAIT, (DWORD_PTR)&mci));
 				m_wDeviceID.erase((MCIDEVICEID)lParam);
 			} else {
 				ASSERT(false); // no way to here
@@ -497,7 +497,7 @@ void CALLBACK JClient::Disconnect()
 	}
 }
 
-void CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact type)
+int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact type)
 {
 	JPtr<JPage> jp;
 	int pos;
@@ -510,56 +510,56 @@ void CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 	{
 	case eServer:
 		{
+			pos = 0;
+
 			if (jpPageServer) {
 				if (!jpPageServer->fEnabled) jpPageServer->Enable();
-				return; // already opened
+				return pos; // already opened
 			}
 
 			jp = jpPageServer = new JPageServer;
-
-			pos = 0;
 			break;
 		}
 	case eList:
 		{
+			pos = (jpPageServer ? 1 : 0);
+
 			if (jpPageList) {
 				if (!jpPageList->fEnabled) jpPageList->Enable();
-				return; // already opened
+				return pos; // already opened
 			}
 
 			jp = jpPageList = new JPageList;
-
-			pos = (jpPageServer ? 1 : 0);
 			break;
 		}
 	case eUser:
 		{
+			pos = (jpPageServer ? 1 : 0) + (jpPageList ? 1 : 0) +
+				(int)mPageChannel.size() + (int)mPageUser.size();
+
 			if (mPageUser.find(id) != mPageUser.end()) {
 				if (!mPageUser[id]->fEnabled) mPageUser[id]->Enable();
-				return; // already opened
+				return pos; // already opened
 			}
 
 			jp = mPageUser[id] = new JPageUser(id, name);
-
-			pos = (jpPageServer ? 1 : 0) + (jpPageList ? 1 : 0) +
-				(int)mPageChannel.size() + (int)mPageUser.size() - 1;
 			break;
 		}
 	case eChannel:
 		{
+			pos = (jpPageServer ? 1 : 0) + (jpPageList ? 1 : 0) +
+				(int)mPageChannel.size();
+
 			if (mPageChannel.find(id) != mPageChannel.end()) {
 				if (!mPageChannel[id]->fEnabled) mPageChannel[id]->Enable();
-				return; // already opened
+				return pos; // already opened
 			}
 
 			jp = mPageChannel[id] = new JPageChannel(id, name);
-
-			pos = (jpPageServer ? 1 : 0) + (jpPageList ? 1 : 0) +
-				(int)mPageChannel.size() - 1;
 			break;
 		}
 	default:
-		return;
+		return -1;
 	}
 
 	ASSERT(jp);
@@ -590,9 +590,9 @@ void CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 	tci.lParam = jp->getID();
 	TabCtrl_InsertItem(m_hwndTab, pos, &tci);
 
-	ContactSel(pos);
 	jp->setAlert(eRed);
 	jp->Enable();
+	return pos;
 }
 
 void CALLBACK JClient::ContactDel(DWORD id)
@@ -791,10 +791,10 @@ std::tstring JClient::getSafeName(DWORD idUser) const
 		return NAME_ANONYMOUS;
 	default:
 		MapUser::const_iterator iu = m_mUser.find(idUser);
-		if (iu != m_mUser.end())
-			return iu->second.name;
-		else
+		if (iu == m_mUser.end() || iu->second.name.empty())
 			return tformat(TEXT("0x%08X"), idUser);
+		else
+			return iu->second.name;
 	}
 }
 
@@ -916,9 +916,10 @@ void JClient::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 		{NOTIFY(CCPM_TOPIC), &JClient::Recv_Notify_TOPIC},
 		{NOTIFY(CCPM_BACKGROUND), &JClient::Recv_Notify_BACKGROUND},
 		{NOTIFY(CCPM_ACCESS), &JClient::Recv_Notify_ACCESS},
-		{NOTIFY(CCPM_BEEP), &JClient::Recv_Notify_BEEP},
 		{REPLY(CCPM_MESSAGE), &JClient::Recv_Reply_MESSAGE},
 		{NOTIFY(CCPM_MESSAGE), &JClient::Recv_Notify_MESSAGE},
+		{NOTIFY(CCPM_BEEP), &JClient::Recv_Notify_BEEP},
+		{NOTIFY(CCPM_CLIPBOARD), &JClient::Recv_Notify_CLIPBOARD},
 		{NOTIFY(CCPM_SPLASHRTF), &JClient::Recv_Notify_SPLASHRTF},
 	};
 	for (int i = 0; i < _countof(responseTable); i++) {
@@ -1015,11 +1016,13 @@ void CALLBACK JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 					InsertUser(ID, user);
 					LinkUser(ID, m_idOwn);
 					// Create interface
-					ContactAdd(user.name, ID, type);
+					int pos = ContactAdd(user.name, ID, type);
 
 					JPtr<JPageUser> jp = mPageUser[ID];
 					ASSERT(jp);
 					jp->setuser(user);
+
+					ContactSel(pos);
 
 					EvReport(tformat(TEXT("opens private talk with [b]%s[/b]"), user.name.c_str()), netengine::eInformation, netengine::eHigher);
 					break;
@@ -1040,11 +1043,13 @@ void CALLBACK JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 					}
 
 					// Create interface
-					ContactAdd(chan.name, ID, type);
+					int pos = ContactAdd(chan.name, ID, type);
 
 					JPtr<JPageChannel> jp = mPageChannel[ID];
 					ASSERT(jp);
 					jp->setchannel(chan);
+
+					ContactSel(pos);
 
 					Send_Quest_USERINFO(sock, wanted);
 
@@ -1525,33 +1530,6 @@ void CALLBACK JClient::Recv_Notify_ACCESS(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JClient::Recv_Notify_BEEP(SOCKET sock, WORD trnid, io::mem& is)
-{
-	DWORD idBy;
-
-	try
-	{
-		io::unpack(is, idBy);
-	}
-	catch (io::exception e)
-	{
-		switch (e.count)
-		{
-		case 0:
-			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
-			return;
-		}
-	}
-
-	if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fCanSignal) {
-		PlaySound(JClientApp::jpApp->strWavBeep.c_str());
-
-		// Report about message
-		EvReport(tformat(TEXT("sound signal from [b]%s[/b]"), getSafeName(idBy).c_str()), netengine::eInformation, netengine::eHigh);
-	}
-}
-
 void CALLBACK JClient::Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 {
 	DWORD idWho;
@@ -1594,22 +1572,22 @@ void CALLBACK JClient::Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 void CALLBACK JClient::Recv_Notify_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 {
 	DWORD idBy;
+	FILETIME ft;
 	DWORD dwRtfSize;
 	const void* ptr;
 	bool bCloseOnDisconnect;
 	bool fAlert;
 	COLORREF crSheet;
-	FILETIME ft;
 
 	try
 	{
 		io::unpack(is, idBy);
+		io::unpack(is, ft);
 		io::unpack(is, dwRtfSize);
 		io::unpackptr(is, ptr, dwRtfSize);
 		io::unpack(is, bCloseOnDisconnect);
 		io::unpack(is, fAlert);
 		io::unpack(is, crSheet);
-		io::unpack(is, ft);
 	}
 	catch (io::exception e)
 	{
@@ -1618,18 +1596,17 @@ void CALLBACK JClient::Recv_Notify_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 		case 0:
 		case 1:
 		case 2:
+		case 3:
 			// Report about message
 			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
 			return;
 
-		case 3:
-			bCloseOnDisconnect = false;
 		case 4:
-			fAlert = false;
+			bCloseOnDisconnect = false;
 		case 5:
-			crSheet = GetSysColor(COLOR_WINDOW);
+			fAlert = false;
 		case 6:
-			GetSystemFileTime(ft);
+			crSheet = GetSysColor(COLOR_WINDOW);
 		}
 	}
 
@@ -1646,6 +1623,92 @@ void CALLBACK JClient::Recv_Notify_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 	}
 	// Report about message
 	EvReport(tformat(TEXT("%s from [b]%s[/b]"), fAlert ? TEXT("alert") : TEXT("message"), getSafeName(idBy).c_str()), netengine::eInformation, netengine::eNormal);
+}
+
+void CALLBACK JClient::Recv_Notify_BEEP(SOCKET sock, WORD trnid, io::mem& is)
+{
+	DWORD idBy;
+
+	try
+	{
+		io::unpack(is, idBy);
+	}
+	catch (io::exception e)
+	{
+		switch (e.count)
+		{
+		case 0:
+			// Report about message
+			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			return;
+		}
+	}
+
+	if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fCanSignal) {
+		PlaySound(JClientApp::jpApp->strWavBeep.c_str());
+
+		// Report about message
+		EvReport(tformat(TEXT("sound signal from [b]%s[/b]"), getSafeName(idBy).c_str()), netengine::eInformation, netengine::eHigh);
+	}
+}
+
+void CALLBACK JClient::Recv_Notify_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& is)
+{
+	DWORD idBy;
+
+	try
+	{
+		io::unpack(is, idBy);
+		if (OpenClipboard(m_hwndPage)) {
+			UINT format;
+			std::tstring name;
+			HANDLE hMem;
+			std::streamsize size;
+			void* ptr;
+			EmptyClipboard();
+			while (io::unpack(is, format), format) {
+				io::unpack(is, name);
+				io::unpack(is, size);
+				if (format >= 0xC000 && format <= 0xFFFF) {
+					format = RegisterClipboardFormat(name.c_str());
+				}
+				if (format) {
+					hMem = GlobalAlloc(GMEM_MOVEABLE, (SIZE_T)size);
+					ptr = GlobalLock(hMem);
+					if (ptr) {
+						io::unpackmem(is, ptr, size);
+						GlobalUnlock(hMem);
+						SetClipboardData(format, hMem);
+					} else {
+						GlobalFree(hMem);
+						io::skip(is, size);
+					}
+				} else {
+					io::skip(is, size);
+				}
+			}
+			VERIFY(CloseClipboard());
+
+			if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fPlayClipboard)
+				PlaySound(JClientApp::jpApp->strWavClipboard.c_str());
+
+			// Report about message
+			EvReport(tformat(TEXT("recieve clipboard content from [b]%s[/b]"), getSafeName(idBy).c_str()), netengine::eInformation, netengine::eHigh);
+		} else {
+			// Report about message
+			EvReport(tformat(TEXT("can not paste recieved clipboard content from [b]%s[/b]"), getSafeName(idBy).c_str()), netengine::eError, netengine::eHigh);
+		}
+	}
+	catch (io::exception e)
+	{
+		switch (e.count)
+		{
+		case 0:
+			// Report about message
+			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			return;
+		}
+	}
 }
 
 void CALLBACK JClient::Recv_Notify_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is)
@@ -1823,13 +1886,6 @@ void CALLBACK JClient::Send_Cmd_ACCESS(SOCKET sock, DWORD idWho, DWORD idWhere, 
 	PushTrn(sock, COMMAND(CCPM_ACCESS), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_BEEP(SOCKET sock, DWORD idWho)
-{
-	std::ostringstream os;
-	io::pack(os, idWho);
-	PushTrn(sock, COMMAND(CCPM_BEEP), 0, os.str());
-}
-
 void CALLBACK JClient::Send_Quest_MESSAGE(SOCKET sock, DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet)
 {
 	std::ostringstream os;
@@ -1840,6 +1896,43 @@ void CALLBACK JClient::Send_Quest_MESSAGE(SOCKET sock, DWORD idWho, const std::s
 	io::pack(os, fAlert);
 	io::pack(os, crSheet);
 	PushTrn(sock, QUEST(CCPM_MESSAGE), 0, os.str());
+}
+
+void CALLBACK JClient::Send_Cmd_BEEP(SOCKET sock, DWORD idWho)
+{
+	std::ostringstream os;
+	io::pack(os, idWho);
+	PushTrn(sock, COMMAND(CCPM_BEEP), 0, os.str());
+}
+
+void CALLBACK JClient::Send_Cmd_CLIPBOARD(SOCKET sock, DWORD idWho)
+{
+	std::ostringstream os;
+	io::pack(os, idWho);
+	if (!OpenClipboard(m_hwndPage)) return;
+	UINT format = 0;
+	TCHAR buffer[64];
+	int len;
+	HANDLE hMem;
+	std::streamsize size;
+	const char* ptr;
+	while ((format = EnumClipboardFormats(format)) != 0) {
+		len = GetClipboardFormatName(format, buffer, _countof(buffer));
+		hMem = GetClipboardData(format);
+		size = (std::streamsize)GlobalSize(hMem);
+		ptr = (const char*)GlobalLock(hMem);
+		if (ptr) {
+			io::pack(os, format);
+			io::pack(os, std::tstring(buffer, len));
+			io::pack(os, size);
+			os.write(ptr, size);
+
+			GlobalUnlock(hMem);
+		}
+	}
+	io::pack(os, (UINT)0); // write end marker
+	VERIFY(CloseClipboard());
+	PushTrn(sock, COMMAND(CCPM_CLIPBOARD), 0, os.str());
 }
 
 void CALLBACK JClient::Send_Cmd_SPLASHRTF(SOCKET sock, DWORD idWho, const std::string& text, const RECT& rcPos, bool bCloseOnDisconnect, DWORD dwCanclose, DWORD dwAutoclose, bool fTransparent, COLORREF crSheet)
@@ -1905,9 +1998,10 @@ void CALLBACK JClientApp::Init()
 	m_strWavJoin = Profile::GetString(RF_SOUNDS, RK_WAVJOIN, TEXT("Sounds\\channel_join.wav"));
 	m_strWavPart = Profile::GetString(RF_SOUNDS, RK_WAVPART, TEXT("Sounds\\channel_leave.wav"));
 	m_strWavPrivate = Profile::GetString(RF_SOUNDS, RK_WAVPRIVATE, TEXT("Sounds\\private_start.wav"));
-	m_strWavBeep = Profile::GetString(RF_SOUNDS, RK_WAVBEEP, TEXT("Sounds\\beep.wav"));
 	m_strWavAlert = Profile::GetString(RF_SOUNDS, RK_WAVALERT, TEXT("Sounds\\alert.wav"));
 	m_strWavMessage = Profile::GetString(RF_SOUNDS, RK_WAVMESSAGE, TEXT("Sounds\\message.wav"));
+	m_strWavBeep = Profile::GetString(RF_SOUNDS, RK_WAVBEEP, TEXT("Sounds\\beep.wav"));
+	m_strWavClipboard = Profile::GetString(RF_SOUNDS, RK_WAVCLIPBOARD, TEXT("Sounds\\clipboard.wav"));
 
 	hiMain16 = LoadIcon(hinstApp, MAKEINTRESOURCE(IDI_SMALL));
 	hiMain32 = LoadIcon(hinstApp, MAKEINTRESOURCE(IDI_MAIN));
@@ -1953,26 +2047,26 @@ void CALLBACK JClientApp::Done()
 	if (jpClient->State != JService::eStopped) jpClient->Stop();
 	jpClient->Done();
 	// Free associated resources
-	DestroyMenu(m_hmenuTab);
-	DestroyMenu(m_hmenuLog);
-	DestroyMenu(m_hmenuChannel);
-	DestroyMenu(m_hmenuRichEdit);
-	DestroyMenu(m_hmenuUser);
+	VERIFY(DestroyMenu(m_hmenuTab));
+	VERIFY(DestroyMenu(m_hmenuLog));
+	VERIFY(DestroyMenu(m_hmenuChannel));
+	VERIFY(DestroyMenu(m_hmenuRichEdit));
+	VERIFY(DestroyMenu(m_hmenuUser));
 	// Destroy the image list
-	ImageList_Destroy(m_himlEdit);
-	ImageList_Destroy(m_himlTab);
-	ImageList_Destroy(m_himlMan);
-	ImageList_Destroy(m_himlStatus);
-	ImageList_Destroy(m_himlStatusImg);
-	DeleteObject(m_himgSend);
-	DeleteObject(m_himgULBG);
-	DeleteObject(m_himgULFoc);
-	DeleteObject(m_himgULSel);
-	DeleteObject(m_himgULHot);
+	VERIFY(ImageList_Destroy(m_himlEdit));
+	VERIFY(ImageList_Destroy(m_himlTab));
+	VERIFY(ImageList_Destroy(m_himlMan));
+	VERIFY(ImageList_Destroy(m_himlStatus));
+	VERIFY(ImageList_Destroy(m_himlStatusImg));
+	VERIFY(DeleteObject(m_himgSend));
+	VERIFY(DeleteObject(m_himgULBG));
+	VERIFY(DeleteObject(m_himgULFoc));
+	VERIFY(DeleteObject(m_himgULSel));
+	VERIFY(DeleteObject(m_himgULHot));
 	// Close all MCI devices
-	mciSendCommand(MCI_ALL_DEVICE_ID, MCI_CLOSE, MCI_WAIT, NULL);
+	VERIFY(!mciSendCommand(MCI_ALL_DEVICE_ID, MCI_CLOSE, MCI_WAIT, NULL));
 	// Free RichEdit library
-	FreeLibrary(hinstRichEdit);
+	VERIFY(FreeLibrary(hinstRichEdit));
 }
 
 void CALLBACK JClientApp::s_Init()

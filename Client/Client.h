@@ -72,9 +72,10 @@
 #define RK_WAVJOIN             TEXT("Join")
 #define RK_WAVPART             TEXT("Part")
 #define RK_WAVPRIVATE          TEXT("Private")
-#define RK_WAVBEEP             TEXT("Beep")
 #define RK_WAVALERT            TEXT("Alert")
 #define RK_WAVMESSAGE          TEXT("Message")
+#define RK_WAVBEEP             TEXT("Beep")
+#define RK_WAVCLIPBOARD        TEXT("Clipboard")
 
 // --- Toolbar's image list indexes ---
 
@@ -137,20 +138,16 @@ namespace colibrichat
 	enum ETimeFormat {etimeNone, etimeHHMM, etimeHHMMSS};
 	enum EAlert {eGreen, eBlue, eYellow, eRed};
 
-	struct Tab
-	{
-		std::tstring name;
-		EContact type;
-		HWND hwnd;
-	};
-	typedef std::map<DWORD, Tab> MapTab;
+#pragma pack(push, 1)
 
 	struct Alert {
 		bool fFlashPageNew, fFlashPageSayPrivate, fFlahPageSayChannel, fFlashPageChangeTopic;
-		bool fCanOpenPrivate, fCanSignal, fCanAlert, fCanMessage;
-		bool fPlayChatSounds, fPlayPrivateSounds, fPlayBeep, fPlayAlert, fPlayMessage;
+		bool fCanOpenPrivate, fCanAlert, fCanMessage, fCanSignal, fCanRecvClipboard;
+		bool fPlayChatSounds, fPlayPrivateSounds, fPlayAlert, fPlayMessage, fPlayBeep, fPlayClipboard;
 	};
 	typedef std::map<EUserStatus, Alert> MapAlert;
+
+#pragma pack(pop)
 
 	class JClient : public netengine::JEngine, public JDialog
 	{
@@ -628,7 +625,7 @@ namespace colibrichat
 		void CALLBACK Disconnect();
 
 		// Contacts
-		void CALLBACK ContactAdd(const std::tstring& name, DWORD id, EContact type);
+		int  CALLBACK ContactAdd(const std::tstring& name, DWORD id, EContact type);
 		void CALLBACK ContactDel(DWORD id);
 		void CALLBACK ContactSel(int index);
 		void CALLBACK ContactRename(DWORD idOld, DWORD idNew, const std::tstring& newname);
@@ -661,9 +658,10 @@ namespace colibrichat
 		void CALLBACK Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_BACKGROUND(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_ACCESS(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Notify_BEEP(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_MESSAGE(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Notify_BEEP(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Notify_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is);
 
 		// Beowolf Network Protocol Messages sending
@@ -680,8 +678,9 @@ namespace colibrichat
 		void CALLBACK Send_Cmd_TOPIC(SOCKET sock, DWORD idWhere, const std::tstring& topic);
 		void CALLBACK Send_Cmd_BACKGROUND(SOCKET sock, DWORD idWhere, COLORREF cr);
 		void CALLBACK Send_Cmd_ACCESS(SOCKET sock, DWORD idWho, DWORD idWhere, EChanStatus stat);
-		void CALLBACK Send_Cmd_BEEP(SOCKET sock, DWORD idWho);
 		void CALLBACK Send_Quest_MESSAGE(SOCKET sock, DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet);
+		void CALLBACK Send_Cmd_BEEP(SOCKET sock, DWORD idWho);
+		void CALLBACK Send_Cmd_CLIPBOARD(SOCKET sock, DWORD idWho);
 		void CALLBACK Send_Cmd_SPLASHRTF(SOCKET sock, DWORD idWho, const std::string& text,
 			const RECT& rcPos, bool bCloseOnDisconnect = true, DWORD dwCanclose = 2500, DWORD dwAutoclose = 30000,
 			bool fTransparent = true, COLORREF crSheet = RGB(255, 255, 255));
@@ -790,9 +789,10 @@ namespace colibrichat
 		JPROPERTY_R(std::tstring, strWavJoin);
 		JPROPERTY_R(std::tstring, strWavPart);
 		JPROPERTY_R(std::tstring, strWavPrivate);
-		JPROPERTY_R(std::tstring, strWavBeep);
 		JPROPERTY_R(std::tstring, strWavAlert);
 		JPROPERTY_R(std::tstring, strWavMessage);
+		JPROPERTY_R(std::tstring, strWavBeep);
+		JPROPERTY_R(std::tstring, strWavClipboard);
 	};
 }; // colibrichat
 
