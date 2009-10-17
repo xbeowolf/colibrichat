@@ -295,7 +295,7 @@ void JServer::JConnections::OnHook(JEventable* src)
 	__super::OnHook(src);
 
 	pSource->EvLinkEstablished += MakeDelegate(this, &JServer::JConnections::OnLinkEstablished);
-	pSource->EvLinkDestroy += MakeDelegate(this, &JServer::JConnections::OnLinkDestroy);
+	pSource->EvLinkClose += MakeDelegate(this, &JServer::JConnections::OnLinkClose);
 }
 
 void JServer::JConnections::OnUnhook(JEventable* src)
@@ -303,7 +303,7 @@ void JServer::JConnections::OnUnhook(JEventable* src)
 	using namespace fastdelegate;
 
 	pSource->EvLinkEstablished -= MakeDelegate(this, &JServer::JConnections::OnLinkEstablished);
-	pSource->EvLinkDestroy -= MakeDelegate(this, &JServer::JConnections::OnLinkDestroy);
+	pSource->EvLinkClose -= MakeDelegate(this, &JServer::JConnections::OnLinkClose);
 
 	__super::OnUnhook(src);
 }
@@ -314,7 +314,7 @@ void JServer::JConnections::OnLinkEstablished(SOCKET sock)
 	if (m_hwndPage) AddLine(sock);
 }
 
-void JServer::JConnections::OnLinkDestroy(SOCKET sock)
+void JServer::JConnections::OnLinkClose(SOCKET sock, UINT err)
 {
 	ASSERT(pSource);
 	if (m_hwndPage) DelLine(sock);

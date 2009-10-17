@@ -41,6 +41,7 @@ static TCHAR szHelpFile[MAX_PATH];
 //
 
 std::map<EChanStatus, std::tstring> JClient::s_mapChanStatName;
+std::map<UINT, std::tstring> JClient::s_mapWsaErr;
 
 Alert JClient::s_mapAlert[] = {
 	{
@@ -81,6 +82,7 @@ jpOnline(0)
 {
 	m_clientsock = 0;
 	m_bReconnect = true;
+	m_nConnectCount = 0;
 	m_bSendByEnter = true;
 
 	m_metrics.uNickMaxLength = 20;
@@ -426,6 +428,20 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			break;
 		}
 
+	case WM_TIMER:
+		{
+			switch (wParam)
+			{
+			case IDT_CONNECT:
+				{
+					Connect();
+					KillTimer(m_hwndPage, IDT_CONNECT);
+					break;
+				}
+			}
+			break;
+		}
+
 	case WM_HELP:
 		{
 			WinHelp(hWnd, szHelpFile, HELP_CONTEXTPOPUP, ((LPHELPINFO)lParam)->dwContextId);
@@ -454,6 +470,7 @@ void CALLBACK JClient::Connect(bool getsetting)
 {
 	if (getsetting && jpPageServer) {
 		TCHAR host[128], pass[64];
+		ASSERT(jpPageServer);
 		GetDlgItemText(jpPageServer->hwndPage, IDC_HOST, host, _countof(host));
 		m_hostname = tstrToANSI(host);
 		m_port = (u_short)GetDlgItemInt(jpPageServer->hwndPage, IDC_PORT, FALSE, FALSE);
@@ -471,7 +488,8 @@ void CALLBACK JClient::Connect(bool getsetting)
 	link.Connect();
 	InsertLink(link);
 	m_clientsock = link.Sock;
-	EvLinkConnecting(m_clientsock);
+	m_nConnectCount++;
+
 	// Write it's to log
 	EvLog(
 		tformat(TEXT("[style=msg]Connecting to %s (%i.%i.%i.%i:%i)[/style]"),
@@ -513,7 +531,7 @@ int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 			pos = 0;
 
 			if (jpPageServer) {
-				if (!jpPageServer->fEnabled) jpPageServer->Enable();
+				m_clientsock ? jpPageServer->Enable() : jpPageServer->Disable();
 				return pos; // already opened
 			}
 
@@ -525,7 +543,7 @@ int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 			pos = (jpPageServer ? 1 : 0);
 
 			if (jpPageList) {
-				if (!jpPageList->fEnabled) jpPageList->Enable();
+				m_clientsock ? jpPageList->Enable() : jpPageList->Disable();
 				return pos; // already opened
 			}
 
@@ -538,7 +556,7 @@ int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 				(int)mPageChannel.size() + (int)mPageUser.size();
 
 			if (mPageUser.find(id) != mPageUser.end()) {
-				if (!mPageUser[id]->fEnabled) mPageUser[id]->Enable();
+				m_clientsock ? mPageUser[id]->Enable() : mPageUser[id]->Disable();
 				return pos; // already opened
 			}
 
@@ -551,7 +569,7 @@ int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 				(int)mPageChannel.size();
 
 			if (mPageChannel.find(id) != mPageChannel.end()) {
-				if (!mPageChannel[id]->fEnabled) mPageChannel[id]->Enable();
+				m_clientsock ? mPageChannel[id]->Enable() : mPageChannel[id]->Disable();
 				return pos; // already opened
 			}
 
@@ -591,7 +609,7 @@ int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 	TabCtrl_InsertItem(m_hwndTab, pos, &tci);
 
 	jp->setAlert(eRed);
-	jp->Enable();
+	m_clientsock ? jp->Enable() : jp->Disable();
 	return pos;
 }
 
@@ -858,27 +876,45 @@ void JClient::OnLinkConnect(SOCKET sock)
 	Send_Quest_IdentifyA
 #endif
 		(m_clientsock, m_password.c_str());
+
+	m_nConnectCount = 0;
 }
 
-void JClient::OnLinkClose(SOCKET sock)
+void JClient::OnLinkClose(SOCKET sock, UINT err)
 {
 	bool isClient = sock == m_clientsock;
 
-	__super::OnLinkClose(sock);
-
-	// If not disconnected by user, try to reconnect again
-	if (isClient && m_bReconnect) Connect();
-}
-
-void JClient::OnLinkDestroy(SOCKET sock)
-{
-	if (sock == m_clientsock)
-	{
+	if (isClient) {
 		m_clientsock = 0; // not connected
-		EvLog(TEXT("[style=msg]Disconnected[/style]"), true);
+		KillTimer(m_hwndPage, IDT_CONNECT);
+		// Update interface
+		EvLog(tformat(TEXT("[style=msg]Disconnected. Reason: [i]%s[/i][/style]"), JClient::s_mapWsaErr[err].c_str()), true);
 	}
 
-	__super::OnLinkDestroy(sock);
+	__super::OnLinkClose(sock, err);
+
+	// If not disconnected by user, try to reconnect again
+	if (err && isClient && m_bReconnect) Connect();
+}
+
+void JClient::OnLinkFail(SOCKET sock, UINT err)
+{
+	bool isClient = sock == m_clientsock;
+
+	if (isClient) {
+		m_clientsock = 0; // not connected
+		// Update interface
+		EvLog(tformat(TEXT("[style=msg]Connecting failed. Reason: [i]%s[/i][/style]"), JClient::s_mapWsaErr[err].c_str()), true);
+	}
+
+	__super::OnLinkFail(sock, err);
+
+	// If not disconnected by user, try to reconnect again
+	if (err && isClient && m_bReconnect) {
+		SetTimer(m_hwndPage, IDT_CONNECT, TIMER_CONNECT, 0);
+		// Update interface
+		EvLog(tformat(TEXT("[style=msg]Waiting %u seconds and try again (attempt #%i).[/style]"), TIMER_CONNECT/1000, m_nConnectCount), true);
+	}
 }
 
 void JClient::OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access)
@@ -1024,7 +1060,7 @@ void CALLBACK JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 
 					ContactSel(pos);
 
-					EvReport(tformat(TEXT("opens private talk with [b]%s[/b]"), user.name.c_str()), netengine::eInformation, netengine::eHigher);
+					EvReport(tformat(TEXT("opened private talk with [b]%s[/b]"), user.name.c_str()), netengine::eInformation, netengine::eHigher);
 					break;
 				}
 
@@ -1122,7 +1158,7 @@ void CALLBACK JClient::Recv_Notify_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 		if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fPlayMessage)
 			PlaySound(JClientApp::jpApp->strWavPrivate.c_str());
 
-		EvReport(tformat(TEXT("opens private talk with [b]%s[/b]"), user.name.c_str()), netengine::eInformation, netengine::eHigher);
+		EvReport(tformat(TEXT("[b]%s[/b] opens private talk"), user.name.c_str()), netengine::eInformation, netengine::eHigher);
 	} else { // channel
 		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
 		if (ipc != mPageChannel.end()) {
@@ -2071,6 +2107,7 @@ void CALLBACK JClientApp::Done()
 
 void CALLBACK JClientApp::s_Init()
 {
+	// Channels access status descriptions
 	JClient::s_mapChanStatName[eOutsider] = TEXT("outsider");
 	JClient::s_mapChanStatName[eReader] = TEXT("reader");
 	JClient::s_mapChanStatName[eWriter] = TEXT("writer");
@@ -2078,6 +2115,20 @@ void CALLBACK JClientApp::s_Init()
 	JClient::s_mapChanStatName[eModerator] = TEXT("moderator");
 	JClient::s_mapChanStatName[eAdmin] = TEXT("administrator");
 	JClient::s_mapChanStatName[eFounder] = TEXT("founder");
+
+	//   WSA error codes
+	// on FD_CONNECT
+	JClient::s_mapWsaErr[WSAECONNREFUSED] = TEXT("The attempt to connect was rejected.");
+	JClient::s_mapWsaErr[WSAENETUNREACH] = TEXT("The network cannot be reached from this host at this time.");
+	JClient::s_mapWsaErr[WSAEMFILE] = TEXT("No more file descriptors are available.");
+	JClient::s_mapWsaErr[WSAENOBUFS] = TEXT("No buffer space is available. The socket cannot be connected.");
+	JClient::s_mapWsaErr[WSAENOTCONN] = TEXT("The socket is not connected.");
+	JClient::s_mapWsaErr[WSAETIMEDOUT] = TEXT("Attempt to connect timed out without establishing a connection.");
+	// on FD_CLOSE
+	JClient::s_mapWsaErr[0] = TEXT("The connection was reset by software itself.");
+	JClient::s_mapWsaErr[WSAENETDOWN] = TEXT("The network subsystem failed."); // and all other
+	JClient::s_mapWsaErr[WSAECONNRESET] = TEXT("The connection was reset by the remote side.");
+	JClient::s_mapWsaErr[WSAECONNABORTED] = TEXT("The connection was terminated due to a time-out or other failure.");
 }
 
 void CALLBACK JClientApp::s_Done()

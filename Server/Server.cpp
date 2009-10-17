@@ -363,9 +363,9 @@ void JServer::OnUnhook(JEventable* src)
 	__super::OnUnhook(src);
 }
 
-void JServer::OnLinkDestroy(SOCKET sock)
+void JServer::OnLinkClose(SOCKET sock, UINT err)
 {
-	__super::OnLinkDestroy(sock);
+	__super::OnLinkClose(sock, err);
 
 	DWORD idSrc = m_mSocketId[sock];
 	MapUser::iterator iter = m_mUser.find(idSrc);

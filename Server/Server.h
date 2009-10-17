@@ -71,7 +71,7 @@ namespace colibrichat
 			void OnUnhook(JEventable* src);
 
 			void OnLinkEstablished(SOCKET sock);
-			void OnLinkDestroy(SOCKET sock);
+			void OnLinkClose(SOCKET sock, UINT err);
 
 		protected:
 
@@ -165,7 +165,7 @@ namespace colibrichat
 		void OnHook(JEventable* src);
 		void OnUnhook(JEventable* src);
 
-		void OnLinkDestroy(SOCKET sock);
+		void OnLinkClose(SOCKET sock, UINT err);
 		void OnLinkEstablished(SOCKET sock);
 		void OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is);
 

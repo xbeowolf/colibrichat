@@ -114,7 +114,7 @@ void JClient::JTopic::OnHook(JEventable* src)
 	__super::OnHook(src);
 
 	pSource->EvLinkEstablished += MakeDelegate(this, &JClient::JTopic::OnLinkEstablished);
-	pSource->EvLinkDestroy += MakeDelegate(this, &JClient::JTopic::OnLinkDestroy);
+	pSource->EvLinkClose += MakeDelegate(this, &JClient::JTopic::OnLinkClose);
 	pSource->EvPageClose += MakeDelegate(this, &JClient::JTopic::OnPageClose);
 }
 
@@ -123,7 +123,7 @@ void JClient::JTopic::OnUnhook(JEventable* src)
 	using namespace fastdelegate;
 
 	pSource->EvLinkEstablished -= MakeDelegate(this, &JClient::JTopic::OnLinkEstablished);
-	pSource->EvLinkDestroy -= MakeDelegate(this, &JClient::JTopic::OnLinkDestroy);
+	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JTopic::OnLinkClose);
 	pSource->EvPageClose -= MakeDelegate(this, &JClient::JTopic::OnPageClose);
 
 	__super::OnUnhook(src);
@@ -134,7 +134,7 @@ void JClient::JTopic::OnLinkEstablished(SOCKET sock)
 	ASSERT(pSource);
 }
 
-void JClient::JTopic::OnLinkDestroy(SOCKET sock)
+void JClient::JTopic::OnLinkClose(SOCKET sock, UINT err)
 {
 	ASSERT(pSource);
 }
@@ -409,7 +409,7 @@ void JClient::JSplashRtfEditor::OnHook(JEventable* src)
 	__super::OnHook(src);
 
 	pSource->EvLinkEstablished += MakeDelegate(this, &JClient::JSplashRtfEditor::OnLinkEstablished);
-	pSource->EvLinkDestroy += MakeDelegate(this, &JClient::JSplashRtfEditor::OnLinkDestroy);
+	pSource->EvLinkClose += MakeDelegate(this, &JClient::JSplashRtfEditor::OnLinkClose);
 }
 
 void JClient::JSplashRtfEditor::OnUnhook(JEventable* src)
@@ -417,7 +417,7 @@ void JClient::JSplashRtfEditor::OnUnhook(JEventable* src)
 	using namespace fastdelegate;
 
 	pSource->EvLinkEstablished -= MakeDelegate(this, &JClient::JSplashRtfEditor::OnLinkEstablished);
-	pSource->EvLinkDestroy -= MakeDelegate(this, &JClient::JSplashRtfEditor::OnLinkDestroy);
+	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JSplashRtfEditor::OnLinkClose);
 
 	__super::OnUnhook(src);
 }
@@ -428,7 +428,7 @@ void JClient::JSplashRtfEditor::OnLinkEstablished(SOCKET sock)
 	EnableWindow(GetDlgItem(m_hwndPage, IDOK), TRUE);
 }
 
-void JClient::JSplashRtfEditor::OnLinkDestroy(SOCKET sock)
+void JClient::JSplashRtfEditor::OnLinkClose(SOCKET sock, UINT err)
 {
 	ASSERT(pSource);
 	EnableWindow(GetDlgItem(m_hwndPage, IDOK), FALSE);
@@ -554,19 +554,19 @@ void JClient::JSplash::OnHook(JEventable* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkDestroy += MakeDelegate(this, &JClient::JSplash::OnLinkDestroy);
+	pSource->EvLinkClose += MakeDelegate(this, &JClient::JSplash::OnLinkClose);
 }
 
 void JClient::JSplash::OnUnhook(JEventable* src)
 {
 	using namespace fastdelegate;
 
-	pSource->EvLinkDestroy -= MakeDelegate(this, &JClient::JSplash::OnLinkDestroy);
+	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JSplash::OnLinkClose);
 
 	__super::OnUnhook(src);
 }
 
-void JClient::JSplash::OnLinkDestroy(SOCKET sock)
+void JClient::JSplash::OnLinkClose(SOCKET sock, UINT err)
 {
 	ASSERT(pSource);
 	if (m_hwndPage && m_bCloseOnDisconnect) DestroyWindow(m_hwndPage);
@@ -884,7 +884,7 @@ void JClient::JMessageEditor::OnHook(JEventable* src)
 	__super::OnHook(src);
 
 	pSource->EvLinkEstablished += MakeDelegate(this, &JClient::JMessageEditor::OnLinkEstablished);
-	pSource->EvLinkDestroy += MakeDelegate(this, &JClient::JMessageEditor::OnLinkDestroy);
+	pSource->EvLinkClose += MakeDelegate(this, &JClient::JMessageEditor::OnLinkClose);
 }
 
 void JClient::JMessageEditor::OnUnhook(JEventable* src)
@@ -892,7 +892,7 @@ void JClient::JMessageEditor::OnUnhook(JEventable* src)
 	using namespace fastdelegate;
 
 	pSource->EvLinkEstablished -= MakeDelegate(this, &JClient::JMessageEditor::OnLinkEstablished);
-	pSource->EvLinkDestroy -= MakeDelegate(this, &JClient::JMessageEditor::OnLinkDestroy);
+	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JMessageEditor::OnLinkClose);
 
 	__super::OnUnhook(src);
 }
@@ -903,7 +903,7 @@ void JClient::JMessageEditor::OnLinkEstablished(SOCKET sock)
 	EnableWindow(GetDlgItem(m_hwndPage, IDOK), TRUE);
 }
 
-void JClient::JMessageEditor::OnLinkDestroy(SOCKET sock)
+void JClient::JMessageEditor::OnLinkClose(SOCKET sock, UINT err)
 {
 	ASSERT(pSource);
 	EnableWindow(GetDlgItem(m_hwndPage, IDOK), FALSE);
@@ -1080,7 +1080,7 @@ void JClient::JMessage::OnHook(JEventable* src)
 	__super::OnHook(src);
 
 	pSource->EvLinkEstablished += MakeDelegate(this, &JClient::JMessage::OnLinkEstablished);
-	pSource->EvLinkDestroy += MakeDelegate(this, &JClient::JMessage::OnLinkDestroy);
+	pSource->EvLinkClose += MakeDelegate(this, &JClient::JMessage::OnLinkClose);
 }
 
 void JClient::JMessage::OnUnhook(JEventable* src)
@@ -1088,7 +1088,7 @@ void JClient::JMessage::OnUnhook(JEventable* src)
 	using namespace fastdelegate;
 
 	pSource->EvLinkEstablished -= MakeDelegate(this, &JClient::JMessage::OnLinkEstablished);
-	pSource->EvLinkDestroy -= MakeDelegate(this, &JClient::JMessage::OnLinkDestroy);
+	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JMessage::OnLinkClose);
 
 	__super::OnUnhook(src);
 }
@@ -1100,7 +1100,7 @@ void JClient::JMessage::OnLinkEstablished(SOCKET sock)
 	EnableWindow(GetDlgItem(m_hwndPage, IDC_PRIVATETALK), TRUE);
 }
 
-void JClient::JMessage::OnLinkDestroy(SOCKET sock)
+void JClient::JMessage::OnLinkClose(SOCKET sock, UINT err)
 {
 	ASSERT(pSource);
 	if (m_hwndPage && m_bCloseOnDisconnect) DestroyWindow(m_hwndPage);

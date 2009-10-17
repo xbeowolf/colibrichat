@@ -209,7 +209,7 @@ void JClient::JPage::OnHook(JEventable* src)
 	__super::OnHook(src);
 
 	pSource->EvLinkConnect += MakeDelegate(this, &JClient::JPage::OnLinkConnect);
-	pSource->EvLinkDestroy += MakeDelegate(this, &JClient::JPage::OnLinkDestroy);
+	pSource->EvLinkClose += MakeDelegate(this, &JClient::JPage::OnLinkClose);
 }
 
 void JClient::JPage::OnUnhook(JEventable* src)
@@ -218,7 +218,7 @@ void JClient::JPage::OnUnhook(JEventable* src)
 	using namespace fastdelegate;
 
 	pSource->EvLinkConnect -= MakeDelegate(this, &JClient::JPage::OnLinkConnect);
-	pSource->EvLinkDestroy -= MakeDelegate(this, &JClient::JPage::OnLinkDestroy);
+	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JPage::OnLinkClose);
 
 	__super::OnUnhook(src);
 
@@ -233,7 +233,7 @@ void JClient::JPage::OnLinkConnect(SOCKET sock)
 	}
 }
 
-void JClient::JPage::OnLinkDestroy(SOCKET sock)
+void JClient::JPage::OnLinkClose(SOCKET sock, UINT err)
 {
 	ASSERT(pSource);
 	if (m_hwndPage) {
@@ -638,6 +638,15 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 				{
 					if (pSource->m_clientsock) {
 						pSource->Disconnect();
+						// Update interface
+						Enable();
+					} else if (pSource->m_nConnectCount) {
+						pSource->m_nConnectCount = 0;
+						KillTimer(pSource->hwndPage, IDT_CONNECT);
+						// Update interface
+						CheckDlgButton(m_hwndPage, IDC_CONNECT, FALSE);
+						Disable();
+						pSource->EvLog(TEXT("[style=msg]Canceled.[/style]"), true);
 					} else {
 						pSource->Connect(true);
 					}
@@ -689,7 +698,6 @@ void JClient::JPageServer::OnHook(JEventable* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkConnecting += MakeDelegate(this, &JClient::JPageServer::OnLinkConnecting);
 	pSource->EvLog += MakeDelegate(this, &JClient::JPageServer::OnLog);
 	pSource->EvReport += MakeDelegate(this, &JClient::JPageServer::OnReport);
 }
@@ -699,19 +707,10 @@ void JClient::JPageServer::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
-	pSource->EvLinkConnecting -= MakeDelegate(this, &JClient::JPageServer::OnLinkConnecting);
 	pSource->EvLog -= MakeDelegate(this, &JClient::JPageServer::OnLog);
 	pSource->EvReport -= MakeDelegate(this, &JClient::JPageServer::OnReport);
 
 	__super::OnUnhook(src);
-}
-
-void JClient::JPageServer::OnLinkConnecting(SOCKET sock)
-{
-	ASSERT(pSource);
-	if (m_hwndPage) {
-		Enable();
-	}
 }
 
 void JClient::JPageServer::OnLog(const std::tstring& str, bool withtime)
@@ -1564,7 +1563,7 @@ void JClient::JPageUser::OnHook(JEventable* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkDestroy += MakeDelegate(this, &JClient::JPageUser::OnLinkDestroy);
+	pSource->EvLinkClose += MakeDelegate(this, &JClient::JPageUser::OnLinkClose);
 }
 
 void JClient::JPageUser::OnUnhook(JEventable* src)
@@ -1572,12 +1571,12 @@ void JClient::JPageUser::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
-	pSource->EvLinkDestroy -= MakeDelegate(this, &JClient::JPageUser::OnLinkDestroy);
+	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JPageUser::OnLinkClose);
 
 	__super::OnUnhook(src);
 }
 
-void JClient::JPageUser::OnLinkDestroy(SOCKET sock)
+void JClient::JPageUser::OnLinkClose(SOCKET sock, UINT err)
 {
 	ASSERT(pSource);
 	if (m_hwndPage) {
@@ -2512,7 +2511,7 @@ void JClient::JPageChannel::OnHook(JEventable* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkDestroy += MakeDelegate(this, &JClient::JPageChannel::OnLinkDestroy);
+	pSource->EvLinkClose += MakeDelegate(this, &JClient::JPageChannel::OnLinkClose);
 }
 
 void JClient::JPageChannel::OnUnhook(JEventable* src)
@@ -2520,12 +2519,12 @@ void JClient::JPageChannel::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
-	pSource->EvLinkDestroy -= MakeDelegate(this, &JClient::JPageChannel::OnLinkDestroy);
+	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JPageChannel::OnLinkClose);
 
 	__super::OnUnhook(src);
 }
 
-void JClient::JPageChannel::OnLinkDestroy(SOCKET sock)
+void JClient::JPageChannel::OnLinkClose(SOCKET sock, UINT err)
 {
 	ASSERT(pSource);
 	if (m_hwndPage) {

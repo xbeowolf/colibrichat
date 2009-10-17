@@ -131,6 +131,10 @@
 // Status images
 #define IML_STATUSIMG_COUNT    38
 
+// Timers
+#define IDT_CONNECT                    100
+#define TIMER_CONNECT                  (30*1000)
+
 //-----------------------------------------------------------------------------
 
 namespace colibrichat
@@ -212,7 +216,7 @@ namespace colibrichat
 			void OnUnhook(JEventable* src);
 
 			void OnLinkConnect(SOCKET sock);
-			void OnLinkDestroy(SOCKET sock);
+			void OnLinkClose(SOCKET sock, UINT err);
 
 		protected:
 
@@ -270,7 +274,6 @@ namespace colibrichat
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
-			void OnLinkConnecting(SOCKET sock);
 			void OnLog(const std::tstring& str, bool withtime = true);
 			void OnReport(const std::tstring& str, netengine::EGroup gr = netengine::eMessage, netengine::EPriority prior = netengine::eNormal);
 
@@ -371,7 +374,7 @@ namespace colibrichat
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
-			void OnLinkDestroy(SOCKET sock);
+			void OnLinkClose(SOCKET sock, UINT err);
 
 		protected:
 
@@ -431,7 +434,7 @@ namespace colibrichat
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
-			void OnLinkDestroy(SOCKET sock);
+			void OnLinkClose(SOCKET sock, UINT err);
 
 		protected:
 
@@ -464,7 +467,7 @@ namespace colibrichat
 			void OnUnhook(JEventable* src);
 
 			void OnLinkEstablished(SOCKET sock);
-			void OnLinkDestroy(SOCKET sock);
+			void OnLinkClose(SOCKET sock, UINT err);
 			void OnPageClose(DWORD id);
 
 		protected:
@@ -486,7 +489,7 @@ namespace colibrichat
 			void OnUnhook(JEventable* src);
 
 			void OnLinkEstablished(SOCKET sock);
-			void OnLinkDestroy(SOCKET sock);
+			void OnLinkClose(SOCKET sock, UINT err);
 
 		protected:
 
@@ -507,7 +510,7 @@ namespace colibrichat
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
-			void OnLinkDestroy(SOCKET sock);
+			void OnLinkClose(SOCKET sock, UINT err);
 
 		protected:
 
@@ -561,7 +564,7 @@ namespace colibrichat
 			void OnUnhook(JEventable* src);
 
 			void OnLinkEstablished(SOCKET sock);
-			void OnLinkDestroy(SOCKET sock);
+			void OnLinkClose(SOCKET sock, UINT err);
 
 		protected:
 
@@ -584,7 +587,7 @@ namespace colibrichat
 			void OnUnhook(JEventable* src);
 
 			void OnLinkEstablished(SOCKET sock);
-			void OnLinkDestroy(SOCKET sock);
+			void OnLinkClose(SOCKET sock, UINT err);
 
 		protected:
 
@@ -689,22 +692,21 @@ namespace colibrichat
 		void OnUnhook(JEventable* src);
 
 		void OnLinkConnect(SOCKET sock);
-		void OnLinkClose(SOCKET sock);
-		void OnLinkDestroy(SOCKET sock);
+		void OnLinkClose(SOCKET sock, UINT err);
+		void OnLinkFail(SOCKET sock, UINT err);
 		void OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access);
 		void OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is);
 
 	public:
 
 		static std::map<EChanStatus, std::tstring> s_mapChanStatName;
+		static std::map<UINT, std::tstring> s_mapWsaErr;
 		static Alert s_mapAlert[];
 
 		// --- Events ---
 
 		fastdelegate::FastDelegateList1<DWORD>
 			EvPageClose;
-		fastdelegate::FastDelegateList1<SOCKET>
-			EvLinkConnecting;
 
 	protected:
 
@@ -716,6 +718,8 @@ namespace colibrichat
 		JPROPERTY_R(u_short, port);
 		JPROPERTY_RREF_CONST(std::tstring, password);
 		JPROPERTY_R(bool, bReconnect);
+		JPROPERTY_R(int, nConnectCount);
+
 		JPROPERTY_R(bool, bSendByEnter);
 		JPROPERTY_RREF_CONST(MapAlert, mAlert);
 
