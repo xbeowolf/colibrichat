@@ -83,6 +83,7 @@ jpOnline(0)
 	m_clientsock = 0;
 	m_bReconnect = true;
 	m_nConnectCount = 0;
+	m_fAutoopen = true;
 	m_bSendByEnter = true;
 
 	m_metrics.uNickMaxLength = 20;
@@ -193,7 +194,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	case WM_DESTROY:
 		{
 			Profile::WriteInt(RF_CLIENT, RK_STATE, m_clientsock != 0);
-			//Sleep(Profile::GetInt(RF_CLIENT, RK_QUITPAUSE, 500)); // gives opportunity to send final messages
+			saveAutoopen();
 			Disconnect();
 
 			// Close all opened waves
@@ -515,38 +516,58 @@ void CALLBACK JClient::Disconnect()
 	}
 }
 
+void CALLBACK JClient::saveAutoopen() const
+{
+	if (Profile::GetInt(RF_AUTOOPEN, RK_USEAUTOOPEN, FALSE)) {
+		int i = 0;
+		for each (MapPageChannel::value_type const& v in mPageChannel) {
+			Profile::WriteInt(RF_AUTOOPEN, tformat(TEXT("type%02i"), i).c_str(), (UINT)v.second->gettype());
+			Profile::WriteString(RF_AUTOOPEN, tformat(TEXT("name%02i"), i).c_str(), v.second->m_channel.name.c_str());
+			Profile::WriteString(RF_AUTOOPEN, tformat(TEXT("pass%02i"), i).c_str(), v.second->m_channel.password.c_str());
+			i++;
+		}
+		Profile::WriteInt(RF_AUTOOPEN, RK_CHANCOUNT, i);
+	}
+}
+
+void CALLBACK JClient::openAutoopen()
+{
+	if (Profile::GetInt(RF_AUTOOPEN, RK_USEAUTOOPEN, FALSE)) {
+		int count = Profile::GetInt(RF_AUTOOPEN, RK_CHANCOUNT, 0);
+		EContact type;
+		std::tstring name, pass;
+		for (int i = 0; i < count; i++) {
+			type = (EContact)Profile::GetInt(RF_AUTOOPEN, tformat(TEXT("type%02i"), i).c_str(), (UINT)eChannel);
+			name = Profile::GetString(RF_AUTOOPEN, tformat(TEXT("name%02i"), i).c_str(), TEXT("main"));
+			pass = Profile::GetString(RF_AUTOOPEN, tformat(TEXT("pass%02i"), i).c_str(), TEXT(""));
+			Send_Quest_JOIN(m_clientsock, name, pass, type);
+		}
+	}
+}
+
 int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact type)
 {
-	JPtr<JPage> jp;
-	int pos;
-
 	if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fFlashPageNew
 		&& Profile::GetInt(RF_CLIENT, RK_FLASHPAGENEW, TRUE)
 		&& !m_mUser[m_idOwn].isOnline)
 		FlashWindow(m_hwndPage, TRUE);
+
+	int pos = getTabIndex(id);
+	if (pos >= 0) return pos;
+	JPtr<JPage> jp;
+	ASSERT(!getPage(id));
+
 	switch (type)
 	{
 	case eServer:
 		{
 			pos = 0;
-
-			if (jpPageServer) {
-				m_clientsock ? jpPageServer->Enable() : jpPageServer->Disable();
-				return pos; // already opened
-			}
-
 			jp = jpPageServer = new JPageServer;
 			break;
 		}
 	case eList:
 		{
 			pos = (jpPageServer ? 1 : 0);
-
-			if (jpPageList) {
-				m_clientsock ? jpPageList->Enable() : jpPageList->Disable();
-				return pos; // already opened
-			}
-
 			jp = jpPageList = new JPageList;
 			break;
 		}
@@ -554,12 +575,6 @@ int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 		{
 			pos = (jpPageServer ? 1 : 0) + (jpPageList ? 1 : 0) +
 				(int)mPageChannel.size() + (int)mPageUser.size();
-
-			if (mPageUser.find(id) != mPageUser.end()) {
-				m_clientsock ? mPageUser[id]->Enable() : mPageUser[id]->Disable();
-				return pos; // already opened
-			}
-
 			jp = mPageUser[id] = new JPageUser(id, name);
 			break;
 		}
@@ -567,12 +582,6 @@ int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 		{
 			pos = (jpPageServer ? 1 : 0) + (jpPageList ? 1 : 0) +
 				(int)mPageChannel.size();
-
-			if (mPageChannel.find(id) != mPageChannel.end()) {
-				m_clientsock ? mPageChannel[id]->Enable() : mPageChannel[id]->Disable();
-				return pos; // already opened
-			}
-
 			jp = mPageChannel[id] = new JPageChannel(id, name);
 			break;
 		}
@@ -641,15 +650,14 @@ void CALLBACK JClient::ContactSel(int index)
 {
 	ASSERT(index >= 0 && index < TabCtrl_GetItemCount(m_hwndTab));
 
-	if (TabCtrl_GetCurSel(m_hwndTab) != index)
-		TabCtrl_SetCurSel(m_hwndTab, index);
+	TabCtrl_SetCurSel(m_hwndTab, index);
 
 	TCITEM tci;
 	tci.mask = TCIF_PARAM;
 	VERIFY(TabCtrl_GetItem(m_hwndTab, index, &tci));
 	JPtr<JPage> jp = getPage((DWORD)tci.lParam);
 	ShowWindow(jp->hwndPage, SW_SHOW);
-	if (jpOnline) ShowWindow(jpOnline->hwndPage, SW_HIDE);
+	if (jpOnline && jpOnline != jp) ShowWindow(jpOnline->hwndPage, SW_HIDE);
 	jp->activate();
 	jpOnline = jp;
 
@@ -911,7 +919,7 @@ void JClient::OnLinkFail(SOCKET sock, UINT err)
 
 	// If not disconnected by user, try to reconnect again
 	if (err && isClient && m_bReconnect) {
-		SetTimer(m_hwndPage, IDT_CONNECT, TIMER_CONNECT, 0);
+		SetTimer(m_hwndPage, IDT_CONNECT, Profile::GetInt(RF_CLIENT, RK_TIMERCONNECT, TIMER_CONNECT), 0);
 		// Update interface
 		EvLog(tformat(TEXT("[style=msg]Waiting %u seconds and try again (attempt #%i).[/style]"), TIMER_CONNECT/1000, m_nConnectCount), true);
 	}
@@ -930,6 +938,12 @@ void JClient::OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access)
 
 	Send_Cmd_NICK(sock, nick);
 	Send_Cmd_STATUS(sock, stat, img, msg);
+
+	// Autoopen
+	if (m_fAutoopen) {
+		openAutoopen();
+		m_fAutoopen = false;
+	}
 }
 
 void JClient::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is)
@@ -1823,11 +1837,12 @@ void CALLBACK JClient::Send_Cmd_NICK(SOCKET sock, const std::tstring& nick)
 	PushTrn(sock, COMMAND(CCPM_NICK), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Quest_JOIN(SOCKET sock, const std::tstring& name, const std::tstring& pass)
+void CALLBACK JClient::Send_Quest_JOIN(SOCKET sock, const std::tstring& name, const std::tstring& pass, int type)
 {
 	std::ostringstream os;
 	io::pack(os, name);
 	io::pack(os, pass);
+	io::pack(os, type);
 	PushTrn(sock, QUEST(CCPM_JOIN), 0, os.str());
 }
 

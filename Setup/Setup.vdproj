@@ -511,7 +511,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Colibri Chat"
         "ProductCode" = "8:{CB4F402C-DC95-4E54-8F11-A91C0416DCAB}"
-        "PackageCode" = "8:{38D716DD-0536-4E6C-B8A0-76FE5DCDE6FE}"
+        "PackageCode" = "8:{EDCD0972-FCD2-4A20-9FF3-C50C60496E27}"
         "UpgradeCode" = "8:{9CE85361-B45F-48AE-B43E-D9C165BF7E24}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
@@ -768,6 +768,60 @@
                                                             }
                                                         }
                                                     }
+                                                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_A0EE56E06F9145D78A1C3691DF182546"
+                                                    {
+                                                    "Name" = "8:Autoopen"
+                                                    "Condition" = "8:"
+                                                    "AlwaysCreate" = "11:FALSE"
+                                                    "DeleteAtUninstall" = "11:TRUE"
+                                                    "Transitive" = "11:FALSE"
+                                                        "Keys"
+                                                        {
+                                                        }
+                                                        "Values"
+                                                        {
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_2379856CDE664067A4B7841B5E8C3A7B"
+                                                            {
+                                                            "Name" = "8:ContactsCount"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:3"
+                                                            "Value" = "3:1"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_383E85BA4FD84885A9946051FB220F9B"
+                                                            {
+                                                            "Name" = "8:UseAutoopen"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:3"
+                                                            "Value" = "3:1"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_4EC0DB3146F040F196C745170D3E8313"
+                                                            {
+                                                            "Name" = "8:type00"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:3"
+                                                            "Value" = "3:8"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_D1977444992145D6B71F9A0CC9AD5B72"
+                                                            {
+                                                            "Name" = "8:pass00"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:1"
+                                                            "Value" = "8:"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_F6BDE06BE6A94048A4583A308F6AD301"
+                                                            {
+                                                            "Name" = "8:name00"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:1"
+                                                            "Value" = "8:main"
+                                                            }
+                                                        }
+                                                    }
                                                 }
                                                 "Values"
                                                 {
@@ -786,6 +840,14 @@
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:1"
                                                     "Value" = "8:1"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_5256B7EBA5D64D9081B51C56883C259B"
+                                                    {
+                                                    "Name" = "8:TimerConnect"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:30000"
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_5941B0148FAC44468E39E94E8D885FF4"
                                                     {

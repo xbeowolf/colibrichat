@@ -44,6 +44,7 @@
 
 // Folders
 #define RF_CLIENT              TEXT("Client\\")
+#define RF_AUTOOPEN            RF_CLIENT TEXT("Autoopen\\")
 #define RF_SOUNDS              RF_CLIENT TEXT("Sounds\\")
 
 // Server
@@ -55,6 +56,7 @@
 #define RK_STATUS              TEXT("Status")
 #define RK_STATUSIMG           TEXT("StatusImage")
 #define RK_STATUSMSG           TEXT("StatusMessage")
+#define RK_TIMERCONNECT        TEXT("TimerConnect")
 
 // Interface
 #define RK_SENDBYENTER         TEXT("SendByEnter")
@@ -62,6 +64,10 @@
 #define RK_FLASHPAGESAYPRIVATE TEXT("FlashPageSayPrivate")
 #define RK_FLASHPAGESAYCHANNEL TEXT("FlashPageSayChannel")
 #define RK_FLASHPAGETOPIC      TEXT("FlashPageChangeTopic")
+
+// Autoopen
+#define RK_USEAUTOOPEN         TEXT("UseAutoopen")
+#define RK_CHANCOUNT           TEXT("ContactsCount")
 
 // Sounds
 #define RK_WAVMELINE           TEXT("MeLine")
@@ -215,7 +221,7 @@ namespace colibrichat
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
-			void OnLinkConnect(SOCKET sock);
+			void OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access);
 			void OnLinkClose(SOCKET sock, UINT err);
 
 		protected:
@@ -374,6 +380,7 @@ namespace colibrichat
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
+			void OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access);
 			void OnLinkClose(SOCKET sock, UINT err);
 
 		protected:
@@ -434,6 +441,7 @@ namespace colibrichat
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
+			void OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access);
 			void OnLinkClose(SOCKET sock, UINT err);
 
 		protected:
@@ -627,6 +635,11 @@ namespace colibrichat
 		void CALLBACK Connect(bool getsetting = false);
 		void CALLBACK Disconnect();
 
+		// Autoopen
+		void CALLBACK saveAutoopen() const;
+		void CALLBACK openAutoopen();
+		bool m_fAutoopen;
+
 		// Contacts
 		int  CALLBACK ContactAdd(const std::tstring& name, DWORD id, EContact type);
 		void CALLBACK ContactDel(DWORD id);
@@ -669,7 +682,7 @@ namespace colibrichat
 
 		// Beowolf Network Protocol Messages sending
 		void CALLBACK Send_Cmd_NICK(SOCKET sock, const std::tstring& nick);
-		void CALLBACK Send_Quest_JOIN(SOCKET sock, const std::tstring& name, const std::tstring& pass = TEXT(""));
+		void CALLBACK Send_Quest_JOIN(SOCKET sock, const std::tstring& name, const std::tstring& pass = TEXT(""), int type = eUser | eChannel | eBoard);
 		void CALLBACK Send_Cmd_PART(SOCKET sock, DWORD idWho, DWORD idWhere);
 		void CALLBACK Send_Quest_USERINFO(SOCKET sock, const SetId& set);
 		void CALLBACK Send_Cmd_ONLINE(SOCKET sock, bool on, DWORD id);

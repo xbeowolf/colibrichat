@@ -208,7 +208,7 @@ void JClient::JPage::OnHook(JEventable* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkConnect += MakeDelegate(this, &JClient::JPage::OnLinkConnect);
+	pSource->EvLinkIdentify += MakeDelegate(this, &JClient::JPage::OnLinkIdentify);
 	pSource->EvLinkClose += MakeDelegate(this, &JClient::JPage::OnLinkClose);
 }
 
@@ -217,7 +217,7 @@ void JClient::JPage::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
-	pSource->EvLinkConnect -= MakeDelegate(this, &JClient::JPage::OnLinkConnect);
+	pSource->EvLinkIdentify -= MakeDelegate(this, &JClient::JPage::OnLinkIdentify);
 	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JPage::OnLinkClose);
 
 	__super::OnUnhook(src);
@@ -225,7 +225,7 @@ void JClient::JPage::OnUnhook(JEventable* src)
 	SetSource(0);
 }
 
-void JClient::JPage::OnLinkConnect(SOCKET sock)
+void JClient::JPage::OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access)
 {
 	ASSERT(pSource);
 	if (m_hwndPage) {
@@ -638,8 +638,6 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 				{
 					if (pSource->m_clientsock) {
 						pSource->Disconnect();
-						// Update interface
-						Enable();
 					} else if (pSource->m_nConnectCount) {
 						pSource->m_nConnectCount = 0;
 						KillTimer(pSource->hwndPage, IDT_CONNECT);
@@ -915,10 +913,9 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 						std::tstring chanbuf(pSource->m_metrics.uChanMaxLength, 0), passbuf(pSource->m_metrics.uPassMaxLength, 0);
 						GetWindowText(m_hwndChan, &chanbuf[0], (int)chanbuf.size()+1);
 						GetWindowText(m_hwndPass, &passbuf[0], (int)passbuf.size()+1);
-						std::tstring chan, msg;
-						chan = chanbuf;
-						if (pSource->CheckNick(chan, msg)) { // check content
-							pSource->Send_Quest_JOIN(pSource->m_clientsock, chan, passbuf);
+						std::tstring msg;
+						if (pSource->CheckNick(chanbuf, msg)) { // check content
+							pSource->Send_Quest_JOIN(pSource->m_clientsock, chanbuf, passbuf);
 						} else {
 							pSource->DisplayMessage(m_hwndChan, msg);
 						}
@@ -1563,6 +1560,7 @@ void JClient::JPageUser::OnHook(JEventable* src)
 
 	__super::OnHook(src);
 
+	pSource->EvLinkIdentify += MakeDelegate(this, &JClient::JPageUser::OnLinkIdentify);
 	pSource->EvLinkClose += MakeDelegate(this, &JClient::JPageUser::OnLinkClose);
 }
 
@@ -1571,9 +1569,18 @@ void JClient::JPageUser::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
+	pSource->EvLinkIdentify -= MakeDelegate(this, &JClient::JPageUser::OnLinkIdentify);
 	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JPageUser::OnLinkClose);
 
 	__super::OnUnhook(src);
+}
+
+void JClient::JPageUser::OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access)
+{
+	ASSERT(pSource);
+	if (m_hwndPage) {
+		pSource->Send_Quest_JOIN(pSource->m_clientsock, m_user.name, m_user.password, gettype());
+	}
 }
 
 void JClient::JPageUser::OnLinkClose(SOCKET sock, UINT err)
@@ -2511,6 +2518,7 @@ void JClient::JPageChannel::OnHook(JEventable* src)
 
 	__super::OnHook(src);
 
+	pSource->EvLinkIdentify += MakeDelegate(this, &JClient::JPageChannel::OnLinkIdentify);
 	pSource->EvLinkClose += MakeDelegate(this, &JClient::JPageChannel::OnLinkClose);
 }
 
@@ -2519,9 +2527,18 @@ void JClient::JPageChannel::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
+	pSource->EvLinkIdentify -= MakeDelegate(this, &JClient::JPageChannel::OnLinkIdentify);
 	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JPageChannel::OnLinkClose);
 
 	__super::OnUnhook(src);
+}
+
+void JClient::JPageChannel::OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access)
+{
+	ASSERT(pSource);
+	if (m_hwndPage) {
+		pSource->Send_Quest_JOIN(pSource->m_clientsock, m_channel.name, m_channel.password, gettype());
+	}
 }
 
 void JClient::JPageChannel::OnLinkClose(SOCKET sock, UINT err)

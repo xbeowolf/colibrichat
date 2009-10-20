@@ -78,6 +78,7 @@
 #define CHAN_ALREADY                   1
 #define CHAN_DENY                      2
 #define CHAN_LIMIT                     3
+#define CHAN_ABSENT                    4
 
 // Part channel or private talk
 #define CCPM_PART                      105

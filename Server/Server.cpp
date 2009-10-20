@@ -560,11 +560,13 @@ void CALLBACK JServer::Recv_Quest_LIST(SOCKET sock, WORD trnid, io::mem& is)
 void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 {
 	std::tstring name, pass;
+	int type;
 
 	try
 	{
 		io::unpack(is, name);
 		io::unpack(is, pass);
+		io::unpack(is, type);
 	}
 	catch (io::exception e)
 	{
@@ -577,13 +579,15 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 
 		case 1:
 			pass = TEXT("");
+		case 2:
+			type = eUser | eChannel | eBoard;
 		}
 	}
 
 	DWORD idDst = dCRC(name.c_str());
 	DWORD idSrc = m_mSocketId[sock];
 	MapUser::const_iterator iu = m_mUser.find(idDst);
-	if (iu != m_mUser.end()) { // private talk
+	if (iu != m_mUser.end() && type & eUser) { // private talk
 		if (iu->second.opened.find(idDst) == iu->second.opened.end()) {
 			Send_Reply_JOIN_User(sock, trnid, idDst, iu->second);
 			Send_Notify_JOIN(m_mIdSocket[idDst], idSrc, idDst, m_mUser[idSrc]);
@@ -593,7 +597,7 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 		}
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idDst);
-		if (ic != m_mChannel.end()) { // channel
+		if (ic != m_mChannel.end() && type & eChannel) { // channel
 			if (ic->second.opened.size() < ic->second.nLimit) {
 				if (ic->second.password.empty() || ic->second.password == pass) {
 					if (ic->second.opened.find(idSrc) == ic->second.opened.end()) {
@@ -612,25 +616,29 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 				Send_Reply_JOIN_Result(sock, trnid, CHAN_LIMIT, eChannel, idDst);
 			}
 		} else { // create new channel if nothing was found
-			FILETIME ft;
-			GetSystemFileTime(ft);
+			if (type & eChannel) {
+				FILETIME ft;
+				GetSystemFileTime(ft);
 
-			Channel chan;
-			chan.name = name;
-			chan.ftCreation = ft;
-			chan.password = pass;
-			chan.topic = TEXT("");
-			chan.idTopicWriter = 0;
-			chan.founder.insert(idSrc);
-			chan.nAutoStatus = eWriter;
-			chan.nLimit = -1;
-			chan.isHidden = false;
-			chan.isAnonymous = false;
-			chan.crBackground = RGB(0xFF, 0xFF, 0xFF);
-			m_mChannel[idDst] = chan;
+				Channel chan;
+				chan.name = name;
+				chan.ftCreation = ft;
+				chan.password = pass;
+				chan.topic = TEXT("");
+				chan.idTopicWriter = 0;
+				chan.founder.insert(idSrc);
+				chan.nAutoStatus = eWriter;
+				chan.nLimit = -1;
+				chan.isHidden = false;
+				chan.isAnonymous = false;
+				chan.crBackground = RGB(0xFF, 0xFF, 0xFF);
+				m_mChannel[idDst] = chan;
 
-			linkCRC(idDst, idSrc);
-			Send_Reply_JOIN_Channel(sock, trnid, idDst, m_mChannel[idDst]);
+				linkCRC(idDst, idSrc);
+				Send_Reply_JOIN_Channel(sock, trnid, idDst, m_mChannel[idDst]);
+			} else if (type & eBoard) {
+				Send_Reply_JOIN_Result(sock, trnid, CHAN_ABSENT, eBoard, idDst);
+			} else Send_Reply_JOIN_Result(sock, trnid, CHAN_ABSENT, (EContact)type, idDst);
 		}
 	}
 
