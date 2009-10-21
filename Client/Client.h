@@ -139,7 +139,9 @@
 
 // Timers
 #define IDT_CONNECT                    100
+#define IDT_BALOONPOP                  101
 #define TIMER_CONNECT                  (30*1000)
+#define TIMER_BALOONPOP                (GetDoubleClickTime() * 10)
 
 //-----------------------------------------------------------------------------
 
@@ -651,7 +653,8 @@ namespace colibrichat
 		void CALLBACK ShowTopic(const std::tstring& topic);
 
 		// Error provider
-		void DisplayMessage(HWND hwnd, const std::tstring& msg);
+		void CALLBACK DisplayMessage(HWND hwnd, const std::tstring& msg);
+		void CALLBACK HideBaloon(HWND hwnd = 0);
 		void CALLBACK PlaySound(const TCHAR* snd);
 
 		// Users managment
@@ -735,6 +738,10 @@ namespace colibrichat
 
 		JPROPERTY_R(bool, bSendByEnter);
 		JPROPERTY_RREF_CONST(MapAlert, mAlert);
+
+		// Baloon tooltip
+		JPROPERTY_R(HWND, isBaloon);
+		JPROPERTY_R(HWND, hwndBaloon);
 
 		// Pages
 		JPtr<JPage> jpOnline;

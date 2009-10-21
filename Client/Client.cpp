@@ -176,6 +176,15 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			SNDMSG(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)JClientApp::jpApp->hiMain16);
 			SNDMSG(hWnd, WM_SETICON, ICON_BIG, (LPARAM)JClientApp::jpApp->hiMain32);
 
+			// Create baloon tool tip for users list
+			m_hwndBaloon = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, 0,
+				WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP | TTS_BALLOON,
+				CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+				hWnd, 0, JClientApp::jpApp->hinstApp, 0);
+			ASSERT(m_hwndBaloon);
+			SendMessage(m_hwndBaloon, TTM_SETMAXTIPWIDTH, 0, 300);
+			m_isBaloon = 0;
+
 			// Inits Tab control
 			TabCtrl_SetImageList(m_hwndTab, JClientApp::jpApp->himlTab);
 
@@ -220,6 +229,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_SIZE:
 		{
+			HideBaloon();
 			if (wParam == SIZE_MINIMIZED) break;
 			SendMessage(hWnd, BEM_ADJUSTSIZE, wParam, lParam);
 			break;
@@ -275,9 +285,12 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		break;
 
 	case WM_ACTIVATEAPP:
-		// Give opportunity to close application without online status sending
-		PostMessage(hWnd, WM_ACTIVATEAPP2, wParam, lParam);
-		break;
+		{
+			HideBaloon();
+			// Give opportunity to close application without online status sending
+			PostMessage(hWnd, WM_ACTIVATEAPP2, wParam, lParam);
+			break;
+		}
 
 	case WM_ACTIVATEAPP2:
 		if (jpOnline) jpOnline->activate();
@@ -297,6 +310,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_COMMAND:
 		{
+			HideBaloon();
 			switch (LOWORD(wParam))
 			{
 			case IDOK:
@@ -436,7 +450,12 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			case IDT_CONNECT:
 				{
 					Connect();
-					KillTimer(m_hwndPage, IDT_CONNECT);
+					break;
+				}
+
+			case IDT_BALOONPOP:
+				{
+					HideBaloon();
 					break;
 				}
 			}
@@ -490,6 +509,8 @@ void CALLBACK JClient::Connect(bool getsetting)
 	InsertLink(link);
 	m_clientsock = link.Sock;
 	m_nConnectCount++;
+
+	KillTimer(m_hwndPage, IDT_CONNECT);
 
 	// Write it's to log
 	EvLog(
@@ -661,6 +682,8 @@ void CALLBACK JClient::ContactSel(int index)
 	jp->activate();
 	jpOnline = jp;
 
+	// Hide any baloon content
+	HideBaloon();
 	// Set main window topic
 	ShowTopic(jp->gettopic());
 	// Set default focus control
@@ -769,10 +792,23 @@ void CALLBACK JClient::ShowTopic(const std::tstring& topic)
 	SetWindowText(m_hwndPage, tformat(TEXT("[%s] - Colibri Chat"), topic.c_str()).c_str());
 }
 
-void JClient::DisplayMessage(HWND hwnd, const std::tstring& msg)
+void CALLBACK JClient::DisplayMessage(HWND hwnd, const std::tstring& msg)
 {
 	MessageBeep(MB_ICONHAND);
 	SetFocus(hwnd);
+}
+
+void CALLBACK JClient::HideBaloon(HWND hwnd)
+{
+	if (hwnd || m_isBaloon) {
+		TOOLINFO ti;
+		ti.cbSize = sizeof(ti);
+		ti.hwnd = m_hwndPage;
+		ti.uId = (UINT_PTR)(hwnd ? hwnd : m_isBaloon);
+		SendMessage(m_hwndBaloon, TTM_TRACKACTIVATE, FALSE, (LPARAM)&ti);
+		if (!hwnd) m_isBaloon = 0;
+		KillTimer(m_hwndPage, IDT_BALOONPOP);
+	}
 }
 
 void CALLBACK JClient::PlaySound(const TCHAR* snd)
@@ -894,7 +930,6 @@ void JClient::OnLinkClose(SOCKET sock, UINT err)
 
 	if (isClient) {
 		m_clientsock = 0; // not connected
-		KillTimer(m_hwndPage, IDT_CONNECT);
 		// Update interface
 		EvLog(tformat(TEXT("[style=msg]Disconnected. Reason: [i]%s[/i][/style]"), JClient::s_mapWsaErr[err].c_str()), true);
 	}

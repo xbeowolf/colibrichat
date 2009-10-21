@@ -198,8 +198,8 @@ LRESULT WINAPI JServer::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 					HMENU hmenu = LoadMenu(JServerApp::jpApp->hinstApp, MAKEINTRESOURCE(IDM_SHELL));
 					POINT p;
 					SetForegroundWindow(hWnd);
-					GetCursorPos(&p);
-					SetMenuDefaultItem(GetSubMenu(hmenu, 0), IDC_SHELL_CONNECTIONS, FALSE);
+					VERIFY(GetCursorPos(&p));
+					VERIFY(SetMenuDefaultItem(GetSubMenu(hmenu, 0), IDC_SHELL_CONNECTIONS, FALSE));
 					TrackPopupMenu(GetSubMenu(hmenu, 0), TPM_RIGHTALIGN | TPM_BOTTOMALIGN | TPM_RIGHTBUTTON,
 						p.x, p.y, 0, hWnd, 0);
 					VERIFY(DestroyMenu(hmenu));

@@ -191,7 +191,7 @@ void CALLBACK JClient::JPage::activate()
 void CALLBACK JClient::JPage::setAlert(EAlert a)
 {
 	ASSERT(pSource);
-	if ((a > m_alert || a == eGreen) && (pSource->jpOnline != this || !pSource->m_mUser[pSource->m_idOwn].isOnline)) {
+	if ((a > m_alert || a == eGreen) && (pSource->jpOnline != this || !pSource->m_mUser[pSource->m_idOwn].isOnline) && pSource->hwndPage) {
 		m_alert = a;
 
 		TCITEM tci;
@@ -720,6 +720,7 @@ void JClient::JPageServer::OnLog(const std::tstring& str, bool withtime)
 void JClient::JPageServer::OnReport(const std::tstring& str, netengine::EGroup gr, netengine::EPriority prior)
 {
 	ASSERT(pSource);
+	if (!m_hwndPage) return; // ignore if window closed
 	if (m_Groups.find(gr) != m_Groups.end() && prior < m_Priority) return;
 
 	std::tstring msg;
@@ -915,7 +916,8 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 						GetWindowText(m_hwndPass, &passbuf[0], (int)passbuf.size()+1);
 						std::tstring msg;
 						if (pSource->CheckNick(chanbuf, msg)) { // check content
-							pSource->Send_Quest_JOIN(pSource->m_clientsock, chanbuf, passbuf);
+							// send only c-strings, not buffer!
+							pSource->Send_Quest_JOIN(pSource->m_clientsock, chanbuf.c_str(), passbuf.c_str());
 						} else {
 							pSource->DisplayMessage(m_hwndChan, msg);
 						}
@@ -1515,7 +1517,7 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 		{
 			if ((HMENU)wParam == GetSubMenu(JClientApp::jpApp->hmenuRichEdit, 0))
 			{
-				SetMenuDefaultItem((HMENU)wParam, IDC_SEND, FALSE);
+				VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_SEND, FALSE));
 				CheckMenuRadioItem((HMENU)wParam,
 					IDC_SENDBYENTER, IDC_SENDBYCTRLENTER,
 					pSource->bSendByEnter ? IDC_SENDBYENTER : IDC_SENDBYCTRLENTER,
@@ -1894,8 +1896,8 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			m_hwndTB = GetDlgItem(hWnd, IDC_TOOLBAR);
 			m_hwndEdit = GetDlgItem(hWnd, IDC_RICHEDIT);
 			m_hwndList = GetDlgItem(hWnd, IDC_USERLIST);
-			m_hwndSend = GetDlgItem(hWnd, IDC_SEND);
 			m_hwndMsgSpin = GetDlgItem(hWnd, IDC_MSGSPIN);
+			m_hwndSend = GetDlgItem(hWnd, IDC_SEND);
 
 			// Get initial windows sizes
 			MapControl(m_hwndEdit, rcEdit);
@@ -1905,6 +1907,15 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 			m_fTransparent = true;
 			wCharFormatting = SCF_SELECTION;
+
+			TOOLINFO ti;
+			ti.cbSize = sizeof(ti);
+			ti.uFlags = TTF_ABSOLUTE | TTF_IDISHWND | TTF_TRACK;
+			ti.hwnd = pSource->hwndPage;
+			ti.uId = (UINT_PTR)m_hwndList;
+			ti.hinst = JClientApp::jpApp->hinstApp;
+			ti.lpszText = 0;
+			VERIFY(SendMessage(pSource->m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
 
 			// Inits tool bar
 			SendMessage(m_hwndTB, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
@@ -1958,6 +1969,13 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 	case WM_DESTROY:
 		{
+			pSource->HideBaloon(m_hwndList);
+			TOOLINFO ti;
+			ti.cbSize = sizeof(ti);
+			ti.hwnd = pSource->hwndPage;
+			ti.uId = (UINT_PTR)m_hwndList;
+			SendMessage(pSource->m_hwndBaloon, TTM_DELTOOL, 0, (LPARAM)&ti);
+
 			pSource->EvPageClose.Invoke(m_ID);
 
 			pSource->Send_Cmd_PART(pSource->clientsock, pSource->m_idOwn, m_ID);
@@ -2314,6 +2332,59 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					break;
 				}
 
+			case LVN_ITEMCHANGED:
+				{
+					LPNMLISTVIEW pnmv = (LPNMLISTVIEW)lParam;
+					if (pnmh->idFrom == IDC_USERLIST && pnmv->uChanged == LVIF_STATE) {
+						MapUser::const_iterator iu = pSource->m_mUser.find((DWORD)pnmv->lParam);
+						if (iu != pSource->m_mUser.end() && pnmv->iItem >= 0)
+						{
+							ASSERT(pSource->m_clientsock);
+
+							SendMessage(pSource->m_hwndBaloon, TTM_SETTIPTEXTCOLOR, (DWORD)pnmv->lParam != pSource->m_idOwn
+								? RGB(0xFF, 0x00, 0x00)
+								: RGB(0x00, 0x00, 0xFF), 0);
+
+							HICON hicon = ImageList_GetIcon(JClientApp::jpApp->himlStatusImg, iu->second.nStatusImg, ILD_TRANSPARENT);
+							VERIFY(SendMessage(pSource->m_hwndBaloon, TTM_SETTITLE, (WPARAM)hicon, (LPARAM)iu->second.name.c_str()));
+							DestroyIcon(hicon);
+
+							static TCHAR  bttbuf[256];
+							SYSTEMTIME st;
+							FileTimeToLocalTime(iu->second.ftCreation, st);
+							TOOLINFO ti;
+							_stprintf_s(bttbuf, _countof(bttbuf),
+								TEXT("%s\n")
+								TEXT("Status text:\t\"%s\"\n")
+								TEXT("IP-address:\t%i.%i.%i.%i\n")
+								TEXT("Connected:\t%02i:%02i:%02i, %02i.%02i.%04i"),
+								iu->second.isOnline ? TEXT("User online") : TEXT("User offline"),
+								iu->second.strStatus.c_str(),
+								iu->second.IP.S_un.S_un_b.s_b1,
+								iu->second.IP.S_un.S_un_b.s_b2,
+								iu->second.IP.S_un.S_un_b.s_b3,
+								iu->second.IP.S_un.S_un_b.s_b4,
+								st.wHour, st.wMinute, st.wSecond,
+								st.wDay, st.wMonth, st.wYear);
+							ti.cbSize = sizeof(ti);
+							ti.hwnd = pSource->hwndPage;
+							ti.uId = (UINT_PTR)m_hwndList;
+							ti.hinst = JClientApp::jpApp->hinstApp;
+							ti.lpszText = bttbuf;
+							SendMessage(pSource->m_hwndBaloon, TTM_UPDATETIPTEXT, 0, (LPARAM)&ti);
+
+							POINT p;
+							VERIFY(GetCursorPos(&p));
+							SendMessage(pSource->m_hwndBaloon, TTM_TRACKPOSITION, 0, MAKELPARAM(p.x, p.y));
+
+							SendMessage(pSource->m_hwndBaloon, TTM_TRACKACTIVATE, TRUE, (LPARAM)&ti);
+							pSource->m_isBaloon = m_hwndList;
+							SetTimer(pSource->hwndPage, IDT_BALOONPOP, TIMER_BALOONPOP, 0);
+						}
+					}
+					break;
+				}
+
 			case EN_MSGFILTER:
 				{
 					MSGFILTER* pmf = (MSGFILTER*)lParam;
@@ -2373,7 +2444,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 	case WM_INITMENUPOPUP:
 		{
 			if ((HMENU)wParam == GetSubMenu(JClientApp::jpApp->hmenuChannel, 0)) {
-				SetMenuDefaultItem((HMENU)wParam, IDC_CHANTOPIC, FALSE);
+				VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_CHANTOPIC, FALSE));
 				EnableMenuItem((HMENU)wParam, IDC_CHANTOPIC,
 					MF_BYCOMMAND | (m_channel.getStatus(pSource->m_idOwn) >= eMember ? MF_ENABLED : MF_GRAYED));
 
@@ -2385,7 +2456,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				break;
 			} else if ((HMENU)wParam == GetSubMenu(JClientApp::jpApp->hmenuRichEdit, 0))
 			{
-				SetMenuDefaultItem((HMENU)wParam, IDC_SEND, FALSE);
+				VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_SEND, FALSE));
 				CheckMenuRadioItem((HMENU)wParam,
 					IDC_SENDBYENTER, IDC_SENDBYCTRLENTER,
 					pSource->bSendByEnter ? IDC_SENDBYENTER : IDC_SENDBYCTRLENTER,
@@ -2412,7 +2483,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				MapUser::const_iterator iu = getSelUser();
 				bool valid = iu != pSource->m_mUser.end();
 
-				SetMenuDefaultItem((HMENU)wParam, IDC_PRIVATETALK, FALSE);
+				VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_PRIVATETALK, FALSE));
 				EnableMenuItem((HMENU)wParam, IDC_PRIVATETALK,
 					MF_BYCOMMAND | (valid && JClient::s_mapAlert[iu->second.nStatus].fCanOpenPrivate ? MF_ENABLED : MF_GRAYED));
 				EnableMenuItem((HMENU)wParam, IDC_PRIVATEMESSAGE,
