@@ -58,8 +58,12 @@
 #define RK_STATUSMSG           TEXT("StatusMessage")
 #define RK_TIMERCONNECT        TEXT("TimerConnect")
 
-// Interface
+// Editor
 #define RK_SENDBYENTER         TEXT("SendByEnter")
+#define RK_QUOTATIONBLUE       TEXT("QuotationBlue")
+#define RK_QUOTATIONRED        TEXT("QuotationRed")
+
+// Interface
 #define RK_FLASHPAGENEW        TEXT("FlashPageNew")
 #define RK_FLASHPAGESAYPRIVATE TEXT("FlashPageSayPrivate")
 #define RK_FLASHPAGESAYCHANNEL TEXT("FlashPageSayChannel")
@@ -242,6 +246,7 @@ namespace colibrichat
 
 			void CALLBACK AppendRtf(const std::string& content) const;
 			void CALLBACK AppendScript(const std::tstring& content, bool withtime = true) const;
+			virtual void CALLBACK Say(DWORD idUser, const std::string& content);
 
 		protected:
 
@@ -370,6 +375,8 @@ namespace colibrichat
 			void CALLBACK Enable();
 			void CALLBACK Disable();
 
+			void CALLBACK Say(DWORD idUser, const std::string& content);
+
 			void CALLBACK OnSheetColor(COLORREF cr);
 
 			void CALLBACK setuser(const User& val) {m_user = val;}
@@ -390,11 +397,12 @@ namespace colibrichat
 			DWORD m_ID;
 			JPROPERTY_RREF_CONST(User, user);
 
-			JPROPERTY_R(HWND, hwndMsgSpin);
+			JPROPERTY_R(HWND, hwndMsgSpinBlue);
+			JPROPERTY_R(HWND, hwndMsgSpinRed);
 			JPROPERTY_R(HWND, hwndSend);
-			RECT rcMsgSpin, rcSend;
+			RECT rcMsgSpinBlue, rcMsgSpinRed, rcSend;
 
-			std::vector<std::string> vecMsgSpin;
+			std::vector<std::string> vecMsgSpinBlue, vecMsgSpinRed;
 		};
 
 		class JPageChannel : public JPageLog, public rtf::Editor
@@ -417,6 +425,8 @@ namespace colibrichat
 
 			void CALLBACK Enable();
 			void CALLBACK Disable();
+
+			void CALLBACK Say(DWORD idUser, const std::string& content);
 
 			void CALLBACK OnSheetColor(COLORREF cr);
 
@@ -452,11 +462,12 @@ namespace colibrichat
 			JPROPERTY_RREF_CONST(Channel, channel);
 
 			JPROPERTY_R(HWND, hwndList);
-			JPROPERTY_R(HWND, hwndMsgSpin);
+			JPROPERTY_R(HWND, hwndMsgSpinBlue);
+			JPROPERTY_R(HWND, hwndMsgSpinRed);
 			JPROPERTY_R(HWND, hwndSend);
-			RECT rcList, rcMsgSpin, rcSend;
+			RECT rcList, rcMsgSpinBlue, rcMsgSpinRed, rcSend;
 
-			std::vector<std::string> vecMsgSpin;
+			std::vector<std::string> vecMsgSpinBlue, vecMsgSpinRed;
 		};
 
 		//

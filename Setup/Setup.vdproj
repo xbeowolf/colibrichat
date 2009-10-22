@@ -517,7 +517,7 @@
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.12"
+        "ProductVersion" = "8:1.0.13"
         "Manufacturer" = "8:BEOWOLF"
         "ARPHELPTELEPHONE" = "8:+380684862837, icq 320-329-575"
         "ARPHELPLINK" = "8:"
@@ -825,6 +825,14 @@
                                                 }
                                                 "Values"
                                                 {
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_180DAE9C8BE44668BBD582FD3F6D9E13"
+                                                    {
+                                                    "Name" = "8:QuotationRed"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:1"
+                                                    }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_2D1DA8FF738A4A67840C76DF3DC1ADFA"
                                                     {
                                                     "Name" = "8:ConnectionState"
@@ -832,14 +840,6 @@
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:3"
                                                     "Value" = "3:0"
-                                                    }
-                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_3A95835F8E5E451A86CF753D51F8C150"
-                                                    {
-                                                    "Name" = "8:SendByEnter"
-                                                    "Condition" = "8:"
-                                                    "Transitive" = "11:FALSE"
-                                                    "ValueTypes" = "3:1"
-                                                    "Value" = "8:1"
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_5256B7EBA5D64D9081B51C56883C259B"
                                                     {
@@ -868,6 +868,14 @@
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_6C7D07DF80DC4324B0BEB631F12F9B76"
                                                     {
                                                     "Name" = "8:Status"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:0"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_88783EF1482C48788AEC85769572BD2F"
+                                                    {
+                                                    "Name" = "8:QuotationBlue"
                                                     "Condition" = "8:"
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:3"
@@ -924,6 +932,14 @@
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_F42EA0F0E14C4E40BA3986963A9F7DFB"
                                                     {
                                                     "Name" = "8:FlashPageSayPrivate"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:1"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_F441068AB8704FC9B94BDADD5081D12F"
+                                                    {
+                                                    "Name" = "8:SendByEnter"
                                                     "Condition" = "8:"
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:3"

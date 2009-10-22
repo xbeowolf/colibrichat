@@ -1459,10 +1459,7 @@ void CALLBACK JClient::Recv_Notify_SAY(SOCKET sock, WORD trnid, io::mem& is)
 		}
 	}
 	if (jp) {
-		jp->AppendScript(tformat(TEXT("[color=%s]%s[/color]:"),
-			idWho != m_idOwn ? TEXT("red") : TEXT("blue"),
-			getSafeName(idWho).c_str()));
-		jp->AppendRtf(content);
+		jp->Say(idWho, content);
 	}
 }
 

@@ -66,6 +66,9 @@
 #define IDC_DATETIMEPICKER1             1058
 #define IDC_RECVTIME                    1058
 #define IDC_REPLY                       1059
+#define IDC_MSGSPINBLUE                 1060
+#define IDC_MSGSPINBLUE2                1062
+#define IDC_MSGSPINRED                  1062
 #define IDC_NICK                        40002
 #define IDC_CONNECT                     40004
 #define IDC_SENDBYENTER                 40017
@@ -122,7 +125,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        163
 #define _APS_NEXT_COMMAND_VALUE         40082
-#define _APS_NEXT_CONTROL_VALUE         1060
+#define _APS_NEXT_CONTROL_VALUE         1061
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif
