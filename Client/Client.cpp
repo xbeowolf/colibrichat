@@ -185,6 +185,15 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			SendMessage(m_hwndBaloon, TTM_SETMAXTIPWIDTH, 0, 300);
 			m_isBaloon = 0;
 
+			TOOLINFO ti;
+			ti.cbSize = sizeof(ti);
+			ti.uFlags = TTF_ABSOLUTE | TTF_IDISHWND | TTF_TRACK;
+			ti.hwnd = hwndPage;
+			ti.uId = (UINT_PTR)hwndPage;
+			ti.hinst = JClientApp::jpApp->hinstApp;
+			ti.lpszText = 0;
+			VERIFY(SendMessage(m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
+
 			// Inits Tab control
 			TabCtrl_SetImageList(m_hwndTab, JClientApp::jpApp->himlTab);
 
@@ -202,6 +211,13 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_DESTROY:
 		{
+			HideBaloon(hwndPage);
+			TOOLINFO ti;
+			ti.cbSize = sizeof(ti);
+			ti.hwnd = hwndPage;
+			ti.uId = (UINT_PTR)hwndPage;
+			SendMessage(m_hwndBaloon, TTM_DELTOOL, 0, (LPARAM)&ti);
+
 			Profile::WriteInt(RF_CLIENT, RK_STATE, m_clientsock != 0);
 			saveAutoopen();
 			Disconnect();
@@ -336,7 +352,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 							if (CheckNick(nick, msg)) { // check content
 								SendMessage(jpOnline->hwndPage, WM_COMMAND, IDC_CONNECT, 0);
 							} else {
-								DisplayMessage(jpPageServer->hwndNick, msg);
+								DisplayMessage(jpPageServer->hwndNick, msg.c_str(), TEXT("wrong nick"), 2);
 							}
 							break;
 						}
@@ -348,7 +364,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 							if (CheckNick(nick, msg)) { // check content
 								Send_Cmd_NICK(m_clientsock, nick);
 							} else {
-								DisplayMessage(jpPageServer->hwndNick, msg);
+								DisplayMessage(jpPageServer->hwndNick, msg.c_str(), TEXT("wrong nick"), 2);
 							}
 							break;
 						}
@@ -372,7 +388,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			case IDC_TABCLOSE:
 				{
 					if (jpOnline->IsPermanent()) {
-						DisplayMessage(m_hwndTab, TEXT("This page can not be closed"));
+						DisplayMessage(m_hwndTab, TEXT("This page can not be closed"), 0, 2);
 					} else {
 						int sel;
 						TCITEM tci;
@@ -792,10 +808,45 @@ void CALLBACK JClient::ShowTopic(const std::tstring& topic)
 	SetWindowText(m_hwndPage, tformat(TEXT("[%s] - Colibri Chat"), topic.c_str()).c_str());
 }
 
-void CALLBACK JClient::DisplayMessage(HWND hwnd, const std::tstring& msg)
+void CALLBACK JClient::DisplayMessage(HWND hwnd, const TCHAR* msg, const TCHAR* title, int icon, COLORREF cr)
 {
-	MessageBeep(MB_ICONHAND);
 	SetFocus(hwnd);
+	TOOLINFO ti;
+	static TCHAR bttbuf[1024];
+	_tcscpy_s(bttbuf, _countof(bttbuf), msg);
+	ti.cbSize = sizeof(ti);
+	ti.hwnd = m_hwndPage;
+	ti.uId = (UINT_PTR)m_hwndPage;
+	ti.hinst = JClientApp::jpApp->hinstApp;
+	ti.lpszText = bttbuf;
+	SendMessage(m_hwndBaloon, TTM_UPDATETIPTEXT, 0, (LPARAM)&ti);
+	VERIFY(SendMessage(m_hwndBaloon, TTM_SETTITLE, (WPARAM)icon, (LPARAM)title));
+	SendMessage(m_hwndBaloon, TTM_SETTIPTEXTCOLOR, cr, 0);
+	RECT r;
+	VERIFY(GetWindowRect(hwnd, &r));
+	SendMessage(m_hwndBaloon, TTM_TRACKPOSITION, 0, MAKELPARAM((r.left + r.right)/2, (r.top + r.bottom)/2));
+	SendMessage(m_hwndBaloon, TTM_TRACKACTIVATE, TRUE, (LPARAM)&ti);
+	m_isBaloon = m_hwndPage;
+	SetTimer(hwndPage, IDT_BALOONPOP, TIMER_BALOONPOP, 0);
+}
+
+void CALLBACK JClient::ShowBaloon(const POINT& p, HWND hwndId, const TCHAR* msg, const TCHAR* title, HICON hicon, COLORREF cr)
+{
+	TOOLINFO ti;
+	static TCHAR bttbuf[1024];
+	_tcscpy_s(bttbuf, _countof(bttbuf), msg);
+	ti.cbSize = sizeof(ti);
+	ti.hwnd = m_hwndPage;
+	ti.uId = (UINT_PTR)hwndId;
+	ti.hinst = JClientApp::jpApp->hinstApp;
+	ti.lpszText = bttbuf;
+	SendMessage(m_hwndBaloon, TTM_UPDATETIPTEXT, 0, (LPARAM)&ti);
+	VERIFY(SendMessage(m_hwndBaloon, TTM_SETTITLE, (WPARAM)hicon, (LPARAM)title));
+	SendMessage(m_hwndBaloon, TTM_SETTIPTEXTCOLOR, cr, 0);
+	SendMessage(m_hwndBaloon, TTM_TRACKPOSITION, 0, MAKELPARAM(p.x, p.y));
+	SendMessage(m_hwndBaloon, TTM_TRACKACTIVATE, TRUE, (LPARAM)&ti);
+	m_isBaloon = hwndId;
+	SetTimer(hwndPage, IDT_BALOONPOP, TIMER_BALOONPOP, 0);
 }
 
 void CALLBACK JClient::HideBaloon(HWND hwnd)
@@ -2105,7 +2156,7 @@ void CALLBACK JClientApp::Init()
 	m_himlMan = ImageList_LoadImage(hinstApp, MAKEINTRESOURCE(IDB_MAN), 16, 8, CLR_DEFAULT, IMAGE_BITMAP, LR_CREATEDIBSECTION);
 	m_himlStatus = ImageList_LoadImage(hinstApp, MAKEINTRESOURCE(IDB_STATUS), 16, 8, CLR_DEFAULT, IMAGE_BITMAP, LR_CREATEDIBSECTION);
 	m_himlStatusImg = ImageList_LoadImage(hinstApp, MAKEINTRESOURCE(IDB_STATUSIMG), 16, 8, CLR_DEFAULT, IMAGE_BITMAP, LR_CREATEDIBSECTION);
-	m_himgSend = LoadImage(hinstApp, MAKEINTRESOURCE(IDB_SEND), IMAGE_BITMAP, 72, 48, LR_LOADMAP3DCOLORS);
+	m_himgSend = LoadImage(hinstApp, MAKEINTRESOURCE(IDB_SEND), IMAGE_BITMAP, 60, 48, LR_LOADMAP3DCOLORS);
 	m_himgULBG = LoadBitmap(hinstApp, MAKEINTRESOURCE(IDB_UL_BG));
 	m_himgULFoc = LoadBitmap(hinstApp, MAKEINTRESOURCE(IDB_UL_FOC));
 	m_himgULSel = LoadBitmap(hinstApp, MAKEINTRESOURCE(IDB_UL_SEL));

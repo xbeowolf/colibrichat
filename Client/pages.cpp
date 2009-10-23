@@ -927,7 +927,7 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 							// send only c-strings, not buffer!
 							pSource->Send_Quest_JOIN(pSource->m_clientsock, chanbuf.c_str(), passbuf.c_str());
 						} else {
-							pSource->DisplayMessage(m_hwndChan, msg);
+							pSource->DisplayMessage(m_hwndChan, msg.c_str(), TEXT("wrong nick"), 2);
 						}
 					}
 					break;
@@ -1243,9 +1243,8 @@ void CALLBACK JClient::JPageUser::Say(DWORD idUser, const std::string& content)
 		vecMsgSpinBlue.insert(vecMsgSpinBlue.begin(), content);
 		if (vecMsgSpinBlue.size() > pSource->m_metrics.nMsgSpinMaxCount)
 			vecMsgSpinBlue.erase(vecMsgSpinBlue.begin() + pSource->m_metrics.nMsgSpinMaxCount, vecMsgSpinBlue.end());
-		EnableWindow(m_hwndMsgSpinBlue, TRUE);
-		InvalidateRect(m_hwndMsgSpinBlue, 0, TRUE);
 		SendMessage(m_hwndMsgSpinBlue, UDM_SETRANGE, 0, MAKELONG(vecMsgSpinBlue.size(), 0));
+		InvalidateRect(m_hwndMsgSpinBlue, 0, TRUE);
 		LPARAM pos = SendMessage(m_hwndMsgSpinBlue, UDM_GETPOS, 0, 0);
 		if (LOWORD(pos) && !HIWORD(pos)) {
 			pos = min(pos + 1, (LPARAM)vecMsgSpinBlue.size());
@@ -1255,9 +1254,8 @@ void CALLBACK JClient::JPageUser::Say(DWORD idUser, const std::string& content)
 		vecMsgSpinRed.insert(vecMsgSpinRed.begin(), content);
 		if (vecMsgSpinRed.size() > pSource->m_metrics.nMsgSpinMaxCount)
 			vecMsgSpinRed.erase(vecMsgSpinRed.begin(), vecMsgSpinRed.begin() + vecMsgSpinRed.size() - pSource->m_metrics.nMsgSpinMaxCount);
-		EnableWindow(m_hwndMsgSpinRed, TRUE);
-		InvalidateRect(m_hwndMsgSpinRed, 0, TRUE);
 		SendMessage(m_hwndMsgSpinRed, UDM_SETRANGE, 0, MAKELONG(vecMsgSpinRed.size(), 0));
+		InvalidateRect(m_hwndMsgSpinRed, 0, TRUE);
 		LPARAM pos = SendMessage(m_hwndMsgSpinRed, UDM_GETPOS, 0, 0);
 		if (LOWORD(pos) && !HIWORD(pos)) {
 			pos = min(pos + 1, (LPARAM)vecMsgSpinRed.size());
@@ -1387,9 +1385,9 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 
 			// Init up-doun control
 			vecMsgSpinBlue.clear();
-			EnableWindow(m_hwndMsgSpinBlue, FALSE);
+			SendMessage(m_hwndMsgSpinBlue, UDM_SETRANGE, 0, MAKELONG(vecMsgSpinBlue.size(), 0));
 			vecMsgSpinRed.clear();
-			EnableWindow(m_hwndMsgSpinRed, FALSE);
+			SendMessage(m_hwndMsgSpinRed, UDM_SETRANGE, 0, MAKELONG(vecMsgSpinRed.size(), 0));
 
 			// Inits Send button
 			SendMessage(m_hwndSend, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)JClientApp::jpApp->himgSend);
@@ -1513,7 +1511,6 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 			}
 			break;
 		}
-
 
 	case WM_NOTIFY:
 		{
@@ -1740,9 +1737,8 @@ void CALLBACK JClient::JPageChannel::Say(DWORD idUser, const std::string& conten
 		vecMsgSpinBlue.insert(vecMsgSpinBlue.begin(), content);
 		if (vecMsgSpinBlue.size() > pSource->m_metrics.nMsgSpinMaxCount)
 			vecMsgSpinBlue.erase(vecMsgSpinBlue.begin() + pSource->m_metrics.nMsgSpinMaxCount, vecMsgSpinBlue.end());
-		EnableWindow(m_hwndMsgSpinBlue, TRUE);
-		InvalidateRect(m_hwndMsgSpinBlue, 0, TRUE);
 		SendMessage(m_hwndMsgSpinBlue, UDM_SETRANGE, 0, MAKELONG(vecMsgSpinBlue.size(), 0));
+		InvalidateRect(m_hwndMsgSpinBlue, 0, TRUE);
 		LPARAM pos = SendMessage(m_hwndMsgSpinBlue, UDM_GETPOS, 0, 0);
 		if (LOWORD(pos) && !HIWORD(pos)) {
 			pos = min(pos + 1, (LPARAM)vecMsgSpinBlue.size());
@@ -1752,15 +1748,44 @@ void CALLBACK JClient::JPageChannel::Say(DWORD idUser, const std::string& conten
 		vecMsgSpinRed.insert(vecMsgSpinRed.begin(), content);
 		if (vecMsgSpinRed.size() > pSource->m_metrics.nMsgSpinMaxCount)
 			vecMsgSpinRed.erase(vecMsgSpinRed.begin(), vecMsgSpinRed.begin() + vecMsgSpinRed.size() - pSource->m_metrics.nMsgSpinMaxCount);
-		EnableWindow(m_hwndMsgSpinRed, TRUE);
-		InvalidateRect(m_hwndMsgSpinRed, 0, TRUE);
 		SendMessage(m_hwndMsgSpinRed, UDM_SETRANGE, 0, MAKELONG(vecMsgSpinRed.size(), 0));
+		InvalidateRect(m_hwndMsgSpinRed, 0, TRUE);
 		LPARAM pos = SendMessage(m_hwndMsgSpinRed, UDM_GETPOS, 0, 0);
 		if (LOWORD(pos) && !HIWORD(pos)) {
 			pos = min(pos + 1, (LPARAM)vecMsgSpinRed.size());
 			SendMessage(m_hwndMsgSpinRed, UDM_SETPOS, 0, MAKELONG(pos, 0));
 		}
 	}
+}
+
+void CALLBACK JClient::JPageChannel::DisplayMessage(DWORD idUser, const TCHAR* msg, HICON hicon, COLORREF cr)
+{
+	POINT p;
+	VERIFY(GetCursorPos(&p));
+	RECT r0, r;
+	GetWindowRect(m_hwndList, &r0);
+	LVFINDINFO lvfi;
+	lvfi.flags = LVFI_PARAM;
+	lvfi.lParam = (LPARAM)idUser;
+	LVITEM lvi;
+	lvi.mask = LVIF_PARAM;
+	int index = ListView_FindItem(m_hwndList, -1, &lvfi);
+	if (index >= 0 && ListView_GetItemRect(m_hwndList, index, &r, LVIR_SELECTBOUNDS)) {
+		MapWindowPoints(m_hwndList, 0, (LPPOINT)&r, sizeof(RECT)/sizeof(POINT));
+		r.left = r0.left, r.right = r0.right;
+		if (r.top < r0.top) r.top = r0.top;
+		if (r.bottom > r0.bottom) r.bottom = r0.bottom;
+	} else r = r0;
+	if (p.x < r.left || p.x > r.right) p.x = (r.left + r.right)/2;
+	if (p.y < r.top || p.y > r.bottom) p.y = (r.top + r.bottom)/2;
+	MapUser::const_iterator iu = pSource->m_mUser.find(idUser);
+	pSource->ShowBaloon(
+		p,
+		m_hwndList,
+		msg,
+		iu != pSource->m_mUser.end() ? iu->second.name.c_str() : 0,
+		hicon,
+		cr);
 }
 
 void CALLBACK JClient::JPageChannel::OnSheetColor(COLORREF cr)
@@ -2071,9 +2096,9 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 			// Init up-down control
 			vecMsgSpinBlue.clear();
-			EnableWindow(m_hwndMsgSpinBlue, FALSE);
+			SendMessage(m_hwndMsgSpinBlue, UDM_SETRANGE, 0, MAKELONG(vecMsgSpinBlue.size(), 0));
 			vecMsgSpinRed.clear();
-			EnableWindow(m_hwndMsgSpinRed, FALSE);
+			SendMessage(m_hwndMsgSpinRed, UDM_SETRANGE, 0, MAKELONG(vecMsgSpinRed.size(), 0));
 
 			// Inits Send button
 			SendMessage(m_hwndSend, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)JClientApp::jpApp->himgSend);
@@ -2221,7 +2246,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					if (JClient::s_mapAlert[iu->second.nStatus].fCanOpenPrivate) {
 						ASSERT(pSource->m_clientsock);
 						pSource->Send_Quest_JOIN(pSource->m_clientsock, iu->second.name);
-					} else pSource->DisplayMessage(m_hwndList, TEXT("User bans to open private talks"));
+					} else DisplayMessage(iu->first, TEXT("User bans to open private talks"), (HICON)1);
 					break;
 				}
 
@@ -2232,7 +2257,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					if (JClient::s_mapAlert[iu->second.nStatus].fCanMessage) {
 						ASSERT(pSource->m_clientsock);
 						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_MSGSEND), pSource->hwndPage, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JMessageEditor(pSource, iu->second.name, false));
-					} else pSource->DisplayMessage(m_hwndList, TEXT("User messages recieving is banned"));
+					} else DisplayMessage(iu->first, TEXT("User messages recieving is banned"), (HICON)1);
 					break;
 				}
 
@@ -2243,7 +2268,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					if (JClient::s_mapAlert[iu->second.nStatus].fCanAlert) {
 						ASSERT(pSource->m_clientsock);
 						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_MSGSEND), pSource->hwndPage, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JMessageEditor(pSource, iu->second.name, true));
-					} else pSource->DisplayMessage(m_hwndList, TEXT("User alerts recieving is banned"));
+					} else DisplayMessage(iu->first, TEXT("User alerts recieving is banned"), (HICON)1);
 					break;
 				}
 
@@ -2254,7 +2279,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					if (JClient::s_mapAlert[iu->second.nStatus].fCanSignal) {
 						ASSERT(pSource->m_clientsock);
 						pSource->Send_Cmd_BEEP(pSource->m_clientsock, iu->first);
-					} else pSource->DisplayMessage(m_hwndList, TEXT("Sound signal disabled now for this user"));
+					} else DisplayMessage(iu->first, TEXT("Sound signal disabled now for this user"), (HICON)1);
 					break;
 				}
 
@@ -2265,7 +2290,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					if (JClient::s_mapAlert[iu->second.nStatus].fCanRecvClipboard) {
 						ASSERT(pSource->m_clientsock);
 						pSource->Send_Cmd_CLIPBOARD(pSource->m_clientsock, iu->first);
-					} else pSource->DisplayMessage(m_hwndList, TEXT("User bans recieving windows clipboard content"));
+					} else DisplayMessage(iu->first, TEXT("User bans recieving windows clipboard content"), (HICON)1);
 					break;
 				}
 
@@ -2276,7 +2301,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					if (JClient::s_mapAlert[iu->second.nStatus].fCanAlert) {
 						ASSERT(pSource->m_clientsock);
 						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_SPLASHRTFEDITOR), pSource->hwndPage, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JSplashRtfEditor(pSource, iu->first));
-					} else pSource->DisplayMessage(m_hwndList, TEXT("User bans recieving splashes"));
+					} else DisplayMessage(iu->first, TEXT("User bans recieving splashes"), (HICON)1);
 					break;
 				}
 
@@ -2290,7 +2315,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					bool canKick = m_channel.getStatus(pSource->m_idOwn) >= m_channel.getStatus(iu->first);
 					if (iu->first == pSource->m_idOwn || (isModer && canKick)) {
 						pSource->Send_Cmd_PART(pSource->m_clientsock, iu->first, m_ID);
-					}
+					} else DisplayMessage(iu->first, TEXT("You have no rights to kick this user"), (HICON)1);
 					break;
 				}
 
@@ -2457,19 +2482,12 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 						{
 							ASSERT(pSource->m_clientsock);
 
-							SendMessage(pSource->m_hwndBaloon, TTM_SETTIPTEXTCOLOR, (DWORD)pnmv->lParam != pSource->m_idOwn
-								? RGB(0xFF, 0x00, 0x00)
-								: RGB(0x00, 0x00, 0xFF), 0);
-
-							HICON hicon = ImageList_GetIcon(JClientApp::jpApp->himlStatusImg, iu->second.nStatusImg, ILD_TRANSPARENT);
-							VERIFY(SendMessage(pSource->m_hwndBaloon, TTM_SETTITLE, (WPARAM)hicon, (LPARAM)iu->second.name.c_str()));
-							DestroyIcon(hicon);
-
-							static TCHAR  bttbuf[256];
 							SYSTEMTIME st;
 							FileTimeToLocalTime(iu->second.ftCreation, st);
-							TOOLINFO ti;
-							_stprintf_s(bttbuf, _countof(bttbuf),
+							HICON hicon = ImageList_GetIcon(JClientApp::jpApp->himlStatusImg, iu->second.nStatusImg, ILD_TRANSPARENT);
+							DisplayMessage(
+								iu->first,
+								tformat(
 								TEXT("%s\n")
 								TEXT("Status text:\t\"%s\"\n")
 								TEXT("IP-address:\t%i.%i.%i.%i\n")
@@ -2481,21 +2499,12 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 								iu->second.IP.S_un.S_un_b.s_b3,
 								iu->second.IP.S_un.S_un_b.s_b4,
 								st.wHour, st.wMinute, st.wSecond,
-								st.wDay, st.wMonth, st.wYear);
-							ti.cbSize = sizeof(ti);
-							ti.hwnd = pSource->hwndPage;
-							ti.uId = (UINT_PTR)m_hwndList;
-							ti.hinst = JClientApp::jpApp->hinstApp;
-							ti.lpszText = bttbuf;
-							SendMessage(pSource->m_hwndBaloon, TTM_UPDATETIPTEXT, 0, (LPARAM)&ti);
-
-							POINT p;
-							VERIFY(GetCursorPos(&p));
-							SendMessage(pSource->m_hwndBaloon, TTM_TRACKPOSITION, 0, MAKELPARAM(p.x, p.y));
-
-							SendMessage(pSource->m_hwndBaloon, TTM_TRACKACTIVATE, TRUE, (LPARAM)&ti);
-							pSource->m_isBaloon = m_hwndList;
-							SetTimer(pSource->hwndPage, IDT_BALOONPOP, TIMER_BALOONPOP, 0);
+								st.wDay, st.wMonth, st.wYear).c_str(),
+								hicon,
+								(DWORD)pnmv->lParam != pSource->m_idOwn
+								? RGB(0xFF, 0x00, 0x00)
+								: RGB(0x00, 0x00, 0xFF));
+								DestroyIcon(hicon);
 						}
 					}
 					break;

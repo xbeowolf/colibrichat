@@ -427,6 +427,7 @@ namespace colibrichat
 			void CALLBACK Disable();
 
 			void CALLBACK Say(DWORD idUser, const std::string& content);
+			void CALLBACK DisplayMessage(DWORD idUser, const TCHAR* msg, HICON hicon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
 
 			void CALLBACK OnSheetColor(COLORREF cr);
 
@@ -664,7 +665,8 @@ namespace colibrichat
 		void CALLBACK ShowTopic(const std::tstring& topic);
 
 		// Error provider
-		void CALLBACK DisplayMessage(HWND hwnd, const std::tstring& msg);
+		void CALLBACK DisplayMessage(HWND hwndId, const TCHAR* msg, const TCHAR* title, int icon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
+		void CALLBACK ShowBaloon(const POINT& p, HWND hwndId, const TCHAR* msg, const TCHAR* title = 0, HICON hicon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
 		void CALLBACK HideBaloon(HWND hwnd = 0);
 		void CALLBACK PlaySound(const TCHAR* snd);
 

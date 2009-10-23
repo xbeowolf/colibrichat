@@ -845,7 +845,7 @@ LRESULT WINAPI JClient::JMessageEditor::DlgProc(HWND hWnd, UINT message, WPARAM 
 							content.c_str(), fAlert, crSheet);
 						DestroyWindow(hWnd);
 					} else {
-						pSource->DisplayMessage(pSource->jpPageServer->hwndNick, msg);
+						pSource->DisplayMessage(pSource->jpPageServer->hwndNick, msg.c_str(), strWho.c_str(), 2);
 					}
 					break;
 				}
@@ -1031,7 +1031,7 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 						ASSERT(pSource->m_clientsock);
 						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_MSGSEND), pSource->hwndPage, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JMessageEditor(pSource, iu->second.name, false));
 						DestroyWindow(hWnd);
-					} else pSource->DisplayMessage(m_hwndPage, TEXT("User messages recieving is banned"));
+					} else pSource->DisplayMessage(m_hwndPage, TEXT("User messages recieving is banned"), pSource->getSafeName(m_idWho).c_str(), 1);
 					break;
 				}
 
@@ -1043,7 +1043,7 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 						ASSERT(pSource->m_clientsock);
 						pSource->Send_Quest_JOIN(pSource->m_clientsock, iu->second.name);
 						DestroyWindow(hWnd);
-					} else pSource->DisplayMessage(m_hwndPage, TEXT("User talk banned"));
+					} else pSource->DisplayMessage(m_hwndPage, TEXT("User talk banned"), pSource->getSafeName(m_idWho).c_str(), 1);
 					break;
 				}
 
