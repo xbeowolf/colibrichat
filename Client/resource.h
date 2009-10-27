@@ -36,6 +36,15 @@
 #define IDA_RICHEDIT                    159
 #define IDD_MSGSEND                     161
 #define IDD_MSGRECV                     162
+#define IDS_MSG_NICKERROR               500
+#define IDS_MSG_TABCLOSE                505
+#define IDS_MSG_PRIVATETALK             510
+#define IDS_MSG_PRIVATEMESSAGE          511
+#define IDS_MSG_ALERT                   512
+#define IDS_MSG_SOUNDSIGNAL             513
+#define IDS_MSG_CLIPBOARD               514
+#define IDS_MSG_SPLASHRTF               515
+#define IDS_MSG_KICK                    516
 #define IDC_LOG                         1001
 #define IDC_USERLIST                    1002
 #define IDC_RICHEDIT                    1003
@@ -123,7 +132,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        163
+#define _APS_NEXT_RESOURCE_VALUE        164
 #define _APS_NEXT_COMMAND_VALUE         40082
 #define _APS_NEXT_CONTROL_VALUE         1061
 #define _APS_NEXT_SYMED_VALUE           102

@@ -21,6 +21,7 @@
 #include <Mmsystem.h>
 
 // Common
+#include <patterns.h>
 #include "netengine.h"
 #include "app.h"
 #include "jrtf.h"
@@ -165,7 +166,7 @@ namespace colibrichat
 
 #pragma pack(pop)
 
-	class JClient : public netengine::JEngine, public JDialog
+	class JClient : public netengine::JEngine, public JDialog, protected initdoneable<JClient>
 	{
 	public:
 
@@ -178,6 +179,7 @@ namespace colibrichat
 		class JPageLog;
 		class JPageServer;
 		class JPageList;
+		class JPageChat;
 		class JPageUser;
 		typedef std::map<DWORD, JPtr<JPageUser>> MapPageUser;
 		class JPageChannel;
@@ -355,7 +357,35 @@ namespace colibrichat
 			JPROPERTY_RREF_CONST(MapChannel, mChannel);
 		};
 
-		class JPageUser : public JPageLog, public rtf::Editor
+		class JPageChat : public JPageLog, public rtf::Editor
+		{
+		public:
+
+			friend class JClient;
+
+			CALLBACK JPageChat();
+
+			bool CALLBACK IsPermanent() const {return false;}
+			HWND getDefFocusWnd() const {return m_hwndEdit;}
+
+			void CALLBACK Say(DWORD idUser, const std::string& content);
+			virtual bool CALLBACK CanSend() const {return true;}
+
+		protected:
+
+			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
+
+		protected:
+
+			JPROPERTY_R(HWND, hwndMsgSpinBlue);
+			JPROPERTY_R(HWND, hwndMsgSpinRed);
+			JPROPERTY_R(HWND, hwndSend);
+			RECT rcMsgSpinBlue, rcMsgSpinRed, rcSend;
+
+			std::vector<std::string> vecMsgSpinBlue, vecMsgSpinRed;
+		};
+
+		class JPageUser : public JPageChat
 		{
 		public:
 
@@ -365,8 +395,6 @@ namespace colibrichat
 
 			int CALLBACK ImageIndex() const;
 			LPCTSTR CALLBACK Template() const {return MAKEINTRESOURCE(IDD_USER);}
-			bool CALLBACK IsPermanent() const {return false;}
-			HWND getDefFocusWnd() const {return hwndEdit;}
 
 			EContact CALLBACK gettype() const {return eUser;}
 			DWORD CALLBACK getID() const {return m_ID;}
@@ -375,9 +403,8 @@ namespace colibrichat
 			void CALLBACK Enable();
 			void CALLBACK Disable();
 
-			void CALLBACK Say(DWORD idUser, const std::string& content);
-
 			void CALLBACK OnSheetColor(COLORREF cr);
+			bool CALLBACK CanSend() const {return true;}
 
 			void CALLBACK setuser(const User& val) {m_user = val;}
 			void CALLBACK rename(DWORD idNew, const std::tstring& newname);
@@ -396,16 +423,9 @@ namespace colibrichat
 
 			DWORD m_ID;
 			JPROPERTY_RREF_CONST(User, user);
-
-			JPROPERTY_R(HWND, hwndMsgSpinBlue);
-			JPROPERTY_R(HWND, hwndMsgSpinRed);
-			JPROPERTY_R(HWND, hwndSend);
-			RECT rcMsgSpinBlue, rcMsgSpinRed, rcSend;
-
-			std::vector<std::string> vecMsgSpinBlue, vecMsgSpinRed;
 		};
 
-		class JPageChannel : public JPageLog, public rtf::Editor
+		class JPageChannel : public JPageChat
 		{
 		public:
 
@@ -415,9 +435,7 @@ namespace colibrichat
 
 			int CALLBACK ImageIndex() const;
 			LPCTSTR CALLBACK Template() const {return MAKEINTRESOURCE(IDD_CHANNEL);}
-			bool CALLBACK IsPermanent() const {return false;}
 			std::tstring gettopic() const;
-			HWND getDefFocusWnd() const {return hwndEdit;}
 
 			EContact CALLBACK gettype() const {return eChannel;}
 			DWORD CALLBACK getID() const {return m_ID;}
@@ -426,10 +444,10 @@ namespace colibrichat
 			void CALLBACK Enable();
 			void CALLBACK Disable();
 
-			void CALLBACK Say(DWORD idUser, const std::string& content);
 			void CALLBACK DisplayMessage(DWORD idUser, const TCHAR* msg, HICON hicon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
 
 			void CALLBACK OnSheetColor(COLORREF cr);
+			bool CALLBACK CanSend() const;
 
 			void CALLBACK setchannel(const Channel& val);
 			void CALLBACK rename(DWORD idNew, const std::tstring& newname);
@@ -463,12 +481,7 @@ namespace colibrichat
 			JPROPERTY_RREF_CONST(Channel, channel);
 
 			JPROPERTY_R(HWND, hwndList);
-			JPROPERTY_R(HWND, hwndMsgSpinBlue);
-			JPROPERTY_R(HWND, hwndMsgSpinRed);
-			JPROPERTY_R(HWND, hwndSend);
-			RECT rcList, rcMsgSpinBlue, rcMsgSpinRed, rcSend;
-
-			std::vector<std::string> vecMsgSpinBlue, vecMsgSpinRed;
+			RECT rcList;
 		};
 
 		//
@@ -627,6 +640,8 @@ namespace colibrichat
 	public:
 
 		// Constructor
+		static void initclass();
+		static void doneclass();
 		CALLBACK JClient();
 		DWORD CALLBACK getMinVersion() const {return BNP_ENGINEVERSMIN;}
 		DWORD CALLBACK getCurVersion() const {return BNP_ENGINEVERSNUM;}
@@ -776,9 +791,6 @@ namespace colibrichat
 	class JClientApp : public JApplication // Singleton
 	{
 	public:
-
-		static void CALLBACK s_Init();
-		static void CALLBACK s_Done();
 
 		virtual void CALLBACK Init();
 		virtual bool CALLBACK InitInstance();

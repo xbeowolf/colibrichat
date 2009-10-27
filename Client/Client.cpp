@@ -76,6 +76,36 @@ Alert JClient::s_mapAlert[] = {
 	}, // eInvisible
 };
 
+void JClient::initclass()
+{
+	// Channels access status descriptions
+	JClient::s_mapChanStatName[eOutsider] = TEXT("outsider");
+	JClient::s_mapChanStatName[eReader] = TEXT("reader");
+	JClient::s_mapChanStatName[eWriter] = TEXT("writer");
+	JClient::s_mapChanStatName[eMember] = TEXT("member");
+	JClient::s_mapChanStatName[eModerator] = TEXT("moderator");
+	JClient::s_mapChanStatName[eAdmin] = TEXT("administrator");
+	JClient::s_mapChanStatName[eFounder] = TEXT("founder");
+
+	//   WSA error codes
+	// on FD_CONNECT
+	JClient::s_mapWsaErr[WSAECONNREFUSED] = TEXT("The attempt to connect was rejected.");
+	JClient::s_mapWsaErr[WSAENETUNREACH] = TEXT("The network cannot be reached from this host at this time.");
+	JClient::s_mapWsaErr[WSAEMFILE] = TEXT("No more file descriptors are available.");
+	JClient::s_mapWsaErr[WSAENOBUFS] = TEXT("No buffer space is available. The socket cannot be connected.");
+	JClient::s_mapWsaErr[WSAENOTCONN] = TEXT("The socket is not connected.");
+	JClient::s_mapWsaErr[WSAETIMEDOUT] = TEXT("Attempt to connect timed out without establishing a connection.");
+	// on FD_CLOSE
+	JClient::s_mapWsaErr[0] = TEXT("The connection was reset by software itself.");
+	JClient::s_mapWsaErr[WSAENETDOWN] = TEXT("The network subsystem failed."); // and all other
+	JClient::s_mapWsaErr[WSAECONNRESET] = TEXT("The connection was reset by the remote side.");
+	JClient::s_mapWsaErr[WSAECONNABORTED] = TEXT("The connection was terminated due to a time-out or other failure.");
+}
+
+void JClient::doneclass()
+{
+}
+
 CALLBACK JClient::JClient()
 : netengine::JEngine(), JDialog(),
 jpOnline(0)
@@ -352,7 +382,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 							if (CheckNick(nick, msg)) { // check content
 								SendMessage(jpOnline->hwndPage, WM_COMMAND, IDC_CONNECT, 0);
 							} else {
-								DisplayMessage(jpPageServer->hwndNick, msg.c_str(), TEXT("wrong nick"), 2);
+								DisplayMessage(jpPageServer->hwndNick, msg.c_str(), MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
 							}
 							break;
 						}
@@ -364,7 +394,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 							if (CheckNick(nick, msg)) { // check content
 								Send_Cmd_NICK(m_clientsock, nick);
 							} else {
-								DisplayMessage(jpPageServer->hwndNick, msg.c_str(), TEXT("wrong nick"), 2);
+								DisplayMessage(jpPageServer->hwndNick, msg.c_str(), MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
 							}
 							break;
 						}
@@ -388,7 +418,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			case IDC_TABCLOSE:
 				{
 					if (jpOnline->IsPermanent()) {
-						DisplayMessage(m_hwndTab, TEXT("This page can not be closed"), 0, 2);
+						DisplayMessage(m_hwndTab, MAKEINTRESOURCE(IDS_MSG_TABCLOSE), 0, 2);
 					} else {
 						int sel;
 						TCITEM tci;
@@ -441,7 +471,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 					min(max(GET_X_LPARAM(lParam), r.left), r.right),
 					min(max(GET_Y_LPARAM(lParam), r.top), r.bottom), 0, hWnd, 0);
 			} else {
-				__super::DlgProc(hWnd, message, wParam, lParam);
+				retval = __super::DlgProc(hWnd, message, wParam, lParam);
 			}
 			break;
 		}
@@ -810,38 +840,28 @@ void CALLBACK JClient::ShowTopic(const std::tstring& topic)
 
 void CALLBACK JClient::DisplayMessage(HWND hwnd, const TCHAR* msg, const TCHAR* title, int icon, COLORREF cr)
 {
-	SetFocus(hwnd);
-	TOOLINFO ti;
-	static TCHAR bttbuf[1024];
-	_tcscpy_s(bttbuf, _countof(bttbuf), msg);
-	ti.cbSize = sizeof(ti);
-	ti.hwnd = m_hwndPage;
-	ti.uId = (UINT_PTR)m_hwndPage;
-	ti.hinst = JClientApp::jpApp->hinstApp;
-	ti.lpszText = bttbuf;
-	SendMessage(m_hwndBaloon, TTM_UPDATETIPTEXT, 0, (LPARAM)&ti);
-	VERIFY(SendMessage(m_hwndBaloon, TTM_SETTITLE, (WPARAM)icon, (LPARAM)title));
-	SendMessage(m_hwndBaloon, TTM_SETTIPTEXTCOLOR, cr, 0);
 	RECT r;
 	VERIFY(GetWindowRect(hwnd, &r));
-	SendMessage(m_hwndBaloon, TTM_TRACKPOSITION, 0, MAKELPARAM((r.left + r.right)/2, (r.top + r.bottom)/2));
-	SendMessage(m_hwndBaloon, TTM_TRACKACTIVATE, TRUE, (LPARAM)&ti);
-	m_isBaloon = m_hwndPage;
-	SetTimer(hwndPage, IDT_BALOONPOP, TIMER_BALOONPOP, 0);
+	POINT p;
+	p.x = (r.left + r.right)/2, p.y = (r.top + r.bottom)/2;
+	ShowBaloon(p, m_hwndPage, msg, title, (HICON)(INT_PTR)icon, cr);
 }
 
 void CALLBACK JClient::ShowBaloon(const POINT& p, HWND hwndId, const TCHAR* msg, const TCHAR* title, HICON hicon, COLORREF cr)
 {
 	TOOLINFO ti;
-	static TCHAR bttbuf[1024];
-	_tcscpy_s(bttbuf, _countof(bttbuf), msg);
+	static TCHAR bufmsg[1024], buftitle[100];
+	if (HIWORD(msg)) _tcscpy_s(bufmsg, _countof(bufmsg), msg);
+	else LoadString(JClientApp::jpApp->hinstApp, LOWORD(msg), bufmsg, _countof(bufmsg));
 	ti.cbSize = sizeof(ti);
 	ti.hwnd = m_hwndPage;
 	ti.uId = (UINT_PTR)hwndId;
 	ti.hinst = JClientApp::jpApp->hinstApp;
-	ti.lpszText = bttbuf;
+	ti.lpszText = bufmsg;
 	SendMessage(m_hwndBaloon, TTM_UPDATETIPTEXT, 0, (LPARAM)&ti);
-	VERIFY(SendMessage(m_hwndBaloon, TTM_SETTITLE, (WPARAM)hicon, (LPARAM)title));
+	if (HIWORD(title)) _tcscpy_s(buftitle, _countof(buftitle), title);
+	else LoadString(JClientApp::jpApp->hinstApp, LOWORD(title), buftitle, _countof(buftitle));
+	VERIFY(SendMessage(m_hwndBaloon, TTM_SETTITLE, (WPARAM)hicon, (LPARAM)buftitle));
 	SendMessage(m_hwndBaloon, TTM_SETTIPTEXTCOLOR, cr, 0);
 	SendMessage(m_hwndBaloon, TTM_TRACKPOSITION, 0, MAKELPARAM(p.x, p.y));
 	SendMessage(m_hwndBaloon, TTM_TRACKACTIVATE, TRUE, (LPARAM)&ti);
@@ -2203,36 +2223,6 @@ void CALLBACK JClientApp::Done()
 	VERIFY(FreeLibrary(hinstRichEdit));
 }
 
-void CALLBACK JClientApp::s_Init()
-{
-	// Channels access status descriptions
-	JClient::s_mapChanStatName[eOutsider] = TEXT("outsider");
-	JClient::s_mapChanStatName[eReader] = TEXT("reader");
-	JClient::s_mapChanStatName[eWriter] = TEXT("writer");
-	JClient::s_mapChanStatName[eMember] = TEXT("member");
-	JClient::s_mapChanStatName[eModerator] = TEXT("moderator");
-	JClient::s_mapChanStatName[eAdmin] = TEXT("administrator");
-	JClient::s_mapChanStatName[eFounder] = TEXT("founder");
-
-	//   WSA error codes
-	// on FD_CONNECT
-	JClient::s_mapWsaErr[WSAECONNREFUSED] = TEXT("The attempt to connect was rejected.");
-	JClient::s_mapWsaErr[WSAENETUNREACH] = TEXT("The network cannot be reached from this host at this time.");
-	JClient::s_mapWsaErr[WSAEMFILE] = TEXT("No more file descriptors are available.");
-	JClient::s_mapWsaErr[WSAENOBUFS] = TEXT("No buffer space is available. The socket cannot be connected.");
-	JClient::s_mapWsaErr[WSAENOTCONN] = TEXT("The socket is not connected.");
-	JClient::s_mapWsaErr[WSAETIMEDOUT] = TEXT("Attempt to connect timed out without establishing a connection.");
-	// on FD_CLOSE
-	JClient::s_mapWsaErr[0] = TEXT("The connection was reset by software itself.");
-	JClient::s_mapWsaErr[WSAENETDOWN] = TEXT("The network subsystem failed."); // and all other
-	JClient::s_mapWsaErr[WSAECONNRESET] = TEXT("The connection was reset by the remote side.");
-	JClient::s_mapWsaErr[WSAECONNABORTED] = TEXT("The connection was terminated due to a time-out or other failure.");
-}
-
-void CALLBACK JClientApp::s_Done()
-{
-}
-
 //-----------------------------------------------------------------------------
 
 int WINAPI _tWinMain(HINSTANCE hInstance,
@@ -2252,15 +2242,11 @@ int WINAPI _tWinMain(HINSTANCE hInstance,
 			SetCurrentDirectory((std::tstring(drive)+dir).c_str());
 		}
 
-		JClientApp::s_Init();
-
 		JClientApp::jpApp->hinstApp = hInstance;
 		JClientApp::jpApp->hinstPrev = hPrevInstance;
 		JClientApp::jpApp->lpszCmdLine = lpszCmdLine;
 		JClientApp::jpApp->nCmdShow = nCmdShow;
 		int retval = JClientApp::jpApp->Iteration();
-
-		JClientApp::s_Done();
 
 		return retval;
 	}
