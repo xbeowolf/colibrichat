@@ -37,6 +37,10 @@
 #define IDD_MSGSEND                     161
 #define IDD_MSGRECV                     162
 #define IDS_MSG_NICKERROR               500
+#define IDS_MSG_NICKVALID               501
+#define IDS_MSG_NICKNONPRINT            502
+#define IDS_STRING503                   503
+#define IDS_MSG_NICKEMPTY               503
 #define IDS_MSG_TABCLOSE                505
 #define IDS_MSG_PRIVATETALK             510
 #define IDS_MSG_PRIVATEMESSAGE          511
@@ -127,13 +131,15 @@
 #define IDC_KICK                        40078
 #define ID_OVERLAP_SENDCLIPBOARD        40080
 #define IDC_CLIPBOARD                   40081
+#define ID_OVERLAP_SAVEAS               40082
+#define IDC_LOGSAVEAS                   40083
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        164
-#define _APS_NEXT_COMMAND_VALUE         40082
+#define _APS_NEXT_COMMAND_VALUE         40084
 #define _APS_NEXT_CONTROL_VALUE         1061
 #define _APS_NEXT_SYMED_VALUE           102
 #endif

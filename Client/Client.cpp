@@ -377,24 +377,28 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 					case IDC_PORT:
 					case IDC_PASS:
 						{
-							std::tstring nick(m_metrics.uNickMaxLength, 0), msg;
-							GetDlgItemText(jpOnline->hwndPage, IDC_NICK, &nick[0], (int)nick.size()+1);
-							if (CheckNick(nick, msg)) { // check content
+							std::tstring nickbuf(m_metrics.uNickMaxLength, 0), nick;
+							const TCHAR* msg;
+							GetDlgItemText(jpOnline->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
+							nick = nickbuf.c_str();
+							if (JClient::CheckNick(nick, msg)) { // check content
 								SendMessage(jpOnline->hwndPage, WM_COMMAND, IDC_CONNECT, 0);
 							} else {
-								DisplayMessage(jpPageServer->hwndNick, msg.c_str(), MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
+								DisplayMessage(jpPageServer->hwndNick, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
 							}
 							break;
 						}
 
 					case IDC_NICK:
 						{
-							std::tstring nick(m_metrics.uNickMaxLength, 0), msg;
-							GetDlgItemText(jpOnline->hwndPage, IDC_NICK, &nick[0], (int)nick.size()+1);
-							if (CheckNick(nick, msg)) { // check content
+							std::tstring nickbuf(m_metrics.uNickMaxLength, 0), nick;
+							const TCHAR* msg;
+							GetDlgItemText(jpOnline->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
+							nick = nickbuf.c_str();
+							if (JClient::CheckNick(nick, msg)) { // check content
 								Send_Cmd_NICK(m_clientsock, nick);
 							} else {
-								DisplayMessage(jpPageServer->hwndNick, msg.c_str(), MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
+								DisplayMessage(jpPageServer->hwndNick, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
 							}
 							break;
 						}
@@ -815,21 +819,21 @@ JPtr<JClient::JPage> CALLBACK JClient::getPage(DWORD id)
 	else return 0;
 }
 
-bool JClient::CheckNick(std::tstring& nick, std::tstring& msg)
+bool CALLBACK JClient::CheckNick(std::tstring& nick, const TCHAR*& msg)
 {
-	while (!nick.empty() && *nick.begin() <= TEXT(' ')) nick.erase(nick.begin());
-	while (!nick.empty() && *(nick.end()-1) <= TEXT(' ')) nick.erase(nick.end()-1);
-	if (nick.empty()) {
-		msg = TEXT("Content can not be empty");
-		return false;
-	}
 	for each (std::tstring::value_type const& v in nick) {
 		if (v < TEXT(' ')) {
-			msg = TEXT("Content must not contain non-printing symbols");
+			msg = MAKEINTRESOURCE(IDS_MSG_NICKNONPRINT);
 			return false;
 		}
 	}
-	msg = TEXT("Content is valid");
+	while (!nick.empty() && *nick.begin() == TEXT(' ')) nick.erase(nick.begin());
+	while (!nick.empty() && *(nick.end()-1) == TEXT(' ')) nick.erase(nick.end()-1);
+	if (nick.empty()) {
+		msg = MAKEINTRESOURCE(IDS_MSG_NICKEMPTY);
+		return false;
+	}
+	msg = MAKEINTRESOURCE(IDS_MSG_NICKVALID);
 	return true;
 }
 

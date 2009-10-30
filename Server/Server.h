@@ -113,8 +113,9 @@ namespace colibrichat
 
 		// --- Support ---
 
+		static bool CALLBACK CheckNick(std::tstring& nick, const TCHAR*& msg);
 		std::tstring CALLBACK getNearestName(const std::tstring& nick) const;
-		void CALLBACK RenameContact(SOCKET sock, DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname);
+		void CALLBACK RenameContact(SOCKET sock, DWORD idOld, std::tstring newname);
 
 	protected:
 

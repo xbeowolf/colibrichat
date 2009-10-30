@@ -297,6 +297,24 @@ void CALLBACK JServer::unlinkCRC(DWORD crc1, DWORD crc2)
 	}
 }
 
+bool CALLBACK JServer::CheckNick(std::tstring& nick, const TCHAR*& msg)
+{
+	for each (std::tstring::value_type const& v in nick) {
+		if (v < TEXT(' ')) {
+			msg = TEXT("Content must not contain non-printing symbols");
+			return false;
+		}
+	}
+	while (!nick.empty() && *nick.begin() == TEXT(' ')) nick.erase(nick.begin());
+	while (!nick.empty() && *(nick.end()-1) == TEXT(' ')) nick.erase(nick.end()-1);
+	if (nick.empty()) {
+		msg = TEXT("Content can not be empty");
+		return false;
+	}
+	msg = TEXT("Content is valid");
+	return true;
+}
+
 std::tstring CALLBACK JServer::getNearestName(const std::tstring& nick) const
 {
 	std::tstring buffer = nick;
@@ -310,9 +328,26 @@ std::tstring CALLBACK JServer::getNearestName(const std::tstring& nick) const
 	return buffer;
 }
 
-void CALLBACK JServer::RenameContact(SOCKET sock, DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname)
+void CALLBACK JServer::RenameContact(SOCKET sock, DWORD idOld, std::tstring newname)
 {
-	ASSERT(idNew != idOld);
+	DWORD idNew = dCRC(newname.c_str());
+	if (idNew == idOld) return;
+
+	DWORD result = NICK_TAKEN;
+	if (hasCRC(idNew)) {
+		if (idNew == CRC_SERVER || idNew == CRC_LIST) {
+			result = NICK_TAKEN;
+		} else if (m_mUser.find(idNew) != m_mUser.end()) {
+			result = NICK_TAKENUSER;
+		} else if (m_mChannel.find(idNew) != m_mChannel.end()) {
+			result = NICK_TAKENCHANNEL;
+		}
+		newname = getNearestName(newname);
+		idNew = dCRC(newname.c_str());
+	} else {
+		result = NICK_OK;
+	}
+
 	SetId opened;
 	MapUser::iterator iu = m_mUser.find(idOld);
 	if (iu != m_mUser.end()) { // private talk
@@ -344,7 +379,23 @@ void CALLBACK JServer::RenameContact(SOCKET sock, DWORD result, DWORD idOld, DWO
 				unlinkCRC(idOld, v);
 			}
 			m_mChannel.erase(idOld);
-		} else return;
+		} else { // create new user by default
+			sockaddr_in si;
+			int len = sizeof(si);
+			getpeername(sock, (struct sockaddr*)&si, &len);
+
+			// Create new user
+			User user;
+			user.Init();
+			user.name = newname;
+			user.IP = si.sin_addr;
+
+			m_mUser[idNew] = user;
+			m_mSocketId[sock] = idNew;
+			m_mIdSocket[idNew] = sock;
+
+			opened.insert(idNew); // send reply to sender
+		}
 	}
 	Broadcast_Notify_NICK(opened, result, idOld, idNew, newname);
 }
@@ -510,40 +561,8 @@ void CALLBACK JServer::Recv_Cmd_NICK(SOCKET sock, WORD trnid, io::mem& is)
 		}
 	}
 
-	DWORD idOld, idNew;
-	idOld = m_mSocketId[sock];
-	idNew = dCRC(name.c_str());
-	DWORD result = NICK_TAKEN;
-	if (hasCRC(idNew)) {
-		if (idNew == CRC_SERVER || idNew == CRC_LIST) {
-			result = NICK_TAKEN;
-		} else if (m_mUser.find(idNew) != m_mUser.end()) {
-			result = NICK_TAKENUSER;
-		} else if (m_mChannel.find(idNew) != m_mChannel.end()) {
-			result = NICK_TAKENCHANNEL;
-		}
-		name = getNearestName(name);
-		idNew = dCRC(name.c_str());
-	} else {
-		result = NICK_OK;
-	}
-
-	if (m_mUser.find(idOld) == m_mUser.end()) {
-		sockaddr_in si;
-		int len = sizeof(si);
-		getpeername(sock, (struct sockaddr*)&si, &len);
-
-		// Create new user
-		User user;
-		user.Init();
-		user.name = name;
-		user.IP = si.sin_addr;
-
-		m_mUser[idOld] = user;
-		m_mSocketId[sock] = idOld;
-		m_mIdSocket[idOld] = sock;
-	}
-	RenameContact(sock, result, idOld, idNew, name);
+	DWORD idOld = m_mSocketId[sock];
+	RenameContact(sock, idOld, name);
 
 	// Report about message
 	EvReport(tformat(TEXT("nickname added: %s"), name.c_str()), netengine::eInformation, netengine::eNormal);

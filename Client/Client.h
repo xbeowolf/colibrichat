@@ -676,7 +676,7 @@ namespace colibrichat
 		void CALLBACK ContactRename(DWORD idOld, DWORD idNew, const std::tstring& newname);
 		int  CALLBACK getTabIndex(DWORD id);
 		JPtr<JPage> CALLBACK getPage(DWORD id);
-		bool CheckNick(std::tstring& nick, std::tstring& msg);
+		static bool CALLBACK CheckNick(std::tstring& nick, const TCHAR*& msg);
 		void CALLBACK ShowTopic(const std::tstring& topic);
 
 		// Error provider

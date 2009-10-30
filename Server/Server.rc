@@ -66,8 +66,8 @@ END
 //
 
 1 VERSIONINFO
- FILEVERSION 1,0,12,1
- PRODUCTVERSION 1,0,12,1
+ FILEVERSION 1,0,15,1
+ PRODUCTVERSION 1,0,15,1
  FILEFLAGSMASK 0x1fL
 #ifdef _DEBUG
  FILEFLAGS 0x9L
@@ -85,14 +85,14 @@ BEGIN
             VALUE "Comments", "Shareware; Colibri Chat created 19.04.2009 17:17:32\r\n\r\nContact information:\r\nmailto:xbeowolf@gmail.com\r\nicq:320-329-575\r\nphone:+380684862837"
             VALUE "CompanyName", "Podobashev D. O. / BEOWOLF"
             VALUE "FileDescription", "Colibri Chat Server Application"
-            VALUE "FileVersion", "1, 0, 12, 1"
+            VALUE "FileVersion", "1, 0, 15, 1"
             VALUE "InternalName", "ColibriServer"
             VALUE "LegalCopyright", "© BEOWOLF / Podobashev Dmitry, 2009"
             VALUE "LegalTrademarks", "MetaShape"
             VALUE "OriginalFilename", "ColibriServer.exe"
-            VALUE "PrivateBuild", "Build 8"
+            VALUE "PrivateBuild", "Build 9"
             VALUE "ProductName", "Colibri Chat"
-            VALUE "ProductVersion", "1, 0, 12, 1"
+            VALUE "ProductVersion", "1, 0, 15, 1"
         END
     END
     BLOCK "VarFileInfo"
@@ -157,11 +157,11 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 IDD_CONNECTIONS DIALOGEX 0, 0, 186, 90
 STYLE DS_SETFONT | DS_SETFOREGROUND | DS_3DLOOK | DS_FIXEDSYS | DS_CENTERMOUSE | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
-EXSTYLE WS_EX_TOPMOST | WS_EX_TOOLWINDOW
+EXSTYLE WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_CONTEXTHELP
 CAPTION "Connections"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    CONTROL         "",IDC_LIST,"SysListView32",LVS_REPORT | LVS_SHAREIMAGELISTS | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,4,4,178,82,0,HIDC_LIST
+    CONTROL         "",IDC_LIST,"SysListView32",LVS_REPORT | LVS_SHOWSELALWAYS | LVS_SHAREIMAGELISTS | LVS_EDITLABELS | LVS_ALIGNLEFT | WS_BORDER | WS_GROUP | WS_TABSTOP,4,4,178,82,0,HIDC_LIST
 END
 
 
@@ -193,7 +193,7 @@ STRINGTABLE
 BEGIN
     IDS_SHELL_TIP           "Colibri Chat Server"
     IDS_ABOUT_TITLE         "About Colibri Chat"
-    IDS_ABOUT_INFO          "Colibri Chat Server, product version 1.0.12.1\r\n\r\n© BEOWOLF / Podobashev Dmitry, 2009"
+    IDS_ABOUT_INFO          "Colibri Chat Server, product version 1.0.15.1\r\n\r\n© BEOWOLF / Podobashev Dmitry, 2009"
 END
 
 #endif    // English (U.S.) resources

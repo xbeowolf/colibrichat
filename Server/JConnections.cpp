@@ -155,7 +155,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					static TCHAR buffer[64];
 					LV_DISPINFO* pnmv = (LV_DISPINFO*)lParam;
 
-					if (pnmv->hdr.idFrom == IDC_LIST)
+					if (pnmh->idFrom == IDC_LIST)
 					{
 						netengine::MapLink::const_iterator iter = pSource->mLinks.find((SOCKET)pnmv->item.lParam);
 						if (iter == pSource->mLinks.end()) break;
@@ -233,6 +233,43 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 								break;
 							}
 						}
+					}
+					break;
+				}
+
+			case LVN_BEGINLABELEDIT:
+				{
+					NMLVDISPINFO* pdi = (NMLVDISPINFO*)lParam;
+					if (pnmh->idFrom == IDC_LIST) {
+						retval = FALSE;
+					}
+					break;
+				}
+
+			case LVN_ENDLABELEDIT:
+				{
+					NMLVDISPINFO* pdi = (NMLVDISPINFO*)lParam;
+					if (pnmh->idFrom == IDC_LIST) {
+						if (pdi->item.pszText) {
+							std::tstring nick = pdi->item.pszText;
+							const TCHAR* msg;
+							if (JServer::CheckNick(nick, msg)) {
+								pSource->RenameContact(
+									(SOCKET)pdi->item.lParam,
+									pSource->m_mSocketId[(SOCKET)pdi->item.lParam],
+									nick);
+								retval = TRUE;
+							} else retval = FALSE;
+						}
+					}
+					break;
+				}
+
+			case NM_DBLCLK:
+				{
+					if (pnmh->idFrom == IDC_LIST) {
+						ListView_EditLabel(pnmh->hwndFrom,
+							ListView_GetNextItem(pnmh->hwndFrom, -1, LVNI_SELECTED));
 					}
 					break;
 				}

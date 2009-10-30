@@ -838,14 +838,16 @@ LRESULT WINAPI JClient::JMessageEditor::DlgProc(HWND hWnd, UINT message, WPARAM 
 					std::string content;
 					getContent(content, SF_RTF);
 
-					std::tstring nick(pSource->m_metrics.uNickMaxLength, 0), msg;
-					GetDlgItemText(hWnd, IDC_NICK, &nick[0], (int)nick.size()+1);
-					if (pSource->CheckNick(nick, msg)) { // check content
+					std::tstring nickbuf(pSource->m_metrics.uNickMaxLength, 0), nick;
+					const TCHAR* msg;
+					GetDlgItemText(hWnd, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
+					nick = nickbuf.c_str();
+					if (JClient::CheckNick(nick, msg)) { // check content
 						pSource->Send_Quest_MESSAGE(pSource->m_clientsock, dCRC(nick.c_str()),
 							content.c_str(), fAlert, crSheet);
 						DestroyWindow(hWnd);
 					} else {
-						pSource->DisplayMessage(pSource->jpPageServer->hwndNick, msg.c_str(), strWho.c_str(), 2);
+						pSource->DisplayMessage(pSource->jpPageServer->hwndNick, msg, strWho.c_str(), 2);
 					}
 					break;
 				}

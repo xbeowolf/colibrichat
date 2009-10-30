@@ -367,6 +367,75 @@ LRESULT WINAPI JClient::JPageLog::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 				SetWindowText(m_hwndLog, TEXT(""));
 				break;
 
+			case IDC_LOGSAVEAS:
+				{
+					static TCHAR szAcceptFile[4096], szTitleBuffer[MAX_PATH];
+					static TCHAR szCustomFilter[256] = TEXT("");
+					static TCHAR szTxtFilter[] =
+						TEXT("Rich text format (*.rtf)\000*.rtf\000")
+						TEXT("Text document (*.txt)\000*.txt\000")
+						TEXT("Unicode text document (*.txt)\000*.txt\000")
+						;
+					OPENFILENAME ofn =
+					{
+						sizeof(OPENFILENAME), // lStructSize
+						0, // hwndOwner
+						0, // hInstance
+						szTxtFilter, // lpstrFilter
+						szCustomFilter, // lpstrCustomFilter
+						_countof(szCustomFilter), // nMaxCustFilter
+						1, // nFilterIndex
+						szAcceptFile, // lpstrFile
+						_countof(szAcceptFile), // nMaxFile
+						szTitleBuffer, // lpstrFileTitle
+						_countof(szTitleBuffer), // nMaxFileTitle
+						0, // lpstrInitialDir
+						0, // lpstrTitle
+						0, // Flags
+						0, // nFileOffset
+						0, // nFileExtension
+						TEXT("RTF"), // lpstrDefExt
+						0, // lCustData
+						0, // lpfnHook
+						0 // lpTemplateName
+					};
+					ofn.hwndOwner = hWnd;
+					ofn.Flags =
+						OFN_ENABLESIZING | OFN_EXPLORER |
+						OFN_EXTENSIONDIFFERENT | OFN_FILEMUSTEXIST |
+						OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST;
+					if (GetSaveFileName(&ofn)) {
+						HANDLE hFile = CreateFile(szAcceptFile, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+						if (hFile != INVALID_HANDLE_VALUE) {
+							UINT mode = SF_RTF;
+							switch (ofn.nFilterIndex)
+							{
+							case 1:
+								mode = SF_RTF;
+								break;
+							case 2:
+								mode = SF_TEXTIZED;
+								break;
+							case 3:
+								{
+									WORD prefix = 0xFEFF;
+									DWORD cb;
+									VERIFY(WriteFile(hFile, &prefix, 2, &cb, 0));
+									mode = SF_TEXTIZED | SF_UNICODE;
+									break;
+								}
+							}
+							EDITSTREAM es;
+							es.dwCookie = (DWORD_PTR)hFile;
+							es.dwError = 0;
+							es.pfnCallback = rtf::StreamToHandle;
+							SendMessage(m_hwndLog, EM_STREAMOUT, mode, (LPARAM)&es);
+							VERIFY(CloseHandle(hFile));
+						}
+					}
+					break;
+				}
+
 			default:
 				retval = __super::DlgProc(hWnd, message, wParam, lParam);
 			}
@@ -920,14 +989,16 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 				{
 					if (pSource->m_clientsock) {
 						std::tstring chanbuf(pSource->m_metrics.uChanMaxLength, 0), passbuf(pSource->m_metrics.uPassMaxLength, 0);
+						std::tstring chan, pass;
 						GetWindowText(m_hwndChan, &chanbuf[0], (int)chanbuf.size()+1);
 						GetWindowText(m_hwndPass, &passbuf[0], (int)passbuf.size()+1);
-						std::tstring msg;
-						if (pSource->CheckNick(chanbuf, msg)) { // check content
+						const TCHAR* msg;
+						chan = chanbuf.c_str(), pass = passbuf.c_str();
+						if (JClient::CheckNick(chan, msg)) { // check content
 							// send only c-strings, not buffer!
-							pSource->Send_Quest_JOIN(pSource->m_clientsock, chanbuf.c_str(), passbuf.c_str());
+							pSource->Send_Quest_JOIN(pSource->m_clientsock, chan, pass);
 						} else {
-							pSource->DisplayMessage(m_hwndChan, msg.c_str(), MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
+							pSource->DisplayMessage(m_hwndChan, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
 						}
 					}
 					break;
