@@ -1273,6 +1273,40 @@ void CALLBACK JClient::JPageList::Send_Quest_LIST(SOCKET sock)
 // JPageChat
 //
 
+std::map<UINT, const TCHAR*> JClient::JPageChat::s_mapButTips;
+
+void JClient::JPageChat::initclass()
+{
+	// Editor toolbar buttons tips
+	{
+		using namespace rtf;
+		s_mapButTips[idcRtfCmd] = MAKEINTRESOURCE(idsRtfCmd);
+		s_mapButTips[idcBold] = MAKEINTRESOURCE(idsBold);
+		s_mapButTips[idcItalic] = MAKEINTRESOURCE(idsItalic);
+		s_mapButTips[idcUnderline] = MAKEINTRESOURCE(idsUnderline);
+		s_mapButTips[idcSubscript] = MAKEINTRESOURCE(idsSubscript);
+		s_mapButTips[idcSuperscript] = MAKEINTRESOURCE(idsSuperscript);
+		s_mapButTips[idcFont] = MAKEINTRESOURCE(idsFont);
+		s_mapButTips[idcFgColor] = MAKEINTRESOURCE(idsFgColor);
+		s_mapButTips[idcBgColor] = MAKEINTRESOURCE(idsBgColor);
+		s_mapButTips[idcSheetColor] = MAKEINTRESOURCE(idsSheetColor);
+		s_mapButTips[idcAlignLeft] = MAKEINTRESOURCE(idsAlignLeft);
+		s_mapButTips[idcAlignRight] = MAKEINTRESOURCE(idsAlignRight);
+		s_mapButTips[idcAlignCenter] = MAKEINTRESOURCE(idsAlignCenter);
+		s_mapButTips[idcAlignJustify] = MAKEINTRESOURCE(idsAlignJustify);
+		s_mapButTips[idcMarksBullet] = MAKEINTRESOURCE(idsMarksBullet);
+		s_mapButTips[idcMarksArabic] = MAKEINTRESOURCE(idsMarksArabic);
+		s_mapButTips[idcStartIndentInc] = MAKEINTRESOURCE(idsStartIndentInc);
+		s_mapButTips[idcStartIndentDec] = MAKEINTRESOURCE(idsStartIndentDec);
+		s_mapButTips[idcBkMode] = MAKEINTRESOURCE(idsBkMode);
+	}
+}
+
+void JClient::JPageChat::doneclass()
+{
+	s_mapButTips.clear();
+}
+
 CALLBACK JClient::JPageChat::JPageChat()
 : JPageLog(), rtf::Editor()
 {
@@ -1337,7 +1371,7 @@ LRESULT WINAPI JClient::JPageChat::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 				{0, 0,
 				0, TBSTYLE_SEP,
 				{0, 0}, 0, 0},
-				{IML_FRCOL, rtf::idcFrColor,
+				{IML_FRCOL, rtf::idcFgColor,
 				TBSTATE_ENABLED, TBSTYLE_BUTTON,
 				{0, 0}, 0, 0},
 				{IML_BGCOL, rtf::idcBgColor,
@@ -1510,6 +1544,14 @@ LRESULT WINAPI JClient::JPageChat::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 			NMHDR* pnmh = (NMHDR*)lParam;
 			switch (pnmh->code)
 			{
+			case TTN_GETDISPINFO:
+				{
+					TOOLTIPTEXT* lpttt = (TOOLTIPTEXT*)lParam;
+					lpttt->hinst = JClientApp::jpApp->hinstApp;
+					lpttt->lpszText = (LPTSTR)s_mapButTips[lpttt->hdr.idFrom];
+					break;
+				}
+
 			case UDN_DELTAPOS:
 				{
 					LPNMUPDOWN lpnmud = (LPNMUPDOWN)lParam;

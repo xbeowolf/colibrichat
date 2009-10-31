@@ -104,6 +104,8 @@ void JClient::initclass()
 
 void JClient::doneclass()
 {
+	JClient::s_mapChanStatName.clear();
+	JClient::s_mapWsaErr.clear();
 }
 
 CALLBACK JClient::JClient()

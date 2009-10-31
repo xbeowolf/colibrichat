@@ -357,12 +357,14 @@ namespace colibrichat
 			JPROPERTY_RREF_CONST(MapChannel, mChannel);
 		};
 
-		class JPageChat : public JPageLog, public rtf::Editor
+		class JPageChat : public JPageLog, public rtf::Editor, protected initdoneable<JPageChat>
 		{
 		public:
 
 			friend class JClient;
 
+			static void initclass();
+			static void doneclass();
 			CALLBACK JPageChat();
 
 			bool CALLBACK IsPermanent() const {return false;}
@@ -383,6 +385,8 @@ namespace colibrichat
 			RECT rcMsgSpinBlue, rcMsgSpinRed, rcSend;
 
 			std::vector<std::string> vecMsgSpinBlue, vecMsgSpinRed;
+
+			static std::map<UINT, const TCHAR*> s_mapButTips;
 		};
 
 		class JPageUser : public JPageChat
@@ -510,10 +514,12 @@ namespace colibrichat
 			JPtr<JPageChannel> jpChannel;
 		};
 
-		class JSplashRtfEditor : public JDialog, public rtf::Editor, public JAttachment<JClient>
+		class JSplashRtfEditor : public JDialog, public rtf::Editor, public JAttachment<JClient>, protected initdoneable<JSplashRtfEditor>
 		{
 		public:
 
+			static void initclass();
+			static void doneclass();
 			CALLBACK JSplashRtfEditor(JClient* p, DWORD who);
 
 		protected:
@@ -530,6 +536,8 @@ namespace colibrichat
 
 			DWORD idWho;
 			RECT rcAutoclose, rcAutocloseSpin, rcSend, rcCancel;
+
+			static std::map<UINT, const TCHAR*> s_mapButTips;
 		};
 
 		class JSplash : public JAttachedDialog<JClient>
@@ -585,10 +593,12 @@ namespace colibrichat
 			std::string content;
 		};
 
-		class JMessageEditor : public JDialog, public rtf::Editor, public JAttachment<JClient>
+		class JMessageEditor : public JDialog, public rtf::Editor, public JAttachment<JClient>, protected initdoneable<JMessageEditor>
 		{
 		public:
 
+			static void initclass();
+			static void doneclass();
 			CALLBACK JMessageEditor(JClient* p, const std::tstring& who, bool alert = false);
 
 		protected:
@@ -606,6 +616,8 @@ namespace colibrichat
 			std::tstring strWho;
 			bool fAlert;
 			RECT rcStatic1, rcNick, rcAlert, rcSend, rcCancel;
+
+			static std::map<UINT, const TCHAR*> s_mapButTips;
 		};
 
 		class JMessage : public JAttachedDialog<JClient>

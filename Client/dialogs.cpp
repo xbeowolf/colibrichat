@@ -183,7 +183,7 @@ LRESULT WINAPI JClient::JSplashRtfEditor::DlgProc(HWND hWnd, UINT message, WPARA
 				{0, 0,
 				0, TBSTYLE_SEP,
 				{0, 0}, 0, 0},
-				{IML_FRCOL, rtf::idcFrColor,
+				{IML_FRCOL, rtf::idcFgColor,
 				TBSTATE_ENABLED, TBSTYLE_BUTTON,
 				{0, 0}, 0, 0},
 				{IML_BGCOL, rtf::idcBgColor,
@@ -376,6 +376,27 @@ LRESULT WINAPI JClient::JSplashRtfEditor::DlgProc(HWND hWnd, UINT message, WPARA
 			break;
 		}
 
+	case WM_NOTIFY:
+		{
+			NMHDR* pnmh = (NMHDR*)lParam;
+			switch (pnmh->code)
+			{
+			case TTN_GETDISPINFO:
+				{
+					TOOLTIPTEXT* lpttt = (TOOLTIPTEXT*)lParam;
+					lpttt->hinst = JClientApp::jpApp->hinstApp;
+					lpttt->lpszText = (LPTSTR)s_mapButTips[lpttt->hdr.idFrom];
+					break;
+				}
+
+			default:
+				retval =
+					JDialog::DlgProc(hWnd, message, wParam, lParam) ||
+					rtf::Editor::DlgProc(hWnd, message, wParam, lParam);
+			}
+			break;
+		}
+
 	case WM_INITMENUPOPUP:
 		{
 			if ((HMENU)wParam == GetSystemMenu(hWnd, FALSE))
@@ -394,6 +415,40 @@ LRESULT WINAPI JClient::JSplashRtfEditor::DlgProc(HWND hWnd, UINT message, WPARA
 			rtf::Editor::DlgProc(hWnd, message, wParam, lParam);
 	}
 	return retval;
+}
+
+std::map<UINT, const TCHAR*> JClient::JSplashRtfEditor::s_mapButTips;
+
+void JClient::JSplashRtfEditor::initclass()
+{
+	// Editor toolbar buttons tips
+	{
+		using namespace rtf;
+		s_mapButTips[idcRtfCmd] = MAKEINTRESOURCE(idsRtfCmd);
+		s_mapButTips[idcBold] = MAKEINTRESOURCE(idsBold);
+		s_mapButTips[idcItalic] = MAKEINTRESOURCE(idsItalic);
+		s_mapButTips[idcUnderline] = MAKEINTRESOURCE(idsUnderline);
+		s_mapButTips[idcSubscript] = MAKEINTRESOURCE(idsSubscript);
+		s_mapButTips[idcSuperscript] = MAKEINTRESOURCE(idsSuperscript);
+		s_mapButTips[idcFont] = MAKEINTRESOURCE(idsFont);
+		s_mapButTips[idcFgColor] = MAKEINTRESOURCE(idsFgColor);
+		s_mapButTips[idcBgColor] = MAKEINTRESOURCE(idsBgColor);
+		s_mapButTips[idcSheetColor] = MAKEINTRESOURCE(idsSheetColor);
+		s_mapButTips[idcAlignLeft] = MAKEINTRESOURCE(idsAlignLeft);
+		s_mapButTips[idcAlignRight] = MAKEINTRESOURCE(idsAlignRight);
+		s_mapButTips[idcAlignCenter] = MAKEINTRESOURCE(idsAlignCenter);
+		s_mapButTips[idcAlignJustify] = MAKEINTRESOURCE(idsAlignJustify);
+		s_mapButTips[idcMarksBullet] = MAKEINTRESOURCE(idsMarksBullet);
+		s_mapButTips[idcMarksArabic] = MAKEINTRESOURCE(idsMarksArabic);
+		s_mapButTips[idcStartIndentInc] = MAKEINTRESOURCE(idsStartIndentInc);
+		s_mapButTips[idcStartIndentDec] = MAKEINTRESOURCE(idsStartIndentDec);
+		s_mapButTips[idcBkMode] = MAKEINTRESOURCE(idsBkMode);
+	}
+}
+
+void JClient::JSplashRtfEditor::doneclass()
+{
+	s_mapButTips.clear();
 }
 
 CALLBACK JClient::JSplashRtfEditor::JSplashRtfEditor(JClient* p, DWORD who)
@@ -673,7 +728,7 @@ LRESULT WINAPI JClient::JMessageEditor::DlgProc(HWND hWnd, UINT message, WPARAM 
 				{0, 0,
 				0, TBSTYLE_SEP,
 				{0, 0}, 0, 0},
-				{IML_FRCOL, rtf::idcFrColor,
+				{IML_FRCOL, rtf::idcFgColor,
 				TBSTATE_ENABLED, TBSTYLE_BUTTON,
 				{0, 0}, 0, 0},
 				{IML_BGCOL, rtf::idcBgColor,
@@ -864,12 +919,67 @@ LRESULT WINAPI JClient::JMessageEditor::DlgProc(HWND hWnd, UINT message, WPARAM 
 			break;
 		}
 
+	case WM_NOTIFY:
+		{
+			NMHDR* pnmh = (NMHDR*)lParam;
+			switch (pnmh->code)
+			{
+			case TTN_GETDISPINFO:
+				{
+					TOOLTIPTEXT* lpttt = (TOOLTIPTEXT*)lParam;
+					lpttt->hinst = JClientApp::jpApp->hinstApp;
+					lpttt->lpszText = (LPTSTR)s_mapButTips[lpttt->hdr.idFrom];
+					break;
+				}
+
+			default:
+				retval =
+					JDialog::DlgProc(hWnd, message, wParam, lParam) ||
+					rtf::Editor::DlgProc(hWnd, message, wParam, lParam);
+			}
+			break;
+		}
+
 	default:
 		retval =
 			JDialog::DlgProc(hWnd, message, wParam, lParam) ||
 			rtf::Editor::DlgProc(hWnd, message, wParam, lParam);
 	}
 	return retval;
+}
+
+std::map<UINT, const TCHAR*> JClient::JMessageEditor::s_mapButTips;
+
+void JClient::JMessageEditor::initclass()
+{
+	// Editor toolbar buttons tips
+	{
+		using namespace rtf;
+		s_mapButTips[idcRtfCmd] = MAKEINTRESOURCE(idsRtfCmd);
+		s_mapButTips[idcBold] = MAKEINTRESOURCE(idsBold);
+		s_mapButTips[idcItalic] = MAKEINTRESOURCE(idsItalic);
+		s_mapButTips[idcUnderline] = MAKEINTRESOURCE(idsUnderline);
+		s_mapButTips[idcSubscript] = MAKEINTRESOURCE(idsSubscript);
+		s_mapButTips[idcSuperscript] = MAKEINTRESOURCE(idsSuperscript);
+		s_mapButTips[idcFont] = MAKEINTRESOURCE(idsFont);
+		s_mapButTips[idcFgColor] = MAKEINTRESOURCE(idsFgColor);
+		s_mapButTips[idcBgColor] = MAKEINTRESOURCE(idsBgColor);
+		s_mapButTips[idcSheetColor] = MAKEINTRESOURCE(idsSheetColor);
+		s_mapButTips[idcAlignLeft] = MAKEINTRESOURCE(idsAlignLeft);
+		s_mapButTips[idcAlignRight] = MAKEINTRESOURCE(idsAlignRight);
+		s_mapButTips[idcAlignCenter] = MAKEINTRESOURCE(idsAlignCenter);
+		s_mapButTips[idcAlignJustify] = MAKEINTRESOURCE(idsAlignJustify);
+		s_mapButTips[idcMarksBullet] = MAKEINTRESOURCE(idsMarksBullet);
+		s_mapButTips[idcMarksArabic] = MAKEINTRESOURCE(idsMarksArabic);
+		s_mapButTips[idcStartIndentInc] = MAKEINTRESOURCE(idsStartIndentInc);
+		s_mapButTips[idcStartIndentDec] = MAKEINTRESOURCE(idsStartIndentDec);
+		s_mapButTips[idcBkMode] = MAKEINTRESOURCE(idsBkMode);
+	}
+}
+
+void JClient::JMessageEditor::doneclass()
+{
+	s_mapButTips.clear();
 }
 
 CALLBACK JClient::JMessageEditor::JMessageEditor(JClient* p, const std::tstring& who, bool alert)
