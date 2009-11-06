@@ -152,13 +152,18 @@
 #define IDC_CLIPBOARD                   40081
 #define ID_OVERLAP_SAVEAS               40082
 #define IDC_LOGSAVEAS                   40083
+#define ID_OVERLAP_PRIVATE              40084
+#define ID_OVERLAP_ANONYMOUS            40085
+#define IDC_CHANPRIVATE                 40086
+#define IDC_CHANANONYMOUS               40087
+#define IDC_CHANHIDDEN                  40088
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        164
-#define _APS_NEXT_COMMAND_VALUE         40084
+#define _APS_NEXT_COMMAND_VALUE         40089
 #define _APS_NEXT_CONTROL_VALUE         1061
 #define _APS_NEXT_SYMED_VALUE           102
 #endif

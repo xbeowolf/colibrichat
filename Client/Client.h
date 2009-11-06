@@ -61,6 +61,7 @@
 
 // Editor
 #define RK_SENDBYENTER         TEXT("SendByEnter")
+#define RK_FULLANONYMOUS       TEXT("FullAnonymous")
 #define RK_QUOTATIONBLUE       TEXT("QuotationBlue")
 #define RK_QUOTATIONRED        TEXT("QuotationRed")
 
@@ -211,6 +212,7 @@ namespace colibrichat
 			virtual bool CALLBACK IsPermanent() const = 0;
 			virtual std::tstring gettopic() const {return getname();}
 			virtual HWND getDefFocusWnd() const = 0;
+			virtual std::tstring getSafeName(DWORD idUser) const;
 
 			virtual EContact CALLBACK gettype() const = 0;
 			virtual DWORD CALLBACK getID() const = 0;
@@ -439,6 +441,7 @@ namespace colibrichat
 
 			int CALLBACK ImageIndex() const;
 			LPCTSTR CALLBACK Template() const {return MAKEINTRESOURCE(IDD_CHANNEL);}
+			std::tstring getSafeName(DWORD idUser) const;
 			std::tstring gettopic() const;
 
 			EContact CALLBACK gettype() const {return eChannel;}
@@ -715,7 +718,7 @@ namespace colibrichat
 		void CALLBACK Recv_Notify_STATUS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_SAY(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Notify_BACKGROUND(SOCKET sock, WORD trnid, io::mem& is);
+		void CALLBACK Recv_Notify_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_ACCESS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_MESSAGE(SOCKET sock, WORD trnid, io::mem& is);
@@ -728,14 +731,14 @@ namespace colibrichat
 		void CALLBACK Send_Quest_JOIN(SOCKET sock, const std::tstring& name, const std::tstring& pass = TEXT(""), int type = eUser | eChannel | eBoard);
 		void CALLBACK Send_Cmd_PART(SOCKET sock, DWORD idWho, DWORD idWhere);
 		void CALLBACK Send_Quest_USERINFO(SOCKET sock, const SetId& set);
-		void CALLBACK Send_Cmd_ONLINE(SOCKET sock, bool on, DWORD id);
+		void CALLBACK Send_Cmd_ONLINE(SOCKET sock, EOnline online, DWORD id);
 		void CALLBACK Send_Cmd_STATUS_Mode(SOCKET sock, EUserStatus stat);
 		void CALLBACK Send_Cmd_STATUS_Img(SOCKET sock, int img);
 		void CALLBACK Send_Cmd_STATUS_Msg(SOCKET sock, const std::tstring& msg);
 		void CALLBACK Send_Cmd_STATUS(SOCKET sock, EUserStatus stat, int img, const std::tstring& msg);
 		void CALLBACK Send_Cmd_SAY(SOCKET sock, DWORD idWhere, UINT type, const std::string& content);
 		void CALLBACK Send_Cmd_TOPIC(SOCKET sock, DWORD idWhere, const std::tstring& topic);
-		void CALLBACK Send_Cmd_BACKGROUND(SOCKET sock, DWORD idWhere, COLORREF cr);
+		void CALLBACK Send_Cmd_CHANOPTIONS(SOCKET sock, DWORD idWhere, int op, DWORD val);
 		void CALLBACK Send_Cmd_ACCESS(SOCKET sock, DWORD idWho, DWORD idWhere, EChanStatus stat);
 		void CALLBACK Send_Quest_MESSAGE(SOCKET sock, DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet);
 		void CALLBACK Send_Cmd_BEEP(SOCKET sock, DWORD idWho);
@@ -777,6 +780,7 @@ namespace colibrichat
 		JPROPERTY_R(int, nConnectCount);
 
 		JPROPERTY_R(bool, bSendByEnter);
+		JPROPERTY_R(bool, bFullAnonymous);
 		JPROPERTY_RREF_CONST(MapAlert, mAlert);
 
 		// Baloon tooltip

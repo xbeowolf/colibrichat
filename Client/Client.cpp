@@ -117,6 +117,7 @@ jpOnline(0)
 	m_nConnectCount = 0;
 	m_fAutoopen = true;
 	m_bSendByEnter = true;
+	m_bFullAnonymous = true;
 
 	m_metrics.uNickMaxLength = 20;
 	m_metrics.uChanMaxLength = 20;
@@ -161,7 +162,7 @@ void CALLBACK JClient::LoadState()
 	user.opened.insert(CRC_SERVER); // make it permanent
 	user.ftCreation = ft;
 	user.IP.S_un.S_addr = ntohl(INADDR_LOOPBACK);
-	user.isOnline = true;
+	user.isOnline = eOnline;
 	user.idOnline = 0;
 	user.nStatus = (EUserStatus)Profile::GetInt(RF_CLIENT, RK_STATUS, eReady);
 	user.nStatusImg = Profile::GetInt(RF_CLIENT, RK_STATUSIMG, 0);
@@ -170,6 +171,7 @@ void CALLBACK JClient::LoadState()
 	m_port = (u_short)Profile::GetInt(RF_CLIENT, RK_PORT, CCP_PORT);
 	m_password = Profile::GetString(RF_CLIENT, RK_PASSWORD, TEXT("beowolf"));
 	m_bSendByEnter = Profile::GetInt(RF_CLIENT, RK_SENDBYENTER, true) != 0;
+	m_bFullAnonymous = Profile::GetInt(RF_CLIENT, RK_FULLANONYMOUS, true) != 0;
 }
 
 void CALLBACK JClient::SaveState()
@@ -275,9 +277,14 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			break;
 		}
 
-	case WM_SIZE:
+	case WM_ENTERSIZEMOVE:
 		{
 			HideBaloon();
+			break;
+		}
+
+	case WM_SIZE:
+		{
 			if (wParam == SIZE_MINIMIZED) break;
 			SendMessage(hWnd, BEM_ADJUSTSIZE, wParam, lParam);
 			break;
@@ -342,7 +349,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_ACTIVATEAPP2:
 		if (jpOnline) jpOnline->activate();
-		if (m_clientsock) Send_Cmd_ONLINE(m_clientsock, wParam != 0, jpOnline ? jpOnline->getID() : 0);
+		if (m_clientsock) Send_Cmd_ONLINE(m_clientsock, wParam != 0 ? eOnline : eOffline, jpOnline ? jpOnline->getID() : 0);
 		break;
 
 	case BEM_JDIALOG:
@@ -381,10 +388,11 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 						{
 							std::tstring nickbuf(m_metrics.uNickMaxLength, 0), nick;
 							const TCHAR* msg;
-							GetDlgItemText(jpOnline->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
+							GetDlgItemText(jpPageServer->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
 							nick = nickbuf.c_str();
 							if (JClient::CheckNick(nick, msg)) { // check content
-								SendMessage(jpOnline->hwndPage, WM_COMMAND, IDC_CONNECT, 0);
+								ASSERT(!m_clientsock); // only for disconnected
+								SendMessage(jpPageServer->hwndPage, WM_COMMAND, IDC_CONNECT, 0);
 							} else {
 								DisplayMessage(jpPageServer->hwndNick, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
 							}
@@ -395,10 +403,11 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 						{
 							std::tstring nickbuf(m_metrics.uNickMaxLength, 0), nick;
 							const TCHAR* msg;
-							GetDlgItemText(jpOnline->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
+							GetDlgItemText(jpPageServer->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
 							nick = nickbuf.c_str();
 							if (JClient::CheckNick(nick, msg)) { // check content
-								Send_Cmd_NICK(m_clientsock, nick);
+								if (m_clientsock) Send_Cmd_NICK(m_clientsock, nick);
+								else if (!m_nConnectCount) SendMessage(jpPageServer->hwndPage, WM_COMMAND, IDC_CONNECT, 0);
 							} else {
 								DisplayMessage(jpPageServer->hwndNick, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
 							}
@@ -408,14 +417,14 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 					case IDC_STATUSMSG:
 						{
 							std::tstring msg(m_metrics.uStatusMsgMaxLength, 0);
-							GetDlgItemText(jpOnline->hwndPage, IDC_STATUSMSG, &msg[0], (int)msg.size()+1);
+							GetDlgItemText(jpPageServer->hwndPage, IDC_STATUSMSG, &msg[0], (int)msg.size()+1);
 							Send_Cmd_STATUS_Msg(m_clientsock, msg);
 							break;
 						}
 
 					case IDC_JOINCHAN:
 					case IDC_JOINPASS:
-						SendMessage(jpOnline->hwndPage, WM_COMMAND, IDC_JOIN, 0);
+						SendMessage(jpPageList->hwndPage, WM_COMMAND, IDC_JOIN, 0);
 						break;
 					}
 					break;
@@ -548,6 +557,17 @@ void CALLBACK JClient::Connect(bool getsetting)
 		m_port = (u_short)GetDlgItemInt(jpPageServer->hwndPage, IDC_PORT, FALSE, FALSE);
 		GetDlgItemText(jpPageServer->hwndPage, IDC_PASS, pass, _countof(pass));
 		m_password = pass;
+
+		// Checkup nick for future identification
+		std::tstring nickbuf(m_metrics.uNickMaxLength, 0), nick;
+		const TCHAR* msg;
+		GetDlgItemText(jpPageServer->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
+		nick = nickbuf.c_str();
+		if (!JClient::CheckNick(nick, msg)) { // check content
+			if (jpOnline != jpPageServer) ContactSel(getTabIndex(CRC_SERVER));
+			DisplayMessage(jpPageServer->hwndNick, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
+			return;
+		}
 	}
 	// Add into socket manager
 	netengine::Link link;
@@ -576,6 +596,8 @@ void CALLBACK JClient::Connect(bool getsetting)
 	// Update interface
 	if (jpPageServer->hwndPage) {
 		CheckDlgButton(jpPageServer->hwndPage, IDC_CONNECT, TRUE);
+		jpPageServer->Enable();
+		EnableWindow(jpPageServer->hwndNick, FALSE);
 	}
 }
 
@@ -774,8 +796,10 @@ void CALLBACK JClient::ContactRename(DWORD idOld, DWORD idNew, const std::tstrin
 			ipc->second->rename(idNew, newname);
 			mPageChannel[idNew] = ipc->second;
 			mPageChannel.erase(idOld);
-			ipc->second->AppendScript(tformat(TEXT("[style=Info]channel name is now [b]%s[/b][/style]"), newname.c_str()));
-			ipc->second->setAlert(eYellow);
+			if (!ipc->second->m_channel.isAnonymous) {
+				ipc->second->AppendScript(tformat(TEXT("[style=Info]channel name is now [b]%s[/b][/style]"), newname.c_str()));
+				ipc->second->setAlert(eYellow);
+			}
 		}
 	}
 
@@ -1041,14 +1065,15 @@ void JClient::OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access)
 {
 	__super::OnLinkIdentify(sock, access);
 
-	std::tstring nick(m_metrics.uNickMaxLength, 0);
-	GetDlgItemText(jpPageServer->hwndPage, IDC_NICK, &nick[0], (int)nick.size()+1);
+	std::tstring nickbuf(m_metrics.uNickMaxLength, 0), nick;
+	GetDlgItemText(jpPageServer->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
+	nick = nickbuf.c_str();
+	Send_Cmd_NICK(sock, nick);
+
 	EUserStatus stat = (EUserStatus)SendDlgItemMessage(jpPageServer->hwndPage, IDC_STATUS, CB_GETCURSEL, 0, 0);
 	int img = (int)SendDlgItemMessage(jpPageServer->hwndPage, IDC_STATUSIMG, CB_GETCURSEL, 0, 0);
 	std::tstring msg(m_metrics.uStatusMsgMaxLength, 0);
 	GetDlgItemText(jpPageServer->hwndPage, IDC_STATUSMSG, &msg[0], (int)msg.size()+1);
-
-	Send_Cmd_NICK(sock, nick);
 	Send_Cmd_STATUS(sock, stat, img, msg);
 
 	// Autoopen
@@ -1076,7 +1101,7 @@ void JClient::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 		{NOTIFY(CCPM_STATUS), &JClient::Recv_Notify_STATUS},
 		{NOTIFY(CCPM_SAY), &JClient::Recv_Notify_SAY},
 		{NOTIFY(CCPM_TOPIC), &JClient::Recv_Notify_TOPIC},
-		{NOTIFY(CCPM_BACKGROUND), &JClient::Recv_Notify_BACKGROUND},
+		{NOTIFY(CCPM_CHANOPTIONS), &JClient::Recv_Notify_CHANOPTIONS},
 		{NOTIFY(CCPM_ACCESS), &JClient::Recv_Notify_ACCESS},
 		{REPLY(CCPM_MESSAGE), &JClient::Recv_Reply_MESSAGE},
 		{NOTIFY(CCPM_MESSAGE), &JClient::Recv_Notify_MESSAGE},
@@ -1394,7 +1419,7 @@ void CALLBACK JClient::Recv_Reply_USERINFO(SOCKET sock, WORD trnid, io::mem& is)
 void CALLBACK JClient::Recv_Notify_ONLINE(SOCKET sock, WORD trnid, io::mem& is)
 {
 	DWORD idWho;
-	bool isOnline;
+	EOnline isOnline;
 	DWORD idOnline;
 
 	try
@@ -1408,7 +1433,7 @@ void CALLBACK JClient::Recv_Notify_ONLINE(SOCKET sock, WORD trnid, io::mem& is)
 		switch (e.count)
 		{
 		case 0:
-			isOnline = true;
+			isOnline = eOnline;
 		case 1:
 			idOnline = 0;
 		}
@@ -1582,7 +1607,7 @@ void CALLBACK JClient::Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 	if (jp) {
 		jp->AppendScript(tformat(TEXT("[style=Descr][color=%s]%s[/color] changes topic to:\n%s[/style]"),
 			idWho != m_idOwn ? TEXT("red") : TEXT("blue"),
-			getSafeName(idWho).c_str(),
+			jp->getSafeName(idWho).c_str(),
 			topic.c_str()));
 		if (jpOnline == jp) ShowTopic(jp->gettopic());
 		if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fPlayChatSounds)
@@ -1590,16 +1615,18 @@ void CALLBACK JClient::Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JClient::Recv_Notify_BACKGROUND(SOCKET sock, WORD trnid, io::mem& is)
+void CALLBACK JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem& is)
 {
 	DWORD idWho, idWhere;
-	COLORREF cr;
+	int op;
+	DWORD val;
 
 	try
 	{
 		io::unpack(is, idWho);
 		io::unpack(is, idWhere);
-		io::unpack(is, cr);
+		io::unpack(is, op);
+		io::unpack(is, val);
 	}
 	catch (io::exception e)
 	{
@@ -1612,33 +1639,72 @@ void CALLBACK JClient::Recv_Notify_BACKGROUND(SOCKET sock, WORD trnid, io::mem& 
 			return;
 
 		case 2:
-			cr = GetSysColor(COLOR_WINDOW);
+			op = CHANOP_ANONYMOUS;
+			val = true;
+			break;
+
+		case 3:
+			// Report about message
+			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			return;
 		}
 	}
 
 	JPtr<JPageLog> jp;
+	std::tstring msg;
 	MapPageUser::iterator ipu = mPageUser.find(idWhere);
 	if (ipu != mPageUser.end()) { // private talk
 		jp = ipu->second;
 
-		SendMessage(ipu->second->hwndEdit, EM_SETBKGNDCOLOR, FALSE, (LPARAM)cr);
-		SendMessage(ipu->second->hwndLog, EM_SETBKGNDCOLOR, FALSE, (LPARAM)cr);
+		ASSERT(op == CHANOP_BACKGROUND);
+		SendMessage(ipu->second->hwndEdit, EM_SETBKGNDCOLOR, FALSE, (LPARAM)val);
+		SendMessage(ipu->second->hwndLog, EM_SETBKGNDCOLOR, FALSE, (LPARAM)val);
+		msg = TEXT("changes sheet color");
 	} else {
 		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
 		if (ipc != mPageChannel.end()) { // channel
 			jp = ipc->second;
-			ipc->second->m_channel.crBackground = cr;
 
-			SendMessage(ipc->second->hwndEdit, EM_SETBKGNDCOLOR, FALSE, (LPARAM)cr);
-			SendMessage(ipc->second->hwndLog, EM_SETBKGNDCOLOR, FALSE, (LPARAM)cr);
-			ListView_SetBkColor(ipc->second->hwndList, cr);
-			InvalidateRect(ipc->second->hwndList, 0, TRUE);
+			switch (op)
+			{
+				case CHANOP_AUTOSTATUS:
+					ipc->second->m_channel.nAutoStatus = (EChanStatus)val;
+					msg = TEXT("changes channel users entry status");
+					break;
+				case CHANOP_LIMIT:
+					ipc->second->m_channel.nLimit = (UINT)val;
+					msg = tformat(TEXT("sets channel limit to %u users"), val);
+					break;
+				case CHANOP_HIDDEN:
+					ipc->second->m_channel.isHidden = val != 0;
+					msg = val
+						? TEXT("sets channel as hidden")
+						: TEXT("sets channel as visible");
+					break;
+				case CHANOP_ANONYMOUS:
+					ipc->second->m_channel.isAnonymous = val != 0;
+					InvalidateRect(ipc->second->hwndList, 0, TRUE);
+					msg = val
+						? TEXT("sets channel as anonymous")
+						: TEXT("sets channel as not anonymous");
+					break;
+				case CHANOP_BACKGROUND:
+					ipc->second->m_channel.crBackground = (COLORREF)val;
+
+					SendMessage(ipc->second->hwndEdit, EM_SETBKGNDCOLOR, FALSE, (LPARAM)val);
+					SendMessage(ipc->second->hwndLog, EM_SETBKGNDCOLOR, FALSE, (LPARAM)val);
+					ListView_SetBkColor(ipc->second->hwndList, val);
+					InvalidateRect(ipc->second->hwndList, 0, TRUE);
+					msg = TEXT("changes sheet color");
+					break;
+			}
 		}
 	}
 	if (jp) {
-		jp->AppendScript(tformat(TEXT("[style=Descr][color=%s]%s[/color] changes sheet color[/style]"),
+		jp->AppendScript(tformat(TEXT("[style=Descr][color=%s]%s[/color] %s[/style]"),
 			idWho != m_idOwn ? TEXT("red") : TEXT("blue"),
-			getSafeName(idWho).c_str()));
+			jp->getSafeName(idWho).c_str(),
+			msg.c_str()));
 		if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fPlayChatSounds)
 			PlaySound(JClientApp::jpApp->strWavTopic.c_str());
 	}
@@ -1681,9 +1747,9 @@ void CALLBACK JClient::Recv_Notify_ACCESS(SOCKET sock, WORD trnid, io::mem& is)
 	}
 	if (jp) {
 		jp->AppendScript(tformat(TEXT("[style=Descr][color=%s]%s[/color] changed channel status to [b]%s[/b] by [color=%s]%s[/color][/style]"),
-			idWho != m_idOwn ? TEXT("red") : TEXT("blue"), getSafeName(idWho).c_str(),
+			idWho != m_idOwn ? TEXT("red") : TEXT("blue"), jp->getSafeName(idWho).c_str(),
 			s_mapChanStatName[stat].c_str(),
-			idBy != m_idOwn ? TEXT("red") : TEXT("blue"), getSafeName(idBy).c_str()));
+			idBy != m_idOwn ? TEXT("red") : TEXT("blue"), jp->getSafeName(idBy).c_str()));
 		if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fPlayChatSounds)
 			PlaySound(JClientApp::jpApp->strWavConfirm.c_str());
 	}
@@ -1942,6 +2008,7 @@ void CALLBACK JClient::Recv_Notify_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& i
 void CALLBACK JClient::Send_Cmd_NICK(SOCKET sock, const std::tstring& nick)
 {
 	std::ostringstream os;
+	io::pack(os, m_idOwn);
 	io::pack(os, nick);
 	PushTrn(sock, COMMAND(CCPM_NICK), 0, os.str());
 }
@@ -1970,10 +2037,10 @@ void CALLBACK JClient::Send_Quest_USERINFO(SOCKET sock, const SetId& set)
 	PushTrn(sock, QUEST(CCPM_USERINFO), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_ONLINE(SOCKET sock, bool on, DWORD id)
+void CALLBACK JClient::Send_Cmd_ONLINE(SOCKET sock, EOnline online, DWORD id)
 {
 	std::ostringstream os;
-	io::pack(os, on);
+	io::pack(os, online);
 	io::pack(os, id);
 	PushTrn(sock, COMMAND(CCPM_ONLINE), 0, os.str());
 }
@@ -2029,12 +2096,13 @@ void CALLBACK JClient::Send_Cmd_TOPIC(SOCKET sock, DWORD idWhere, const std::tst
 	PushTrn(sock, COMMAND(CCPM_TOPIC), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_BACKGROUND(SOCKET sock, DWORD idWhere, COLORREF cr)
+void CALLBACK JClient::Send_Cmd_CHANOPTIONS(SOCKET sock, DWORD idWhere, int op, DWORD val)
 {
 	std::ostringstream os;
 	io::pack(os, idWhere);
-	io::pack(os, cr);
-	PushTrn(sock, COMMAND(CCPM_BACKGROUND), 0, os.str());
+	io::pack(os, op);
+	io::pack(os, val);
+	PushTrn(sock, COMMAND(CCPM_CHANOPTIONS), 0, os.str());
 }
 
 void CALLBACK JClient::Send_Cmd_ACCESS(SOCKET sock, DWORD idWho, DWORD idWhere, EChanStatus stat)

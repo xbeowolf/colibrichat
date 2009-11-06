@@ -129,7 +129,7 @@ void CALLBACK User::Init()
 	GetSystemFileTime(ftCreation);
 
 	IP.S_un.S_addr = 0;
-	isOnline = false;
+	isOnline = eOffline;
 	idOnline = 0;
 	nStatus = eReady;
 	nStatusImg = 0;

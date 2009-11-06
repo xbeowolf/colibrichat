@@ -44,6 +44,7 @@ namespace colibrichat
 	enum EContact {eServer = 0x01U, eList = 0x02U, eUser = 0x04U, eChannel = 0x08U, eBoard = 0x10U};
 	enum EChanStatus {eOutsider, eReader, eWriter, eMember, eModerator, eAdmin, eFounder};
 	enum EUserStatus {eReady, eDND, eBusy, eNA, eAway, eInvisible};
+	enum EOnline {eOffline, eOnline, eTyping};
 
 	typedef std::set<DWORD> SetId;
 
@@ -59,7 +60,7 @@ namespace colibrichat
 	struct User : Contact
 	{
 		in_addr IP; // IP-address of user
-		bool isOnline; // true if application window is active
+		EOnline isOnline; // indicate application window activity
 		DWORD idOnline; // identifier of selected contact
 		EUserStatus nStatus;
 		int nStatusImg;
@@ -81,6 +82,7 @@ namespace colibrichat
 
 		EChanStatus CALLBACK getStatus(DWORD idUser) const;
 		void CALLBACK setStatus(DWORD idUser, EChanStatus val);
+		bool isPrivate() const {return nAutoStatus == eOutsider;}
 	};
 	typedef std::map<DWORD, Channel> MapChannel;
 

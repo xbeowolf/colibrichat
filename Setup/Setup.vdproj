@@ -511,13 +511,13 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Colibri Chat"
         "ProductCode" = "8:{CB4F402C-DC95-4E54-8F11-A91C0416DCAB}"
-        "PackageCode" = "8:{E23E8FD7-7BCD-4B76-92E4-22EE6908E485}"
+        "PackageCode" = "8:{F59C5DD5-8C21-4340-BC37-EE1080B02558}"
         "UpgradeCode" = "8:{9CE85361-B45F-48AE-B43E-D9C165BF7E24}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.15"
+        "ProductVersion" = "8:1.0.16"
         "Manufacturer" = "8:BEOWOLF"
         "ARPHELPTELEPHONE" = "8:+380684862837, icq 320-329-575"
         "ARPHELPLINK" = "8:"
@@ -896,6 +896,14 @@
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:3"
                                                     "Value" = "3:0"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_B7C3FB6EA476409588808F3A9564C6AF"
+                                                    {
+                                                    "Name" = "8:FullAnonymous"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:1"
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_BEC89DC848E6465E80EFB1DF55D6175C"
                                                     {

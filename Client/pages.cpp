@@ -181,6 +181,11 @@ CALLBACK JClient::JPage::JPage()
 	m_alert = eGreen;
 }
 
+std::tstring JClient::JPage::getSafeName(DWORD idUser) const
+{
+	return pSource->getSafeName(idUser);
+}
+
 void CALLBACK JClient::JPage::activate()
 {
 	if (m_alert > eGreen) {
@@ -322,7 +327,7 @@ void CALLBACK JClient::JPageLog::Say(DWORD idUser, const std::string& content)
 {
 	AppendScript(tformat(TEXT("[color=%s]%s[/color]:"),
 		idUser != pSource->m_idOwn ? TEXT("red") : TEXT("blue"),
-		pSource->getSafeName(idUser).c_str()));
+		getSafeName(idUser).c_str()));
 	AppendRtf(content);
 }
 
@@ -492,6 +497,7 @@ void CALLBACK JClient::JPageServer::Enable()
 	EnableWindow(m_hwndHost, FALSE);
 	EnableWindow(m_hwndPort, FALSE);
 	EnableWindow(m_hwndPass, FALSE);
+	EnableWindow(m_hwndNick, TRUE);
 	m_fEnabled = true;
 }
 
@@ -500,6 +506,7 @@ void CALLBACK JClient::JPageServer::Disable()
 	EnableWindow(m_hwndHost, TRUE);
 	EnableWindow(m_hwndPort, TRUE);
 	EnableWindow(m_hwndPass, TRUE);
+	EnableWindow(m_hwndNick, TRUE);
 	m_fEnabled = false;
 }
 
@@ -1054,7 +1061,7 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 								break;
 
 							case 4:
-								pnmv->item.pszText = iter->second.isHidden ? TEXT("+") : TEXT("-");
+								pnmv->item.pszText = iter->second.isPrivate() ? TEXT("+") : TEXT("-");
 								break;
 
 							case 5:
@@ -1713,7 +1720,7 @@ void CALLBACK JClient::JPageUser::OnSheetColor(COLORREF cr)
 	__super::OnSheetColor(cr);
 
 	ASSERT(pSource);
-	pSource->Send_Cmd_BACKGROUND(pSource->m_clientsock, m_ID, cr);
+	pSource->Send_Cmd_CHANOPTIONS(pSource->m_clientsock, m_ID, CHANOP_BACKGROUND, cr);
 }
 
 void CALLBACK JClient::JPageUser::rename(DWORD idNew, const std::tstring& newname)
@@ -1844,6 +1851,11 @@ CALLBACK JClient::JPageChannel::JPageChannel(DWORD id, const std::tstring& nick)
 	m_channel.crBackground = GetSysColor(COLOR_WINDOW);
 }
 
+std::tstring JClient::JPageChannel::getSafeName(DWORD idUser) const
+{
+	return pSource->getSafeName(pSource->m_bFullAnonymous && m_channel.isAnonymous ? CRC_ANONYMOUS : idUser);
+}
+
 void CALLBACK JClient::JPageChannel::Enable()
 {
 	EnableWindow(m_hwndEdit, TRUE);
@@ -1877,10 +1889,10 @@ std::tstring JClient::JPageChannel::gettopic() const
 
 	if (m_channel.topic.empty()) {
 		return tformat(TEXT("#%s"), m_channel.name.c_str());
-	} else if (pSource->mUser.find(m_channel.idTopicWriter) == pSource->mUser.end()) {
+	} else if (m_channel.isAnonymous || pSource->mUser.find(m_channel.idTopicWriter) == pSource->mUser.end()) {
 		return tformat(TEXT("#%s: %s"), m_channel.name.c_str(), m_channel.topic.c_str());
 	} else {
-		return tformat(TEXT("#%s: %s (%s)"), m_channel.name.c_str(), m_channel.topic.c_str(), pSource->getSafeName(m_channel.idTopicWriter).c_str());
+		return tformat(TEXT("#%s: %s (%s)"), m_channel.name.c_str(), m_channel.topic.c_str(), getSafeName(m_channel.idTopicWriter).c_str());
 	}
 }
 
@@ -1919,8 +1931,8 @@ void CALLBACK JClient::JPageChannel::OnSheetColor(COLORREF cr)
 	__super::OnSheetColor(cr);
 
 	ASSERT(pSource);
-	if (m_channel.getStatus(pSource->m_idOwn) >= eMember) {
-		pSource->Send_Cmd_BACKGROUND(pSource->m_clientsock, m_ID, cr);
+	if (m_channel.getStatus(pSource->m_idOwn) >= eAdmin) {
+		pSource->Send_Cmd_CHANOPTIONS(pSource->m_clientsock, m_ID, CHANOP_BACKGROUND, cr);
 	}
 }
 
@@ -2024,7 +2036,7 @@ void CALLBACK JClient::JPageChannel::Join(DWORD idUser)
 	// Introduction messages only fo finded user here - user can be unknown or hidden
 	MapUser::const_iterator iu = pSource->m_mUser.find(idUser);
 	if (iu != pSource->m_mUser.end() && iu->second.name.length()) {
-		AppendScript(tformat(TEXT("[style=Info]joins: [b]%s[/b][/style]"), iu->second.name.c_str()));
+		AppendScript(tformat(TEXT("[style=Info]joins: [b]%s[/b][/style]"), getSafeName(idUser).c_str()));
 	}
 }
 
@@ -2034,20 +2046,17 @@ void CALLBACK JClient::JPageChannel::Part(DWORD idUser, DWORD idBy)
 	if (m_hwndPage) DelLine(idUser);
 
 	// Parting message
-	MapUser::const_iterator iu = pSource->m_mUser.find(idUser);
-	if (iu != pSource->m_mUser.end() && iu->second.name.length()) {
-		std::tstring msg;
-		if (idUser == idBy) {
-			msg = tformat(TEXT("[style=Info]parts: [b]%s[/b][/style]"), iu->second.name.c_str());
-		} else if (idBy == CRC_SERVER) {
-			msg = tformat(TEXT("[style=Info]quits: [b]%s[/b][/style]"), iu->second.name.c_str());
-		} else {
-			MapUser::const_iterator iu2 = pSource->m_mUser.find(idBy);
-			std::tstring by = iu2 != pSource->m_mUser.end() ? iu2->second.name : TEXT("unknown");
-			msg = tformat(TEXT("[style=Info][b]%s[/b] was kicked by [b]%s[/b][/style]"), iu->second.name.c_str(), by.c_str());
-		}
-		AppendScript(msg);
+	std::tstring msg;
+	std::tstring who = getSafeName(idUser);
+	if (idUser == idBy) {
+		msg = tformat(TEXT("[style=Info]parts: [b]%s[/b][/style]"), who.c_str());
+	} else if (idBy == CRC_SERVER) {
+		msg = tformat(TEXT("[style=Info]quits: [b]%s[/b][/style]"), who.c_str());
+	} else {
+		std::tstring by = getSafeName(idBy);
+		msg = tformat(TEXT("[style=Info][b]%s[/b] was kicked by [b]%s[/b][/style]"), who.c_str(), by.c_str());
 	}
+	AppendScript(msg);
 }
 
 int  CALLBACK JClient::JPageChannel::indexIcon(DWORD idUser) const
@@ -2209,6 +2218,20 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			case IDC_CHANTOPIC:
 				if (m_channel.getStatus(pSource->m_idOwn) >= eMember)
 					CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_TOPIC), pSource->hwndPage, (DLGPROC)JDialog::DlgProcStub, (LPARAM)(JDialog*)new JTopic(pSource, this));
+				break;
+
+			case IDC_CHANHIDDEN:
+				if (m_channel.getStatus(pSource->m_idOwn) >= eAdmin) {
+					ASSERT(pSource->m_clientsock);
+					pSource->Send_Cmd_CHANOPTIONS(pSource->m_clientsock, m_ID, CHANOP_HIDDEN, !m_channel.isHidden);
+				}
+				break;
+
+			case IDC_CHANANONYMOUS:
+				if (m_channel.getStatus(pSource->m_idOwn) >= eAdmin) {
+					ASSERT(pSource->m_clientsock);
+					pSource->Send_Cmd_CHANOPTIONS(pSource->m_clientsock, m_ID, CHANOP_ANONYMOUS, !m_channel.isAnonymous);
+				}
 				break;
 
 			case IDC_PRIVATETALK:
@@ -2389,7 +2412,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					COLORREF cr = SetTextColor(lpDrawItem->hDC, (DWORD)lpDrawItem->itemData != pSource->m_idOwn
 						? RGB(0xFF, 0x00, 0x00)
 						: RGB(0x00, 0x00, 0xFF));
-					DrawText(lpDrawItem->hDC, pSource->getSafeName((DWORD)lpDrawItem->itemData).c_str(), -1, &rc, DT_LEFT | DT_NOCLIP | DT_VCENTER);
+					DrawText(lpDrawItem->hDC, getSafeName((DWORD)lpDrawItem->itemData).c_str(), -1, &rc, DT_LEFT | DT_NOCLIP | DT_VCENTER);
 					SetTextColor(lpDrawItem->hDC, cr);
 					// Draw "Status" column
 					rc = lpDrawItem->rcItem;
@@ -2400,7 +2423,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					rc = lpDrawItem->rcItem;
 					rc.left += nColPos[2] + sep;
 					rc.right = rc.left + nColWidth[2];
-					DrawText(lpDrawItem->hDC, valid
+					DrawText(lpDrawItem->hDC, valid && !m_channel.isAnonymous
 						? tformat(TEXT("%i.%i.%i.%i"),
 						iter->second.IP.S_un.S_un_b.s_b1,
 						iter->second.IP.S_un.S_un_b.s_b2,
@@ -2447,7 +2470,8 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					if (pnmh->idFrom == IDC_USERLIST && pnmv->uChanged == LVIF_STATE) {
 						MapUser::const_iterator iu = pSource->m_mUser.find((DWORD)pnmv->lParam);
 						if (iu != pSource->m_mUser.end() && pnmv->iItem >= 0
-							&& (pnmv->uNewState & LVIS_SELECTED) != 0 && (pnmv->uOldState & LVIS_SELECTED) == 0)
+							&& (pnmv->uNewState & LVIS_SELECTED) != 0 && (pnmv->uOldState & LVIS_SELECTED) == 0
+							&& !m_channel.isAnonymous)
 						{
 							ASSERT(pSource->m_clientsock);
 
@@ -2471,8 +2495,8 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 								st.wDay, st.wMonth, st.wYear).c_str(),
 								hicon,
 								(DWORD)pnmv->lParam != pSource->m_idOwn
-								? RGB(0xFF, 0x00, 0x00)
-								: RGB(0x00, 0x00, 0xFF));
+								? RGB(0xC0, 0x00, 0x00)
+								: RGB(0x00, 0x00, 0xC0));
 								DestroyIcon(hicon);
 						}
 					}
@@ -2522,6 +2546,14 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_CHANTOPIC, FALSE));
 				EnableMenuItem((HMENU)wParam, IDC_CHANTOPIC,
 					MF_BYCOMMAND | (m_channel.getStatus(pSource->m_idOwn) >= eMember ? MF_ENABLED : MF_GRAYED));
+				EnableMenuItem((HMENU)wParam, IDC_CHANHIDDEN,
+					MF_BYCOMMAND | (m_channel.getStatus(pSource->m_idOwn) >= eAdmin ? MF_ENABLED : MF_GRAYED));
+				EnableMenuItem((HMENU)wParam, IDC_CHANANONYMOUS,
+					MF_BYCOMMAND | (m_channel.getStatus(pSource->m_idOwn) >= eAdmin ? MF_ENABLED : MF_GRAYED));
+				CheckMenuItem((HMENU)wParam, IDC_CHANHIDDEN,
+					MF_BYCOMMAND | (m_channel.isHidden ? MF_CHECKED : MF_UNCHECKED));
+				CheckMenuItem((HMENU)wParam, IDC_CHANANONYMOUS,
+					MF_BYCOMMAND | (m_channel.isAnonymous ? MF_CHECKED : MF_UNCHECKED));
 
 				CHARRANGE cr;
 				SendMessage(m_hwndLog, EM_EXGETSEL, 0, (LPARAM)&cr);

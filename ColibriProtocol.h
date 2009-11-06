@@ -48,7 +48,6 @@
 #define NAME_NONAME            TEXT("Noname")
 #define CRC_ANONYMOUS          0xbec1fbcd
 #define NAME_ANONYMOUS         TEXT("Anonymous")
-#define CI_RESERVEDPOOL        10
 
 //-----------------------------------------------------------------------------
 
@@ -101,8 +100,13 @@
 // Change channel topic
 #define CCPM_TOPIC                     109
 
-// Changing background colors
-#define CCPM_BACKGROUND                110
+// Changing channel options: limits, colors, etc.
+#define CCPM_CHANOPTIONS               110
+#define CHANOP_AUTOSTATUS              1
+#define CHANOP_LIMIT                   2
+#define CHANOP_HIDDEN                  3
+#define CHANOP_ANONYMOUS               4
+#define CHANOP_BACKGROUND              5
 
 // Change user status on channel
 #define CCPM_ACCESS                    111

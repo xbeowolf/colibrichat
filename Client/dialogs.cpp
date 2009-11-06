@@ -777,6 +777,9 @@ LRESULT WINAPI JClient::JMessageEditor::DlgProc(HWND hWnd, UINT message, WPARAM 
 			MapControl(IDOK, rcSend);
 			MapControl(IDCANCEL, rcCancel);
 
+			m_fTransparent = true;
+			wCharFormatting = SCF_SELECTION;
+
 			if (!pSource) {
 				retval = FALSE;
 				break;

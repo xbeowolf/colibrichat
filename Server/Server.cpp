@@ -245,6 +245,8 @@ bool CALLBACK JServer::hasCRC(DWORD crc) const
 	return
 		crc == CRC_SERVER ||
 		crc == CRC_LIST ||
+		crc == CRC_NONAME ||
+		crc == CRC_ANONYMOUS ||
 		m_mUser.find(crc) != m_mUser.end() ||
 		m_mChannel.find(crc) != m_mChannel.end();
 }
@@ -488,7 +490,7 @@ void JServer::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 		{COMMAND(CCPM_STATUS), &JServer::Recv_Cmd_STATUS},
 		{COMMAND(CCPM_SAY), &JServer::Recv_Cmd_SAY},
 		{COMMAND(CCPM_TOPIC), &JServer::Recv_Cmd_TOPIC},
-		{COMMAND(CCPM_BACKGROUND), &JServer::Recv_Cmd_BACKGROUND},
+		{COMMAND(CCPM_CHANOPTIONS), &JServer::Recv_Cmd_CHANOPTIONS},
 		{COMMAND(CCPM_ACCESS), &JServer::Recv_Cmd_ACCESS},
 		{COMMAND(CCPM_BEEP), &JServer::Recv_Cmd_BEEP},
 		{COMMAND(CCPM_CLIPBOARD), &JServer::Recv_Cmd_CLIPBOARD},
@@ -544,10 +546,12 @@ int  CALLBACK JServer::BroadcastTrn(const SetId& set, bool nested, WORD message,
 
 void CALLBACK JServer::Recv_Cmd_NICK(SOCKET sock, WORD trnid, io::mem& is)
 {
+	DWORD idOld;
 	std::tstring name;
 
 	try
 	{
+		io::unpack(is, idOld);
 		io::unpack(is, name);
 	}
 	catch (io::exception e)
@@ -561,11 +565,28 @@ void CALLBACK JServer::Recv_Cmd_NICK(SOCKET sock, WORD trnid, io::mem& is)
 		}
 	}
 
-	DWORD idOld = m_mSocketId[sock];
-	RenameContact(sock, idOld, name);
-
-	// Report about message
-	EvReport(tformat(TEXT("nickname added: %s"), name.c_str()), netengine::eInformation, netengine::eNormal);
+	DWORD idBy = m_mSocketId[sock];
+	MapUser::iterator iu = m_mUser.find(idOld);
+	if (iu != m_mUser.end()) { // private talk
+		if (idOld == idBy) {
+			RenameContact(sock, idOld, name);
+			// Report about message
+			EvReport(tformat(TEXT("nickname renamed: %s"), name.c_str()), netengine::eInformation, netengine::eNormal);
+		}
+	} else if (idOld == CRC_NONAME) { // new user
+		RenameContact(sock, idOld, name);
+		// Report about message
+		EvReport(tformat(TEXT("nickname added: %s"), name.c_str()), netengine::eInformation, netengine::eNormal);
+	} else {
+		MapChannel::const_iterator ic = m_mChannel.find(idOld);
+		if (ic != m_mChannel.end()) { // channel
+			if (ic->second.getStatus(idBy) == eFounder) {
+				RenameContact(sock, idOld, name);
+				// Report about message
+				EvReport(tformat(TEXT("channel name modified to: %s"), name.c_str()), netengine::eInformation, netengine::eNormal);
+			}
+		}
+	}
 }
 
 void CALLBACK JServer::Recv_Quest_LIST(SOCKET sock, WORD trnid, io::mem& is)
@@ -686,6 +707,8 @@ void CALLBACK JServer::Recv_Cmd_PART(SOCKET sock, WORD trnid, io::mem& is)
 		}
 	}
 
+	if (idWho == CRC_NONAME) idWho = m_mSocketId[sock];
+
 	DWORD idBy = m_mSocketId[sock];
 	MapUser::iterator iuWho = m_mUser.find(idWho), iuBy = m_mUser.find(idBy);
 	ASSERT(iuWho != m_mUser.end());
@@ -745,7 +768,7 @@ void CALLBACK JServer::Recv_Quest_USERINFO(SOCKET sock, WORD trnid, io::mem& is)
 
 void CALLBACK JServer::Recv_Cmd_ONLINE(SOCKET sock, WORD trnid, io::mem& is)
 {
-	bool isOnline;
+	EOnline isOnline;
 	DWORD idOnline;
 
 	try
@@ -758,7 +781,7 @@ void CALLBACK JServer::Recv_Cmd_ONLINE(SOCKET sock, WORD trnid, io::mem& is)
 		switch (e.count)
 		{
 		case 0:
-			isOnline = true;
+			isOnline = eOnline;
 		case 1:
 			idOnline = 0;
 		}
@@ -869,7 +892,7 @@ void CALLBACK JServer::Recv_Cmd_SAY(SOCKET sock, WORD trnid, io::mem& is)
 		MapChannel::const_iterator ic = m_mChannel.find(idWhere);
 		if (ic != m_mChannel.end()) { // channel
 			if (ic->second.getStatus(idSrc) > eReader)
-				Broadcast_Notify_SAY(ic->second.opened, idSrc, idWhere, type, content);
+				Broadcast_Notify_SAY(ic->second.opened, !ic->second.isAnonymous ? idSrc : CRC_ANONYMOUS, idWhere, type, content);
 		}
 	}
 }
@@ -911,15 +934,17 @@ void CALLBACK JServer::Recv_Cmd_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JServer::Recv_Cmd_BACKGROUND(SOCKET sock, WORD trnid, io::mem& is)
+void CALLBACK JServer::Recv_Cmd_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem& is)
 {
 	DWORD idWhere;
-	COLORREF cr;
+	int op;
+	DWORD val;
 
 	try
 	{
 		io::unpack(is, idWhere);
-		io::unpack(is, cr);
+		io::unpack(is, op);
+		io::unpack(is, val);
 	}
 	catch (io::exception e)
 	{
@@ -929,20 +954,48 @@ void CALLBACK JServer::Recv_Cmd_BACKGROUND(SOCKET sock, WORD trnid, io::mem& is)
 			// Report about message
 			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
 			return;
+
+		case 1:
+			op = CHANOP_ANONYMOUS;
+			val = true;
+			break;
+
+		case 2:
+			// Report about message
+			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			return;
 		}
 	}
 
 	DWORD idSrc = m_mSocketId[sock];
 	MapUser::const_iterator iu = m_mUser.find(idWhere);
 	if (iu != m_mUser.end()) { // private talk
-		Send_Notify_BACKGROUND(m_mIdSocket[idWhere], idSrc, idSrc, cr);
+		ASSERT(op == CHANOP_BACKGROUND);
+		Send_Notify_CHANOPTIONS(m_mIdSocket[idWhere], idSrc, idSrc, op, val);
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWhere);
 		if (ic != m_mChannel.end()) { // channel
-			if (ic->second.getStatus(idSrc) >= eMember) {
-				ic->second.crBackground = cr;
+			if (ic->second.getStatus(idSrc) >= eAdmin) {
+				switch (op)
+				{
+				case CHANOP_AUTOSTATUS:
+					ic->second.nAutoStatus = (EChanStatus)val;
+					break;
+				case CHANOP_LIMIT:
+					ic->second.nLimit = (UINT)val;
+					break;
+				case CHANOP_HIDDEN:
+					ic->second.isHidden = val != 0;
+					break;
+				case CHANOP_ANONYMOUS:
+					ic->second.isAnonymous = val != 0;
+					break;
+				case CHANOP_BACKGROUND:
+					ic->second.crBackground = (COLORREF)val;
+					break;
+				}
 
-				Broadcast_Notify_BACKGROUND(ic->second.opened, idSrc, idWhere, cr);
+				Broadcast_Notify_CHANOPTIONS(ic->second.opened, idSrc, idWhere, op, val);
 			}
 		}
 	}
@@ -969,6 +1022,8 @@ void CALLBACK JServer::Recv_Cmd_ACCESS(SOCKET sock, WORD trnid, io::mem& is)
 			return;
 		}
 	}
+
+	if (idWho == CRC_NONAME) idWho = m_mSocketId[sock];
 
 	DWORD idSrc = m_mSocketId[sock];
 	MapUser::const_iterator iu = m_mUser.find(idWhere);
@@ -1000,6 +1055,8 @@ void CALLBACK JServer::Recv_Cmd_BEEP(SOCKET sock, WORD trnid, io::mem& is)
 			return;
 		}
 	}
+
+	if (idWho == CRC_NONAME) idWho = m_mSocketId[sock];
 
 	DWORD idBy = m_mSocketId[sock];
 	MapUser::const_iterator iu = m_mUser.find(idWho);
@@ -1036,6 +1093,8 @@ void CALLBACK JServer::Recv_Cmd_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& is)
 		}
 	}
 
+	if (idWho == CRC_NONAME) idWho = m_mSocketId[sock];
+
 	DWORD idBy = m_mSocketId[sock];
 	MapUser::const_iterator iu = m_mUser.find(idWho);
 	if (iu != m_mUser.end()) { // private talk
@@ -1070,6 +1129,8 @@ void CALLBACK JServer::Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 			return;
 		}
 	}
+
+	if (idWho == CRC_NONAME) idWho = m_mSocketId[sock];
 
 	FILETIME ft;
 	GetSystemFileTime(ft);
@@ -1113,6 +1174,8 @@ void CALLBACK JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is)
 		}
 	}
 
+	if (idWho == CRC_NONAME) idWho = m_mSocketId[sock];
+
 	DWORD idBy = m_mSocketId[sock];
 	MapUser::const_iterator iu = m_mUser.find(idWho);
 	if (iu != m_mUser.end()) { // private talk
@@ -1141,11 +1204,20 @@ void CALLBACK JServer::Broadcast_Notify_NICK(const SetId& set, DWORD result, DWO
 void CALLBACK JServer::Send_Reply_LIST(SOCKET sock, WORD trnid)
 {
 	std::ostringstream os;
-	io::pack(os, m_mChannel.size());
+	// Count all visible channels
+	size_t size = 0;
 	for each (MapChannel::value_type const& v in m_mChannel)
 	{
-		io::pack(os, v.first);
-		io::pack(os, v.second);
+		if (!v.second.isHidden) size++;
+	}
+	io::pack(os, size);
+	// Pack all visible channels
+	for each (MapChannel::value_type const& v in m_mChannel)
+	{
+		if (!v.second.isHidden) {
+			io::pack(os, v.first);
+			io::pack(os, v.second);
+		}
 	}
 	PushTrn(sock, REPLY(CCPM_LIST), trnid, os.str());
 }
@@ -1234,11 +1306,11 @@ void CALLBACK JServer::Send_Reply_USERINFO(SOCKET sock, WORD trnid, const SetId&
 	PushTrn(sock, REPLY(CCPM_USERINFO), trnid, os.str());
 }
 
-void CALLBACK JServer::Broadcast_Notify_ONLINE(const SetId& set, DWORD idWho, bool on, DWORD id)
+void CALLBACK JServer::Broadcast_Notify_ONLINE(const SetId& set, DWORD idWho, EOnline online, DWORD id)
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
-	io::pack(os, on);
+	io::pack(os, online);
 	io::pack(os, id);
 	BroadcastTrn(set, true, NOTIFY(CCPM_ONLINE), os.str());
 }
@@ -1289,22 +1361,24 @@ void CALLBACK JServer::Broadcast_Notify_TOPIC(const SetId& set, DWORD idWho, DWO
 	BroadcastTrn(set, false, NOTIFY(CCPM_TOPIC), os.str());
 }
 
-void CALLBACK JServer::Send_Notify_BACKGROUND(SOCKET sock, DWORD idWho, DWORD idWhere, COLORREF cr)
+void CALLBACK JServer::Send_Notify_CHANOPTIONS(SOCKET sock, DWORD idWho, DWORD idWhere, int op, DWORD val)
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, idWhere);
-	io::pack(os, cr);
-	PushTrn(sock, NOTIFY(CCPM_BACKGROUND), 0, os.str());
+	io::pack(os, op);
+	io::pack(os, val);
+	PushTrn(sock, NOTIFY(CCPM_CHANOPTIONS), 0, os.str());
 }
 
-void CALLBACK JServer::Broadcast_Notify_BACKGROUND(const SetId& set, DWORD idWho, DWORD idWhere, COLORREF cr)
+void CALLBACK JServer::Broadcast_Notify_CHANOPTIONS(const SetId& set, DWORD idWho, DWORD idWhere, int op, DWORD val)
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, idWhere);
-	io::pack(os, cr);
-	BroadcastTrn(set, false, NOTIFY(CCPM_BACKGROUND), os.str());
+	io::pack(os, op);
+	io::pack(os, val);
+	BroadcastTrn(set, false, NOTIFY(CCPM_CHANOPTIONS), os.str());
 }
 
 void CALLBACK JServer::Broadcast_Notify_ACCESS(const SetId& set, DWORD idWho, DWORD idWhere, EChanStatus stat, DWORD idBy)
