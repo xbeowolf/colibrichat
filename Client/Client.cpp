@@ -109,7 +109,7 @@ void JClient::doneclass()
 }
 
 CALLBACK JClient::JClient()
-: netengine::JEngine(), JDialog(),
+: JEngine(), JDialog(),
 jpOnline(0)
 {
 	m_clientsock = 0;
@@ -119,12 +119,12 @@ jpOnline(0)
 	m_bSendByEnter = true;
 	m_bFullAnonymous = true;
 
-	m_metrics.uNickMaxLength = 20;
-	m_metrics.uChanMaxLength = 20;
+	m_metrics.uNameMaxLength = 20;
 	m_metrics.uPassMaxLength = 32;
 	m_metrics.uTopicMaxLength = 100;
 	m_metrics.uStatusMsgMaxLength = 32;
 	m_metrics.nMsgSpinMaxCount = 20;
+	m_metrics.uChatLineMaxSize = 80*1024;
 }
 
 void CALLBACK JClient::Init()
@@ -386,7 +386,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 					case IDC_PORT:
 					case IDC_PASS:
 						{
-							std::tstring nickbuf(m_metrics.uNickMaxLength, 0), nick;
+							std::tstring nickbuf(m_metrics.uNameMaxLength, 0), nick;
 							const TCHAR* msg;
 							GetDlgItemText(jpPageServer->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
 							nick = nickbuf.c_str();
@@ -401,7 +401,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 					case IDC_NICK:
 						{
-							std::tstring nickbuf(m_metrics.uNickMaxLength, 0), nick;
+							std::tstring nickbuf(m_metrics.uNameMaxLength, 0), nick;
 							const TCHAR* msg;
 							GetDlgItemText(jpPageServer->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
 							nick = nickbuf.c_str();
@@ -559,7 +559,7 @@ void CALLBACK JClient::Connect(bool getsetting)
 		m_password = pass;
 
 		// Checkup nick for future identification
-		std::tstring nickbuf(m_metrics.uNickMaxLength, 0), nick;
+		std::tstring nickbuf(m_metrics.uNameMaxLength, 0), nick;
 		const TCHAR* msg;
 		GetDlgItemText(jpPageServer->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
 		nick = nickbuf.c_str();
@@ -570,7 +570,7 @@ void CALLBACK JClient::Connect(bool getsetting)
 		}
 	}
 	// Add into socket manager
-	netengine::Link link;
+	Link link;
 	hostent* h = gethostbyname(m_hostname.c_str());
 	u_long addr = h ? *(u_long*)h->h_addr : htonl(INADDR_LOOPBACK);
 	link.m_saAddr.sin_family = AF_INET;
@@ -1061,11 +1061,11 @@ void JClient::OnLinkFail(SOCKET sock, UINT err)
 	}
 }
 
-void JClient::OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access)
+void JClient::OnLinkIdentify(SOCKET sock, const SetAccess& access)
 {
 	__super::OnLinkIdentify(sock, access);
 
-	std::tstring nickbuf(m_metrics.uNickMaxLength, 0), nick;
+	std::tstring nickbuf(m_metrics.uNameMaxLength, 0), nick;
 	GetDlgItemText(jpPageServer->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
 	nick = nickbuf.c_str();
 	Send_Cmd_NICK(sock, nick);
@@ -1091,6 +1091,7 @@ void JClient::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 		TrnParser parser;
 	} responseTable[] =
 	{
+		{NOTIFY(CCPM_METRICS), &JClient::Recv_Notify_METRICS},
 		{REPLY(CCPM_NICK), &JClient::Recv_Notify_NICK},
 		{NOTIFY(CCPM_NICK), &JClient::Recv_Notify_NICK},
 		{REPLY(CCPM_JOIN), &JClient::Recv_Reply_JOIN},
@@ -1123,6 +1124,27 @@ void JClient::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 // Beowolf Network Protocol Messages reciving
 //
 
+void CALLBACK JClient::Recv_Notify_METRICS(SOCKET sock, WORD trnid, io::mem& is)
+{
+	try
+	{
+		io::unpack(is, m_metrics);
+	}
+	catch (io::exception e)
+	{
+		switch (e.count)
+		{
+		case 0:
+			// Report about message
+			EvReport(SZ_BADTRN, eWarning, eLow);
+			return;
+		}
+	}
+
+	EvMetrics(m_metrics);
+	EvReport(TEXT("metrics from server"), eInformation, eLow);
+}
+
 void CALLBACK JClient::Recv_Notify_NICK(SOCKET sock, WORD trnid, io::mem& is)
 {
 	DWORD result;
@@ -1145,7 +1167,7 @@ void CALLBACK JClient::Recv_Notify_NICK(SOCKET sock, WORD trnid, io::mem& is)
 		case 2:
 		case 3:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -1176,7 +1198,7 @@ void CALLBACK JClient::Recv_Notify_NICK(SOCKET sock, WORD trnid, io::mem& is)
 			msg = TEXT("nickname is taken by channel");
 			break;
 		}
-		EvReport(tformat(TEXT("%s, now nickname is [b]%s[/b]"), msg, newname.c_str()), netengine::eInformation, netengine::eHigh);
+		EvReport(tformat(TEXT("%s, now nickname is [b]%s[/b]"), msg, newname.c_str()), eInformation, eHigh);
 	}
 }
 
@@ -1211,7 +1233,7 @@ void CALLBACK JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 
 					ContactSel(pos);
 
-					EvReport(tformat(TEXT("opened private talk with [b]%s[/b]"), user.name.c_str()), netengine::eInformation, netengine::eHigher);
+					EvReport(tformat(TEXT("opened private talk with [b]%s[/b]"), user.name.c_str()), eInformation, eHigher);
 					break;
 				}
 
@@ -1240,7 +1262,7 @@ void CALLBACK JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 
 					Send_Quest_USERINFO(sock, wanted);
 
-					EvReport(tformat(TEXT("joins to [b]#%s[/b] channel"), chan.name.c_str()), netengine::eInformation, netengine::eHigher);
+					EvReport(tformat(TEXT("joins to [b]#%s[/b] channel"), chan.name.c_str()), eInformation, eHigher);
 					break;
 				}
 			}
@@ -1255,20 +1277,29 @@ void CALLBACK JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 				}
 				msg = TEXT("contact is already opened");
 				break;
-			case CHAN_DENY:
+			case CHAN_BADPASS:
 				msg = TEXT("password does not satisfies");
+				break;
+			case CHAN_DENY:
+				msg = TEXT("access denied, channel is invite-only");
+				break;
+			case CHAN_LIMIT:
+				msg = TEXT("number of users exceeds the channel limits");
+				break;
+			case CHAN_ABSENT:
+				msg = TEXT("contact is absent");
 				break;
 			default:
 				msg = TEXT("can not join to contact");
 				break;
 			}
-			EvReport(msg, netengine::eError, netengine::eHigher);
+			EvReport(msg, eError, eHigher);
 		}
 	}
 	catch (io::exception e)
 	{
 		// Report about message
-		EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+		EvReport(SZ_BADTRN, eWarning, eLow);
 		return;
 	}
 }
@@ -1292,7 +1323,7 @@ void CALLBACK JClient::Recv_Notify_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -1309,7 +1340,7 @@ void CALLBACK JClient::Recv_Notify_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 		if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fPlayMessage)
 			PlaySound(JClientApp::jpApp->strWavPrivate.c_str());
 
-		EvReport(tformat(TEXT("[b]%s[/b] opens private talk"), user.name.c_str()), netengine::eInformation, netengine::eHigher);
+		EvReport(tformat(TEXT("[b]%s[/b] opens private talk"), user.name.c_str()), eInformation, eHigher);
 	} else { // channel
 		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
 		if (ipc != mPageChannel.end()) {
@@ -1340,7 +1371,7 @@ void CALLBACK JClient::Recv_Notify_PART(SOCKET sock, WORD trnid, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 
 		case 2:
@@ -1365,7 +1396,7 @@ void CALLBACK JClient::Recv_Notify_PART(SOCKET sock, WORD trnid, io::mem& is)
 		ipu->second->setAlert(eYellow);
 		ipu->second->Disable();
 
-		EvReport(msg, netengine::eInformation, netengine::eHigher);
+		EvReport(msg, eInformation, eHigher);
 	} else { // channel
 		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
 		if (ipc != mPageChannel.end()) {
@@ -1407,13 +1438,13 @@ void CALLBACK JClient::Recv_Reply_USERINFO(SOCKET sock, WORD trnid, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
 
 	// Report about message
-	EvReport(tformat(TEXT("recieve users info")), netengine::eInformation, netengine::eLow);
+	EvReport(tformat(TEXT("recieve users info")), eInformation, eLow);
 }
 
 void CALLBACK JClient::Recv_Notify_ONLINE(SOCKET sock, WORD trnid, io::mem& is)
@@ -1451,7 +1482,7 @@ void CALLBACK JClient::Recv_Notify_ONLINE(SOCKET sock, WORD trnid, io::mem& is)
 	}
 
 	// Report about message
-	EvReport(tformat(TEXT("user %s is %s"), iu != m_mUser.end() ? iu->second.name.c_str() : TEXT("unknown"), isOnline ? TEXT("online") : TEXT("offline")), netengine::eInformation, netengine::eLowest);
+	EvReport(tformat(TEXT("user %s is %s"), iu != m_mUser.end() ? iu->second.name.c_str() : TEXT("unknown"), isOnline ? TEXT("online") : TEXT("offline")), eInformation, eLowest);
 }
 
 void CALLBACK JClient::Recv_Notify_STATUS(SOCKET sock, WORD trnid, io::mem& is)
@@ -1483,7 +1514,7 @@ void CALLBACK JClient::Recv_Notify_STATUS(SOCKET sock, WORD trnid, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -1527,7 +1558,7 @@ void CALLBACK JClient::Recv_Notify_SAY(SOCKET sock, WORD trnid, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -1583,7 +1614,7 @@ void CALLBACK JClient::Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -1635,7 +1666,7 @@ void CALLBACK JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem&
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 
 		case 2:
@@ -1645,7 +1676,7 @@ void CALLBACK JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem&
 
 		case 3:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -1729,7 +1760,7 @@ void CALLBACK JClient::Recv_Notify_ACCESS(SOCKET sock, WORD trnid, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -1772,7 +1803,7 @@ void CALLBACK JClient::Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -1791,7 +1822,7 @@ void CALLBACK JClient::Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 		msg = TEXT("message to [b]%s[/b] saved");
 		break;
 	}
-	EvReport(tformat(msg.c_str(), getSafeName(idWho).c_str()), netengine::eInformation, netengine::eNormal);
+	EvReport(tformat(msg.c_str(), getSafeName(idWho).c_str()), eInformation, eNormal);
 }
 
 void CALLBACK JClient::Recv_Notify_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
@@ -1823,7 +1854,7 @@ void CALLBACK JClient::Recv_Notify_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 		case 2:
 		case 3:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 
 		case 4:
@@ -1847,7 +1878,7 @@ void CALLBACK JClient::Recv_Notify_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 		PostMessage(m_hwndPage, BEM_JDIALOG, IDD_MSGRECV, (LPARAM)(JDialog*)jp);
 	}
 	// Report about message
-	EvReport(tformat(TEXT("%s from [b]%s[/b]"), fAlert ? TEXT("alert") : TEXT("message"), getSafeName(idBy).c_str()), netengine::eInformation, netengine::eNormal);
+	EvReport(tformat(TEXT("%s from [b]%s[/b]"), fAlert ? TEXT("alert") : TEXT("message"), getSafeName(idBy).c_str()), eInformation, eNormal);
 }
 
 void CALLBACK JClient::Recv_Notify_BEEP(SOCKET sock, WORD trnid, io::mem& is)
@@ -1864,7 +1895,7 @@ void CALLBACK JClient::Recv_Notify_BEEP(SOCKET sock, WORD trnid, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -1873,7 +1904,7 @@ void CALLBACK JClient::Recv_Notify_BEEP(SOCKET sock, WORD trnid, io::mem& is)
 		PlaySound(JClientApp::jpApp->strWavBeep.c_str());
 
 		// Report about message
-		EvReport(tformat(TEXT("sound signal from [b]%s[/b]"), getSafeName(idBy).c_str()), netengine::eInformation, netengine::eHigh);
+		EvReport(tformat(TEXT("sound signal from [b]%s[/b]"), getSafeName(idBy).c_str()), eInformation, eHigh);
 	}
 }
 
@@ -1918,10 +1949,10 @@ void CALLBACK JClient::Recv_Notify_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& i
 				PlaySound(JClientApp::jpApp->strWavClipboard.c_str());
 
 			// Report about message
-			EvReport(tformat(TEXT("recieve clipboard content from [b]%s[/b]"), getSafeName(idBy).c_str()), netengine::eInformation, netengine::eHigh);
+			EvReport(tformat(TEXT("recieve clipboard content from [b]%s[/b]"), getSafeName(idBy).c_str()), eInformation, eHigh);
 		} else {
 			// Report about message
-			EvReport(tformat(TEXT("can not paste recieved clipboard content from [b]%s[/b]"), getSafeName(idBy).c_str()), netengine::eError, netengine::eHigh);
+			EvReport(tformat(TEXT("can not paste recieved clipboard content from [b]%s[/b]"), getSafeName(idBy).c_str()), eError, eHigh);
 		}
 	}
 	catch (io::exception e)
@@ -1930,7 +1961,7 @@ void CALLBACK JClient::Recv_Notify_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& i
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -1967,7 +1998,7 @@ void CALLBACK JClient::Recv_Notify_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& i
 		case 1:
 		case 2:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 
 		case 3:
@@ -1998,7 +2029,7 @@ void CALLBACK JClient::Recv_Notify_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& i
 		PostMessage(m_hwndPage, BEM_JDIALOG, IDD_SPLASHRTF, (LPARAM)(JDialog*)jp);
 	}
 	// Report about message
-	EvReport(tformat(TEXT("splash text from [b]%s[/b]"), getSafeName(idBy).c_str()), netengine::eInformation, netengine::eNormal);
+	EvReport(tformat(TEXT("splash text from [b]%s[/b]"), getSafeName(idBy).c_str()), eInformation, eNormal);
 }
 
 //

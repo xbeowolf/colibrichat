@@ -62,8 +62,9 @@ LRESULT WINAPI JClient::JTopic::DlgProc(HWND hWnd, UINT message, WPARAM wParam, 
 			GetWindowText(hWnd, buffer, _countof(buffer));
 			SetWindowText(hWnd, tformat(TEXT("%s: #%s"), buffer, jpChannel->channel.name.c_str()).c_str());
 
-			SendDlgItemMessage(hWnd, IDC_TOPICTEXT, EM_LIMITTEXT, pSource->m_metrics.uTopicMaxLength, 0);
 			SetDlgItemText(hWnd, IDC_TOPICTEXT, jpChannel->channel.topic.c_str());
+
+			OnMetrics(pSource->m_metrics);
 
 			retval = TRUE;
 			break;
@@ -116,6 +117,7 @@ void JClient::JTopic::OnHook(JEventable* src)
 	pSource->EvLinkEstablished += MakeDelegate(this, &JClient::JTopic::OnLinkEstablished);
 	pSource->EvLinkClose += MakeDelegate(this, &JClient::JTopic::OnLinkClose);
 	pSource->EvPageClose += MakeDelegate(this, &JClient::JTopic::OnPageClose);
+	pSource->EvMetrics += MakeDelegate(this, &JClient::JTopic::OnMetrics);
 }
 
 void JClient::JTopic::OnUnhook(JEventable* src)
@@ -125,6 +127,7 @@ void JClient::JTopic::OnUnhook(JEventable* src)
 	pSource->EvLinkEstablished -= MakeDelegate(this, &JClient::JTopic::OnLinkEstablished);
 	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JTopic::OnLinkClose);
 	pSource->EvPageClose -= MakeDelegate(this, &JClient::JTopic::OnPageClose);
+	pSource->EvMetrics -= MakeDelegate(this, &JClient::JTopic::OnMetrics);
 
 	__super::OnUnhook(src);
 }
@@ -145,6 +148,14 @@ void JClient::JTopic::OnPageClose(DWORD id)
 
 	if (m_hwndPage && id == jpChannel->getID())
 		SendMessage(m_hwndPage, WM_COMMAND, IDCANCEL, 0);
+}
+
+void JClient::JTopic::OnMetrics(const Metrics& metrics)
+{
+	ASSERT(pSource);
+	if (!m_hwndPage) return; // ignore if window closed
+
+	SendDlgItemMessage(m_hwndPage, IDC_TOPICTEXT, EM_LIMITTEXT, metrics.uTopicMaxLength, 0);
 }
 
 //
@@ -817,10 +828,11 @@ LRESULT WINAPI JClient::JMessageEditor::DlgProc(HWND hWnd, UINT message, WPARAM 
 
 			EnableWindow(GetDlgItem(m_hwndPage, IDOK), pSource->m_clientsock != 0);
 
-			SendDlgItemMessage(hWnd, IDC_NICK, EM_LIMITTEXT, pSource->metrics.uNickMaxLength, 0);
 			SetDlgItemText(hWnd, IDC_NICK, strWho.c_str());
 
 			CheckDlgButton(hWnd, IDC_ALERT, fAlert ? BST_CHECKED : BST_UNCHECKED);
+
+			OnMetrics(pSource->m_metrics);
 
 			retval = TRUE;
 			break;
@@ -896,7 +908,7 @@ LRESULT WINAPI JClient::JMessageEditor::DlgProc(HWND hWnd, UINT message, WPARAM 
 					std::string content;
 					getContent(content, SF_RTF);
 
-					std::tstring nickbuf(pSource->m_metrics.uNickMaxLength, 0), nick;
+					std::tstring nickbuf(pSource->m_metrics.uNameMaxLength, 0), nick;
 					const TCHAR* msg;
 					GetDlgItemText(hWnd, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
 					nick = nickbuf.c_str();
@@ -1000,6 +1012,7 @@ void JClient::JMessageEditor::OnHook(JEventable* src)
 
 	pSource->EvLinkEstablished += MakeDelegate(this, &JClient::JMessageEditor::OnLinkEstablished);
 	pSource->EvLinkClose += MakeDelegate(this, &JClient::JMessageEditor::OnLinkClose);
+	pSource->EvMetrics += MakeDelegate(this, &JClient::JMessageEditor::OnMetrics);
 }
 
 void JClient::JMessageEditor::OnUnhook(JEventable* src)
@@ -1008,6 +1021,7 @@ void JClient::JMessageEditor::OnUnhook(JEventable* src)
 
 	pSource->EvLinkEstablished -= MakeDelegate(this, &JClient::JMessageEditor::OnLinkEstablished);
 	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JMessageEditor::OnLinkClose);
+	pSource->EvMetrics -= MakeDelegate(this, &JClient::JMessageEditor::OnMetrics);
 
 	__super::OnUnhook(src);
 }
@@ -1022,6 +1036,14 @@ void JClient::JMessageEditor::OnLinkClose(SOCKET sock, UINT err)
 {
 	ASSERT(pSource);
 	EnableWindow(GetDlgItem(m_hwndPage, IDOK), FALSE);
+}
+
+void JClient::JMessageEditor::OnMetrics(const Metrics& metrics)
+{
+	ASSERT(pSource);
+	if (!m_hwndPage) return; // ignore if window closed
+
+	SendDlgItemMessage(m_hwndPage, IDC_NICK, EM_LIMITTEXT, metrics.uNameMaxLength, 0);
 }
 
 //

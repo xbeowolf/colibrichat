@@ -18,7 +18,6 @@
 #pragma region Includes
 
 // Common
-#include "netengine.h"
 #include "app.h"
 
 // Project
@@ -45,7 +44,7 @@ namespace colibrichat
 	typedef std::map<SOCKET, DWORD> MapSocketId;
 	typedef std::map<DWORD, SOCKET> MapIdSocket;
 
-	class JServer : public netengine::JEngine, public JWindow
+	class JServer : public JEngine, public JWindow
 	{
 	public:
 
@@ -103,7 +102,7 @@ namespace colibrichat
 
 		LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
-		bool CALLBACK CheckAccess(const TCHAR* password, netengine::SetAccess& access) const;
+		bool CALLBACK CheckAccess(const TCHAR* password, SetAccess& access) const;
 
 		// --- CRC work ---
 
@@ -139,6 +138,7 @@ namespace colibrichat
 		void CALLBACK Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is);
 
 		// Beowolf Network Protocol Messages sending
+		void CALLBACK Send_Notify_METRICS(SOCKET sock, const Metrics& metrics);
 		void CALLBACK Broadcast_Notify_NICK(const SetId& set, DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname);
 		void CALLBACK Send_Reply_LIST(SOCKET sock, WORD trnid);
 		void CALLBACK Send_Reply_JOIN_Result(SOCKET sock, WORD trnid, DWORD result, EContact type, DWORD id);
@@ -168,6 +168,7 @@ namespace colibrichat
 
 		void OnLinkClose(SOCKET sock, UINT err);
 		void OnLinkEstablished(SOCKET sock);
+		void OnLinkPassword(SOCKET sock, const TCHAR* password, const SetAccess& access);
 		void OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is);
 
 		// --- Commands ---

@@ -157,7 +157,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 					if (pnmh->idFrom == IDC_LIST)
 					{
-						netengine::MapLink::const_iterator iter = pSource->mLinks.find((SOCKET)pnmv->item.lParam);
+						MapLink::const_iterator iter = pSource->mLinks.find((SOCKET)pnmv->item.lParam);
 						if (iter == pSource->mLinks.end()) break;
 						MapSocketId::const_iterator iterId = pSource->mSocketId.find(iter->second.Sock);
 						if (iterId == pSource->mSocketId.end()) break;
@@ -320,7 +320,7 @@ void CALLBACK JServer::JConnections::DelLine(SOCKET sock)
 
 void CALLBACK JServer::JConnections::BuildView()
 {
-	for each (netengine::MapLink::value_type const& v in pSource->mLinks) {
+	for each (MapLink::value_type const& v in pSource->mLinks) {
 		if (v.second.isEstablished()) AddLine(v.first);
 	}
 }

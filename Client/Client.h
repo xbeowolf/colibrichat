@@ -21,8 +21,7 @@
 #include <Mmsystem.h>
 
 // Common
-#include <patterns.h>
-#include "netengine.h"
+#include "patterns.h"
 #include "app.h"
 #include "jrtf.h"
 
@@ -167,7 +166,7 @@ namespace colibrichat
 
 #pragma pack(pop)
 
-	class JClient : public netengine::JEngine, public JDialog, protected initdoneable<JClient>
+	class JClient : public JEngine, public JDialog, protected initdoneable<JClient>
 	{
 	public:
 
@@ -231,7 +230,7 @@ namespace colibrichat
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
-			void OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access);
+			void OnLinkIdentify(SOCKET sock, const SetAccess& access);
 			void OnLinkClose(SOCKET sock, UINT err);
 
 		protected:
@@ -258,8 +257,8 @@ namespace colibrichat
 
 		protected:
 
-			JPROPERTY_RREF_CONST(std::set<netengine::EGroup>, Groups);
-			JPROPERTY_R(netengine::EPriority, Priority);
+			JPROPERTY_RREF_CONST(std::set<EGroup>, Groups);
+			JPROPERTY_R(EPriority, Priority);
 			ETimeFormat etimeFormat;
 
 			JPROPERTY_R(HWND, hwndLog);
@@ -292,7 +291,8 @@ namespace colibrichat
 			void OnUnhook(JEventable* src);
 
 			void OnLog(const std::tstring& str, bool withtime = true);
-			void OnReport(const std::tstring& str, netengine::EGroup gr = netengine::eMessage, netengine::EPriority prior = netengine::eNormal);
+			void OnReport(const std::tstring& str, EGroup gr = eMessage, EPriority prior = eNormal);
+			void OnMetrics(const Metrics& metrics);
 
 		protected:
 
@@ -345,8 +345,9 @@ namespace colibrichat
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
-			void OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access);
+			void OnLinkIdentify(SOCKET sock, const SetAccess& access);
 			void OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is);
+			void OnMetrics(const Metrics& metrics);
 
 		protected:
 
@@ -367,10 +368,12 @@ namespace colibrichat
 
 			static void initclass();
 			static void doneclass();
-			CALLBACK JPageChat();
+			CALLBACK JPageChat(DWORD id);
 
 			bool CALLBACK IsPermanent() const {return false;}
 			HWND getDefFocusWnd() const {return m_hwndEdit;}
+
+			DWORD CALLBACK getID() const {return m_ID;}
 
 			void CALLBACK Say(DWORD idUser, const std::string& content);
 			virtual bool CALLBACK CanSend() const {return true;}
@@ -380,6 +383,8 @@ namespace colibrichat
 			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
 		protected:
+
+			DWORD m_ID;
 
 			JPROPERTY_R(HWND, hwndMsgSpinBlue);
 			JPROPERTY_R(HWND, hwndMsgSpinRed);
@@ -403,7 +408,6 @@ namespace colibrichat
 			LPCTSTR CALLBACK Template() const {return MAKEINTRESOURCE(IDD_USER);}
 
 			EContact CALLBACK gettype() const {return eUser;}
-			DWORD CALLBACK getID() const {return m_ID;}
 			std::tstring CALLBACK getname() const {return m_user.name;}
 
 			void CALLBACK Enable();
@@ -422,12 +426,11 @@ namespace colibrichat
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
-			void OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access);
+			void OnLinkIdentify(SOCKET sock, const SetAccess& access);
 			void OnLinkClose(SOCKET sock, UINT err);
 
 		protected:
 
-			DWORD m_ID;
 			JPROPERTY_RREF_CONST(User, user);
 		};
 
@@ -445,7 +448,6 @@ namespace colibrichat
 			std::tstring gettopic() const;
 
 			EContact CALLBACK gettype() const {return eChannel;}
-			DWORD CALLBACK getID() const {return m_ID;}
 			std::tstring CALLBACK getname() const {return m_channel.name;}
 
 			void CALLBACK Enable();
@@ -479,12 +481,11 @@ namespace colibrichat
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
-			void OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access);
+			void OnLinkIdentify(SOCKET sock, const SetAccess& access);
 			void OnLinkClose(SOCKET sock, UINT err);
 
 		protected:
 
-			DWORD m_ID;
 			JPROPERTY_RREF_CONST(Channel, channel);
 
 			JPROPERTY_R(HWND, hwndList);
@@ -511,6 +512,7 @@ namespace colibrichat
 			void OnLinkEstablished(SOCKET sock);
 			void OnLinkClose(SOCKET sock, UINT err);
 			void OnPageClose(DWORD id);
+			void OnMetrics(const Metrics& metrics);
 
 		protected:
 
@@ -613,6 +615,7 @@ namespace colibrichat
 
 			void OnLinkEstablished(SOCKET sock);
 			void OnLinkClose(SOCKET sock, UINT err);
+			void OnMetrics(const Metrics& metrics);
 
 		protected:
 
@@ -709,6 +712,7 @@ namespace colibrichat
 	protected:
 
 		// Beowolf Network Protocol Messages reciving
+		void CALLBACK Recv_Notify_METRICS(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_NICK(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is);
 		void CALLBACK Recv_Notify_JOIN(SOCKET sock, WORD trnid, io::mem& is);
@@ -753,7 +757,7 @@ namespace colibrichat
 		void OnLinkConnect(SOCKET sock);
 		void OnLinkClose(SOCKET sock, UINT err);
 		void OnLinkFail(SOCKET sock, UINT err);
-		void OnLinkIdentify(SOCKET sock, const netengine::SetAccess& access);
+		void OnLinkIdentify(SOCKET sock, const SetAccess& access);
 		void OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is);
 
 	public:
@@ -766,6 +770,8 @@ namespace colibrichat
 
 		fastdelegate::FastDelegateList1<DWORD>
 			EvPageClose;
+		fastdelegate::FastDelegateList1<const Metrics&>
+			EvMetrics;
 
 	protected:
 

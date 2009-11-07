@@ -27,10 +27,10 @@
 #define CCP_PORT               7531
 
 // Current engine version
-#define BNP_ENGINEVERSSTRW MAKEVERSIONSTR(1, 0, 0, 1)
-#define BNP_ENGINEVERSSTRA MAKEVERSIONSTR(1, 0, 0, 1)
-#define BNP_ENGINEVERSNUM  MAKEVERSIONNUM(1, 0, 0, 1)
-#define BNP_ENGINEVERSMIN  MAKEVERSIONNUM(1, 0, 0, 1)
+#define BNP_ENGINEVERSSTRW MAKEVERSIONSTR(1, 0, 17, 1)
+#define BNP_ENGINEVERSSTRA MAKEVERSIONSTR(1, 0, 17, 1)
+#define BNP_ENGINEVERSNUM  MAKEVERSIONNUM(1, 0, 17, 1)
+#define BNP_ENGINEVERSMIN  MAKEVERSIONNUM(1, 0, 17, 1)
 #ifdef UNICODE
 #define BNP_ENGINEVERSSTR  BNP_ENGINEVERSSTRW
 #else
@@ -55,53 +55,57 @@
 // Chat base
 //
 
+// Sets metrics from server
+#define CCPM_METRICS                   100
+
 // Creates new nick
-#define CCPM_NICK                      100
+#define CCPM_NICK                      101
 #define NICK_OK                        0
 #define NICK_TAKEN                     1
 #define NICK_TAKENCHANNEL              2
 #define NICK_TAKENUSER                 3
 
 // Changing password
-#define CCPM_PASSWORD                  101
+#define CCPM_PASSWORD                  102 // reserved
 
 // Channels list
-#define CCPM_LIST                      102
+#define CCPM_LIST                      103
 
 // User information, i.e. name, IP, creation time
-#define CCPM_USERINFO                  103
+#define CCPM_USERINFO                  104
 
 // Join to channel or to private talk
-#define CCPM_JOIN                      104
+#define CCPM_JOIN                      105
 #define CHAN_OK                        0
 #define CHAN_ALREADY                   1
-#define CHAN_DENY                      2
-#define CHAN_LIMIT                     3
-#define CHAN_ABSENT                    4
+#define CHAN_BADPASS                   2
+#define CHAN_DENY                      3
+#define CHAN_LIMIT                     4
+#define CHAN_ABSENT                    5
 
 // Part channel or private talk
-#define CCPM_PART                      105
+#define CCPM_PART                      106
 #define PART_KICK                      0
 #define PART_LEAVE                     1
 #define PART_DISCONNECT                2
 
 // Indicate application activation
-#define CCPM_ONLINE                    106
+#define CCPM_ONLINE                    107
 
 // Status components
-#define CCPM_STATUS                    107
+#define CCPM_STATUS                    108
 #define STATUS_MODE                    0x0001
 #define STATUS_IMG                     0x0002
 #define STATUS_MSG                     0x0004
 
 // Say to channel or to private talk
-#define CCPM_SAY                       108
+#define CCPM_SAY                       109
 
 // Change channel topic
-#define CCPM_TOPIC                     109
+#define CCPM_TOPIC                     110
 
 // Changing channel options: limits, colors, etc.
-#define CCPM_CHANOPTIONS               110
+#define CCPM_CHANOPTIONS               111
 #define CHANOP_AUTOSTATUS              1
 #define CHANOP_LIMIT                   2
 #define CHANOP_HIDDEN                  3
@@ -109,22 +113,22 @@
 #define CHANOP_BACKGROUND              5
 
 // Change user status on channel
-#define CCPM_ACCESS                    111
+#define CCPM_ACCESS                    112
 
 // Message or alert
-#define CCPM_MESSAGE                   112
+#define CCPM_MESSAGE                   113
 #define MESSAGE_IGNORE                 0
 #define MESSAGE_SENT                   1
 #define MESSAGE_SAVED                  2
 
 // Beep
-#define CCPM_BEEP                      113
+#define CCPM_BEEP                      114
 
 // Send windows clipboard content
-#define CCPM_CLIPBOARD                 114
+#define CCPM_CLIPBOARD                 115
 
 // Creates splash-window with given text content
-#define CCPM_SPLASHRTF                 115
+#define CCPM_SPLASHRTF                 116
 
 //-----------------------------------------------------------------------------
 

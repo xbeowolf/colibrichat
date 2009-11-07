@@ -68,6 +68,9 @@
 #define IDS_MSG_CLIPBOARD               514
 #define IDS_MSG_SPLASHRTF               515
 #define IDS_MSG_KICK                    516
+#define IDS_MSG_EDITOR                  517
+#define IDS_MSG_LIMITCHATLINE           518
+#define IDS_MSG_READER                  520
 #define IDC_LOG                         1001
 #define IDC_USERLIST                    1002
 #define IDC_RICHEDIT                    1003
@@ -157,13 +160,30 @@
 #define IDC_CHANPRIVATE                 40086
 #define IDC_CHANANONYMOUS               40087
 #define IDC_CHANHIDDEN                  40088
+#define ID_OVERLAP_ENTRYSTATUS          40089
+#define ID_OVERLAP_ENTRYSTATUS40090     40090
+#define ID_ENTRYSTATUS_FOUNDER          40091
+#define ID_ENTRYSTATUS_ADMINISTRATOR    40092
+#define ID_ENTRYSTATUS_MODERATOR        40093
+#define ID_ENTRYSTATUS_MEMBER           40094
+#define ID_ENTRYSTATUS_WRITER           40095
+#define ID_ENTRYSTATUS_WRITER40096      40096
+#define ID_ENTRYSTATUS_WRITER40097      40097
+#define ID_ENTRYSTATUS_READER           40098
+#define ID_ENTRYSTATUS_PRIVATECHANNEL   40099
+#define IDC_CHANFOUNDER                 40100
+#define IDC_CHANADMIN                   40101
+#define IDC_CHANMODERATOR               40102
+#define IDC_CHANMEMBER                  40103
+#define IDC_CHANWRITER                  40104
+#define IDC_CHANREADER                  40105
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        164
-#define _APS_NEXT_COMMAND_VALUE         40089
+#define _APS_NEXT_COMMAND_VALUE         40106
 #define _APS_NEXT_CONTROL_VALUE         1061
 #define _APS_NEXT_SYMED_VALUE           102
 #endif

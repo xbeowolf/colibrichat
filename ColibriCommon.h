@@ -37,6 +37,8 @@
 
 namespace colibrichat
 {
+	using namespace netengine;
+
 	struct Contact;
 	struct User;
 	struct Channel;
@@ -88,25 +90,27 @@ namespace colibrichat
 
 	struct Metrics
 	{
-		size_t uNickMaxLength;
+		size_t uNameMaxLength;
 		size_t uStatusMsgMaxLength;
-		size_t uChanMaxLength;
 		size_t uPassMaxLength;
 		size_t uTopicMaxLength;
 		size_t nMsgSpinMaxCount;
+		size_t uChatLineMaxSize;
 	};
 
-	enum EGender {eMale, eFemale};
 	struct Personal
 	{
+		enum EGender {eMale, eFemale};
+
 		std::tstring name;
 		// personal
 		EGender gender;
-		UINT birthDay, birthMonth, birthYear;
+		SYSTEMTIME birthDay;
 		// contacts
 		UINT icq;
 		std::tstring email;
 		std::tstring phone;
+		std::tstring about;
 	};
 }; // colibrichat
 

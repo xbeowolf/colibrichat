@@ -37,7 +37,7 @@ static TCHAR szHelpFile[MAX_PATH];
 //
 
 CALLBACK JServer::JServer()
-: netengine::JEngine(), JWindow()
+: JEngine(), JWindow()
 {
 	// Dialogs
 	jpConnections = new JConnections();
@@ -48,9 +48,12 @@ CALLBACK JServer::JServer()
 
 	m_bShowIcon = true;
 
-	m_metrics.uNickMaxLength = 20;
-	m_metrics.uChanMaxLength = 20;
+	m_metrics.uNameMaxLength = 20;
 	m_metrics.uPassMaxLength = 32;
+	m_metrics.uTopicMaxLength = 100;
+	m_metrics.uStatusMsgMaxLength = 32;
+	m_metrics.nMsgSpinMaxCount = 20;
+	m_metrics.uChatLineMaxSize = 80*1024;
 }
 
 void CALLBACK JServer::Init()
@@ -68,7 +71,7 @@ void CALLBACK JServer::Init()
 	CreateMsgWindow();
 
 	// Create listening socket
-	netengine::Link link;
+	Link link;
 	link.m_saAddr.sin_family = AF_INET;
 	link.m_saAddr.sin_addr.S_un.S_addr = htonl(m_IP);
 	link.m_saAddr.sin_port = htons(m_port);
@@ -230,7 +233,7 @@ LRESULT WINAPI JServer::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	return retval;
 }
 
-bool CALLBACK JServer::CheckAccess(const TCHAR* password, netengine::SetAccess& access) const
+bool CALLBACK JServer::CheckAccess(const TCHAR* password, SetAccess& access) const
 {
 	if (!password) {
 		__super::CheckAccess(password, access);
@@ -324,7 +327,7 @@ std::tstring CALLBACK JServer::getNearestName(const std::tstring& nick) const
 	DWORD i = 0;
 	while (hasCRC(dCRC(buffer.c_str()))) {
 		StringCchPrintf(digits, _countof(digits), TEXT("%u"), i);
-		buffer = nick.substr(0, m_metrics.uNickMaxLength - lstrlen(digits)) + digits;
+		buffer = nick.substr(0, m_metrics.uNameMaxLength - lstrlen(digits)) + digits;
 		i++;
 	}
 	return buffer;
@@ -473,6 +476,13 @@ void JServer::OnLinkEstablished(SOCKET sock)
 	}
 }
 
+void JServer::OnLinkPassword(SOCKET sock, const TCHAR* password, const SetAccess& access)
+{
+	__super::OnLinkPassword(sock, password, access);
+
+	Send_Notify_METRICS(sock, m_metrics);
+}
+
 void JServer::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is)
 {
 	typedef void (CALLBACK JServer::*TrnParser)(SOCKET, WORD, io::mem&);
@@ -512,7 +522,7 @@ int  CALLBACK JServer::BroadcastTrn(const SetId& set, bool nested, WORD message,
 	ASSERT(NATIVEACTION(message) != BNPM_REPLY); // can not broadcast reply
 
 	// Count users to prevent duplicate sents
-	netengine::SetSocket broadcast;
+	SetSocket broadcast;
 	MapIdSocket::const_iterator iis;
 	for each (SetId::value_type const& v in set)
 	{
@@ -534,7 +544,7 @@ int  CALLBACK JServer::BroadcastTrn(const SetId& set, bool nested, WORD message,
 	}
 
 	// Broadcast to unical users
-	for each (netengine::SetSocket::value_type const& v in broadcast) {
+	for each (SetSocket::value_type const& v in broadcast) {
 		PushTrn(v, message, 0, str, ssi);
 	}
 	return (int)broadcast.size();
@@ -560,7 +570,7 @@ void CALLBACK JServer::Recv_Cmd_NICK(SOCKET sock, WORD trnid, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -571,19 +581,19 @@ void CALLBACK JServer::Recv_Cmd_NICK(SOCKET sock, WORD trnid, io::mem& is)
 		if (idOld == idBy) {
 			RenameContact(sock, idOld, name);
 			// Report about message
-			EvReport(tformat(TEXT("nickname renamed: %s"), name.c_str()), netengine::eInformation, netengine::eNormal);
+			EvReport(tformat(TEXT("nickname renamed: %s"), name.c_str()), eInformation, eNormal);
 		}
 	} else if (idOld == CRC_NONAME) { // new user
 		RenameContact(sock, idOld, name);
 		// Report about message
-		EvReport(tformat(TEXT("nickname added: %s"), name.c_str()), netengine::eInformation, netengine::eNormal);
+		EvReport(tformat(TEXT("nickname added: %s"), name.c_str()), eInformation, eNormal);
 	} else {
 		MapChannel::const_iterator ic = m_mChannel.find(idOld);
 		if (ic != m_mChannel.end()) { // channel
 			if (ic->second.getStatus(idBy) == eFounder) {
 				RenameContact(sock, idOld, name);
 				// Report about message
-				EvReport(tformat(TEXT("channel name modified to: %s"), name.c_str()), netengine::eInformation, netengine::eNormal);
+				EvReport(tformat(TEXT("channel name modified to: %s"), name.c_str()), eInformation, eNormal);
 			}
 		}
 	}
@@ -594,7 +604,7 @@ void CALLBACK JServer::Recv_Quest_LIST(SOCKET sock, WORD trnid, io::mem& is)
 	Send_Reply_LIST(sock, trnid);
 
 	// Report about message
-	EvReport(tformat(TEXT("channels list")), netengine::eInformation, netengine::eNormal);
+	EvReport(tformat(TEXT("channels list")), eInformation, eNormal);
 }
 
 void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
@@ -614,7 +624,7 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 
 		case 1:
@@ -639,15 +649,20 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 		MapChannel::iterator ic = m_mChannel.find(idDst);
 		if (ic != m_mChannel.end() && type & eChannel) { // channel
 			if (ic->second.opened.size() < ic->second.nLimit) {
-				if (ic->second.password.empty() || ic->second.password == pass) {
-					if (ic->second.opened.find(idSrc) == ic->second.opened.end()) {
-						if (ic->second.getStatus(idSrc) == eOutsider)
-							ic->second.setStatus(idSrc, ic->second.nAutoStatus);
-						Broadcast_Notify_JOIN(ic->second.opened, idSrc, idDst, m_mUser[idSrc]);
-						linkCRC(idDst, idSrc);
-						Send_Reply_JOIN_Channel(sock, trnid, idDst, ic->second);
+				if (ic->second.nAutoStatus > eOutsider) {
+					if (ic->second.password.empty() || ic->second.password == pass) {
+						if (ic->second.opened.find(idSrc) == ic->second.opened.end()) {
+							if (ic->second.getStatus(idSrc) == eOutsider) {
+								ic->second.setStatus(idSrc, ic->second.nAutoStatus);
+							}
+							Broadcast_Notify_JOIN(ic->second.opened, idSrc, idDst, m_mUser[idSrc]);
+							linkCRC(idDst, idSrc);
+							Send_Reply_JOIN_Channel(sock, trnid, idDst, ic->second);
+						} else {
+							Send_Reply_JOIN_Result(sock, trnid, CHAN_ALREADY, eChannel, idDst);
+						}
 					} else {
-						Send_Reply_JOIN_Result(sock, trnid, CHAN_ALREADY, eChannel, idDst);
+						Send_Reply_JOIN_Result(sock, trnid, CHAN_BADPASS, eChannel, idDst);
 					}
 				} else {
 					Send_Reply_JOIN_Result(sock, trnid, CHAN_DENY, eChannel, idDst);
@@ -683,7 +698,7 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 	}
 
 	// Report about message
-	EvReport(tformat(TEXT("joins %s to %s"), m_mUser[idSrc].name.c_str(), name.c_str()), netengine::eInformation, netengine::eNormal);
+	EvReport(tformat(TEXT("joins %s to %s"), m_mUser[idSrc].name.c_str(), name.c_str()), eInformation, eNormal);
 }
 
 void CALLBACK JServer::Recv_Cmd_PART(SOCKET sock, WORD trnid, io::mem& is)
@@ -702,7 +717,7 @@ void CALLBACK JServer::Recv_Cmd_PART(SOCKET sock, WORD trnid, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -717,7 +732,7 @@ void CALLBACK JServer::Recv_Cmd_PART(SOCKET sock, WORD trnid, io::mem& is)
 	MapUser::iterator iu = m_mUser.find(idWhere);
 	if (iu != m_mUser.end()) { // private talk
 		// Report about message
-		EvReport(tformat(TEXT("parts %s from %s"), iuWho->second.name.c_str(), iu->second.name.c_str()), netengine::eInformation, netengine::eNormal);
+		EvReport(tformat(TEXT("parts %s from %s"), iuWho->second.name.c_str(), iu->second.name.c_str()), eInformation, eNormal);
 
 		Send_Notify_PART(m_mIdSocket[idWhere], idWho, idWho, idBy); // recieves to close private with idWho
 		Send_Notify_PART(sock, idBy, idWhere, idBy);
@@ -729,7 +744,7 @@ void CALLBACK JServer::Recv_Cmd_PART(SOCKET sock, WORD trnid, io::mem& is)
 			bool canKick = ic->second.getStatus(idBy) >= ic->second.getStatus(idWho);
 			if (idWho == idBy || (isModer && canKick)) {
 				// Report about message
-				EvReport(tformat(TEXT("parts %s from %s"), iuWho->second.name.c_str(), ic->second.name.c_str()), netengine::eInformation, netengine::eNormal);
+				EvReport(tformat(TEXT("parts %s from %s"), iuWho->second.name.c_str(), ic->second.name.c_str()), eInformation, eNormal);
 
 				ic = m_mChannel.find(idWhere);
 				if (ic != m_mChannel.end()) { // check that channel still exist
@@ -755,7 +770,7 @@ void CALLBACK JServer::Recv_Quest_USERINFO(SOCKET sock, WORD trnid, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -763,7 +778,7 @@ void CALLBACK JServer::Recv_Quest_USERINFO(SOCKET sock, WORD trnid, io::mem& is)
 	Send_Reply_USERINFO(sock, trnid, wanted);
 
 	// Report about message
-	EvReport(tformat(TEXT("info for %u users"), wanted.size()), netengine::eInformation, netengine::eNormal);
+	EvReport(tformat(TEXT("info for %u users"), wanted.size()), eInformation, eNormal);
 }
 
 void CALLBACK JServer::Recv_Cmd_ONLINE(SOCKET sock, WORD trnid, io::mem& is)
@@ -799,7 +814,7 @@ void CALLBACK JServer::Recv_Cmd_ONLINE(SOCKET sock, WORD trnid, io::mem& is)
 	}
 
 	// Report about message
-	EvReport(tformat(TEXT("user is %s"), isOnline ? TEXT("online") : TEXT("offline")), netengine::eInformation, netengine::eLowest);
+	EvReport(tformat(TEXT("user is %s"), isOnline ? TEXT("online") : TEXT("offline")), eInformation, eLowest);
 }
 
 void CALLBACK JServer::Recv_Cmd_STATUS(SOCKET sock, WORD trnid, io::mem& is)
@@ -832,7 +847,7 @@ void CALLBACK JServer::Recv_Cmd_STATUS(SOCKET sock, WORD trnid, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -856,7 +871,7 @@ void CALLBACK JServer::Recv_Cmd_STATUS(SOCKET sock, WORD trnid, io::mem& is)
 	}
 
 	// Report about message
-	EvReport(tformat(TEXT("user changes status")), netengine::eInformation, netengine::eLowest);
+	EvReport(tformat(TEXT("user changes status")), eInformation, eLowest);
 }
 
 void CALLBACK JServer::Recv_Cmd_SAY(SOCKET sock, WORD trnid, io::mem& is)
@@ -878,7 +893,7 @@ void CALLBACK JServer::Recv_Cmd_SAY(SOCKET sock, WORD trnid, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -913,7 +928,7 @@ void CALLBACK JServer::Recv_Cmd_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -952,7 +967,7 @@ void CALLBACK JServer::Recv_Cmd_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem& is
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 
 		case 1:
@@ -962,7 +977,7 @@ void CALLBACK JServer::Recv_Cmd_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem& is
 
 		case 2:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -1018,7 +1033,7 @@ void CALLBACK JServer::Recv_Cmd_ACCESS(SOCKET sock, WORD trnid, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -1051,7 +1066,7 @@ void CALLBACK JServer::Recv_Cmd_BEEP(SOCKET sock, WORD trnid, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -1088,7 +1103,7 @@ void CALLBACK JServer::Recv_Cmd_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -1125,7 +1140,7 @@ void CALLBACK JServer::Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -1169,7 +1184,7 @@ void CALLBACK JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, netengine::eWarning, netengine::eLow);
+			EvReport(SZ_BADTRN, eWarning, eLow);
 			return;
 		}
 	}
@@ -1190,6 +1205,13 @@ void CALLBACK JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is)
 //
 // Beowolf Network Protocol Messages sending
 //
+
+void CALLBACK JServer::Send_Notify_METRICS(SOCKET sock, const Metrics& metrics)
+{
+	std::ostringstream os;
+	io::pack(os, metrics);
+	PushTrn(sock, NOTIFY(CCPM_METRICS), 0, os.str());
+}
 
 void CALLBACK JServer::Broadcast_Notify_NICK(const SetId& set, DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname)
 {
