@@ -50,12 +50,25 @@ namespace colibrichat
 
 	typedef std::set<DWORD> SetId;
 
+#pragma pack(push, 1)
+
+	struct Alert {
+		bool fFlashPageNew : 1, fFlashPageSayPrivate : 1, fFlahPageSayChannel : 1, fFlashPageChangeTopic : 1;
+		bool fCanOpenPrivate : 1, fCanAlert : 1, fCanMessage : 1, fCanSplash : 1, fCanSignal : 1, fCanRecvClipboard : 1;
+		bool fPlayChatSounds : 1, fPlayPrivateSounds : 1, fPlayAlert : 1, fPlayMessage : 1, fPlayBeep : 1, fPlayClipboard : 1;
+	};
+	typedef std::map<EUserStatus, Alert> MapAlert;
+
+#pragma pack(pop)
+
 	struct Contact
 	{
 		std::tstring name; // unical contact name
 		std::tstring password; // password for join into channel
 		SetId opened; // identifiers of opened contacts
 		FILETIME ftCreation; // contact creation time
+
+		bool CALLBACK isOpened(DWORD id) const;
 	};
 	typedef std::map<DWORD, Contact> MapContact;
 
@@ -65,10 +78,14 @@ namespace colibrichat
 		EOnline isOnline; // indicate application window activity
 		DWORD idOnline; // identifier of selected contact
 		EUserStatus nStatus;
+		Alert accessibility;
 		int nStatusImg;
 		std::tstring strStatus;
+		struct {
+			bool isGod : 1, isDevil : 1;
+		} cheat;
 
-		void CALLBACK Init();
+		CALLBACK User();
 	};
 	typedef std::map<DWORD, User> MapUser;
 
@@ -76,7 +93,7 @@ namespace colibrichat
 	{
 		std::tstring topic; // channel topic
 		DWORD idTopicWriter;
-		SetId writer, member, moderator, admin, founder; // users identifiers with access rights
+		SetId reader, writer, member, moderator, admin, founder; // users identifiers with access rights
 		EChanStatus nAutoStatus; // default access right for incomer
 		UINT nLimit; // maximum users on channel
 		bool isHidden, isAnonymous;
@@ -91,11 +108,11 @@ namespace colibrichat
 	struct Metrics
 	{
 		size_t uNameMaxLength;
-		size_t uStatusMsgMaxLength;
 		size_t uPassMaxLength;
+		size_t uStatusMsgMaxLength;
 		size_t uTopicMaxLength;
 		size_t nMsgSpinMaxCount;
-		size_t uChatLineMaxSize;
+		size_t uChatLineMaxVolume;
 	};
 
 	struct Personal

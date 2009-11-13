@@ -36,8 +36,10 @@ void CALLBACK io::pack(std::ostream& os, const colibrichat::User& data)
 	io::pack(os, data.isOnline);
 	io::pack(os, data.idOnline);
 	io::pack(os, data.nStatus);
+	io::pack(os, data.accessibility);
 	io::pack(os, data.nStatusImg);
 	io::pack(os, data.strStatus);
+	io::pack(os, data.cheat);
 }
 
 void CALLBACK io::pack(std::ostream& os, const colibrichat::Channel& data)
@@ -48,6 +50,7 @@ void CALLBACK io::pack(std::ostream& os, const colibrichat::Channel& data)
 	io::pack(os, data.ftCreation);
 	io::pack(os, data.topic);
 	io::pack(os, data.idTopicWriter);
+	io::pack(os, data.reader);
 	io::pack(os, data.writer);
 	io::pack(os, data.member);
 	io::pack(os, data.moderator);
@@ -80,8 +83,10 @@ void CALLBACK io::unpack(io::mem& is, colibrichat::User& data)
 	io::unpack(is, data.isOnline);
 	io::unpack(is, data.idOnline);
 	io::unpack(is, data.nStatus);
+	io::unpack(is, data.accessibility);
 	io::unpack(is, data.nStatusImg);
 	io::unpack(is, data.strStatus);
+	io::unpack(is, data.cheat);
 }
 
 void CALLBACK io::unpack(io::mem& is, colibrichat::Channel& data)
@@ -92,6 +97,7 @@ void CALLBACK io::unpack(io::mem& is, colibrichat::Channel& data)
 	io::unpack(is, data.ftCreation);
 	io::unpack(is, data.topic);
 	io::unpack(is, data.idTopicWriter);
+	io::unpack(is, data.reader);
 	io::unpack(is, data.writer);
 	io::unpack(is, data.member);
 	io::unpack(is, data.moderator);
@@ -123,9 +129,13 @@ void CALLBACK GetSystemFileTime(FILETIME& ft)
 
 //-----------------------------------------------------------------------------
 
-void CALLBACK User::Init()
+bool CALLBACK Contact::isOpened(DWORD id) const
 {
-	opened.clear();
+	return opened.find(id) != opened.end();
+}
+
+CALLBACK User::User()
+{
 	GetSystemFileTime(ftCreation);
 
 	IP.S_un.S_addr = 0;
@@ -134,6 +144,8 @@ void CALLBACK User::Init()
 	nStatus = eReady;
 	nStatusImg = 0;
 	strStatus = TEXT("");
+	cheat.isGod = false;
+	cheat.isDevil = false;
 }
 
 EChanStatus CALLBACK Channel::getStatus(DWORD idUser) const
@@ -148,7 +160,7 @@ EChanStatus CALLBACK Channel::getStatus(DWORD idUser) const
 		return eMember;
 	else if (writer.find(idUser) != writer.end())
 		return eWriter;
-	else if (opened.find(idUser) != opened.end())
+	else if (reader.find(idUser) != reader.end())
 		return eReader;
 	else return eOutsider;
 }
@@ -166,6 +178,8 @@ void CALLBACK Channel::setStatus(DWORD idUser, EChanStatus val)
 		member.erase(idUser);
 	else if (writer.find(idUser) != writer.end())
 		writer.erase(idUser);
+	else if (reader.find(idUser) != reader.end())
+		reader.erase(idUser);
 	// Set new state
 	switch (val)
 	{
@@ -185,7 +199,7 @@ void CALLBACK Channel::setStatus(DWORD idUser, EChanStatus val)
 		writer.insert(idUser);
 		break;
 	case eReader:
-		// State must be assigned without inviting
+		reader.insert(idUser);
 		break;
 	case eOutsider:
 		// No actions

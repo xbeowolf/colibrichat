@@ -27,10 +27,10 @@
 #define CCP_PORT               7531
 
 // Current engine version
-#define BNP_ENGINEVERSSTRW MAKEVERSIONSTR(1, 0, 17, 1)
-#define BNP_ENGINEVERSSTRA MAKEVERSIONSTR(1, 0, 17, 1)
-#define BNP_ENGINEVERSNUM  MAKEVERSIONNUM(1, 0, 17, 1)
-#define BNP_ENGINEVERSMIN  MAKEVERSIONNUM(1, 0, 17, 1)
+#define BNP_ENGINEVERSSTRW MAKEVERSIONSTR(1, 0, 18, 1)
+#define BNP_ENGINEVERSSTRA MAKEVERSIONSTR(1, 0, 18, 1)
+#define BNP_ENGINEVERSNUM  MAKEVERSIONNUM(1, 0, 18, 1)
+#define BNP_ENGINEVERSMIN  MAKEVERSIONNUM(1, 0, 18, 1)
 #ifdef UNICODE
 #define BNP_ENGINEVERSSTR  BNP_ENGINEVERSSTRW
 #else
@@ -97,6 +97,8 @@
 #define STATUS_MODE                    0x0001
 #define STATUS_IMG                     0x0002
 #define STATUS_MSG                     0x0004
+#define STATUS_GOD                     0x0008
+#define STATUS_DEVIL                   0x0010
 
 // Say to channel or to private talk
 #define CCPM_SAY                       109

@@ -91,8 +91,8 @@ IDI_SMALL               ICON                    "Chat.ico"
 //
 
 1 VERSIONINFO
- FILEVERSION 1,0,17,1
- PRODUCTVERSION 1,0,17,1
+ FILEVERSION 1,0,18,1
+ PRODUCTVERSION 1,0,18,1
  FILEFLAGSMASK 0x1fL
 #ifdef _DEBUG
  FILEFLAGS 0x9L
@@ -110,14 +110,14 @@ BEGIN
             VALUE "Comments", "Shareware; Colibri Chat created 19.04.2009 17:17:32\r\n\r\nContact information:\r\nmailto:xbeowolf@gmail.com\r\nicq:320-329-575\r\nphone:+380684862837"
             VALUE "CompanyName", "Podobashev D. O. / BEOWOLF"
             VALUE "FileDescription", "Colibri Chat Client Application"
-            VALUE "FileVersion", "1, 0, 17, 1"
+            VALUE "FileVersion", "1, 0, 18, 1"
             VALUE "InternalName", "ColibriClient"
             VALUE "LegalCopyright", "© BEOWOLF / Podobashev Dmitry, 2009"
             VALUE "LegalTrademarks", "MetaShape"
             VALUE "OriginalFilename", "ColibriClient.exe"
-            VALUE "PrivateBuild", "Build 31"
+            VALUE "PrivateBuild", "Build 32"
             VALUE "ProductName", "Colibri Chat"
-            VALUE "ProductVersion", "1, 0, 17, 1"
+            VALUE "ProductVersion", "1, 0, 18, 1"
         END
     END
     BLOCK "VarFileInfo"
@@ -262,7 +262,7 @@ EXSTYLE WS_EX_CONTEXTHELP | WS_EX_CONTROLPARENT
 CAPTION "List"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    CONTROL         "",IDC_CHANLIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_SHAREIMAGELISTS | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,0,0,300,209,0,HIDC_CHANLIST
+    CONTROL         "",IDC_CHANLIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_SHAREIMAGELISTS | LVS_EDITLABELS | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,0,0,300,209,0,HIDC_CHANLIST
     CONTROL         "Join to:",IDC_STATIC1,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,0,213,24,8,0,HIDC_STATIC1
     EDITTEXT        IDC_JOINCHAN,24,211,64,12,ES_AUTOHSCROLL,0,HIDC_JOINCHAN
     CONTROL         "with password:",IDC_STATIC2,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,90,213,48,8,0,HIDC_STATIC2
@@ -293,7 +293,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     CONTROL         "Rich edit controls",IDC_TOOLBAR,"ToolbarWindow32",WS_TABSTOP | 0x900,0,0,300,16,WS_EX_TOOLWINDOW,HIDC_TOOLBAR
     CONTROL         "",IDC_LOG,"RichEdit20A",ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | ES_NUMBER | WS_BORDER | WS_VSCROLL | WS_TABSTOP,0,18,218,163,0,HIDC_LOG
-    CONTROL         "",IDC_USERLIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHAREIMAGELISTS | LVS_OWNERDRAWFIXED | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,220,18,80,163,0,HIDC_USERLIST
+    CONTROL         "",IDC_USERLIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHAREIMAGELISTS | LVS_EDITLABELS | LVS_OWNERDRAWFIXED | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,220,18,80,163,0,HIDC_USERLIST
     CONTROL         "",IDC_RICHEDIT,"RichEdit20A",ES_MULTILINE | ES_AUTOVSCROLL | ES_NOHIDESEL | ES_NUMBER | WS_BORDER | WS_VSCROLL | WS_TABSTOP,0,183,218,40,0,HIDC_RICHEDIT
     CONTROL         "",IDC_MSGSPINBLUE,"msctls_updown32",UDS_ARROWKEYS | UDS_HOTTRACK | WS_TABSTOP,220,183,12,40,0,HIDC_MSGSPINBLUE
     DEFPUSHBUTTON   "Send",IDC_SEND,232,183,56,40,BS_BITMAP,0,HIDC_SEND
@@ -447,6 +447,46 @@ BEGIN
             MENUITEM "&Reader",                     IDC_READER
             MENUITEM "&Outsider",                   IDC_OUTSIDER
         END
+        MENUITEM "&Kick",                       IDC_KICK
+    END
+END
+
+IDM_CHANLIST MENU 
+BEGIN
+    POPUP "&Overlap"
+    BEGIN
+        MENUITEM "&Join",                       IDC_JOIN
+        MENUITEM SEPARATOR
+        MENUITEM "Re&name",                     IDC_RENAME
+        MENUITEM "&Topic...",                   IDC_TOPIC
+        MENUITEM SEPARATOR
+        MENUITEM "&Refresh list",               IDC_REFRESHLIST
+    END
+END
+
+IDM_USERGOD MENU 
+BEGIN
+    POPUP "&Overlap"
+    BEGIN
+        MENUITEM "&Private talk",               IDC_PRIVATETALK
+        MENUITEM "Private &message...",         IDC_PRIVATEMESSAGE
+        MENUITEM "&Alert...",                   IDC_ALERT
+        MENUITEM SEPARATOR
+        MENUITEM "&Sound signal",               IDS_SOUNDSIGNAL
+        MENUITEM "Send &clipboard",             IDC_CLIPBOARD
+        MENUITEM "Splash &text...",             IDC_SPLASHRTF
+        MENUITEM SEPARATOR
+        POPUP "Access &rights"
+        BEGIN
+            MENUITEM "&Founder",                    IDC_FOUNDER
+            MENUITEM "&Administrator",              IDC_ADMIN
+            MENUITEM "&Moderator",                  IDC_MODERATOR
+            MENUITEM "M&ember",                     IDC_MEMBER
+            MENUITEM "&Writer",                     IDC_WRITER
+            MENUITEM "&Reader",                     IDC_READER
+            MENUITEM "&Outsider",                   IDC_OUTSIDER
+        END
+        MENUITEM "&Rename",                     IDC_RENAME
         MENUITEM "&Kick",                       IDC_KICK
     END
 END

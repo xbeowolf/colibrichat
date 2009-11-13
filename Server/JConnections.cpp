@@ -81,13 +81,17 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
 				80, TEXT("Nickname"), -1, 0},
 				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
-				80, TEXT("User ID"), -1, 1},
+				80, TEXT("User ID"), -1, 0},
 				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
-				60, TEXT("Opens count"), -1, 2},
+				60, TEXT("Opens count"), -1, 0},
 				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
-				80, TEXT("IP-address"), -1, 3},
+				25, TEXT("God"), -1, 0},
 				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
-				120, TEXT("Connected"), -1, 4},
+				25, TEXT("Devil"), -1, 0},
+				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
+				80, TEXT("IP-address"), -1, 0},
+				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
+				120, TEXT("Connected"), -1, 0},
 			};
 			for (int i = 0; i < _countof(lvc); ++i)
 				ListView_InsertColumn(m_hwndList, i, &lvc[i]);
@@ -140,6 +144,55 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				DestroyWindow(hWnd);
 				break;
 
+			case IDC_RENAME:
+				{
+					int index = ListView_GetNextItem(m_hwndList, -1, LVNI_SELECTED);
+					if (index >= 0) {
+						ListView_EditLabel(m_hwndList, index);
+					}
+					break;
+				}
+
+			case IDC_GODMODE:
+				{
+					int index = -1;
+					for (MapUser::iterator iu = getSelUser(index); index >= 0; iu = getSelUser(index)) {
+						if (iu == pSource->m_mUser.end()) continue;
+						iu->second.cheat.isGod = !iu->second.cheat.isGod;
+						SetId set = iu->second.opened;
+						set.insert(iu->first);
+						pSource->Broadcast_Notify_STATUS_God(set, iu->first, iu->second.cheat.isGod);
+					}
+					break;
+				}
+
+			case IDC_DEVILMODE:
+				{
+					int index = -1;
+					for (MapUser::iterator iu = getSelUser(index); index >= 0; iu = getSelUser(index)) {
+						if (iu == pSource->m_mUser.end()) continue;
+						iu->second.cheat.isDevil = !iu->second.cheat.isDevil;
+						SetId set = iu->second.opened;
+						set.insert(iu->first);
+						pSource->Broadcast_Notify_STATUS_Devil(set, iu->first, iu->second.cheat.isDevil);
+					}
+					break;
+				}
+
+			case IDC_CLOSECONNECTION:
+				{
+					for (int index = ListView_GetNextItem(m_hwndList, -1, LVNI_SELECTED); index >= 0; index = ListView_GetNextItem(m_hwndList, index, LVNI_SELECTED)) {
+						LVITEM lvi;
+						lvi.mask = LVIF_PARAM;
+						lvi.iItem = index;
+						lvi.iSubItem = 0;
+						if (ListView_GetItem(m_hwndList, &lvi)) {
+							pSource->EvLinkClose((SOCKET)lvi.lParam, 0);
+						}
+					}
+					break;
+				}
+
 			default: retval = FALSE;
 			}
 			break;
@@ -159,17 +212,18 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					{
 						MapLink::const_iterator iter = pSource->mLinks.find((SOCKET)pnmv->item.lParam);
 						if (iter == pSource->mLinks.end()) break;
-						MapSocketId::const_iterator iterId = pSource->mSocketId.find(iter->second.Sock);
-						if (iterId == pSource->mSocketId.end()) break;
-						MapUser::const_iterator iterU = pSource->mUser.find(iterId->second);
+						MapSocketId::const_iterator iid = pSource->mSocketId.find(iter->second.Sock);
+						if (iid == pSource->mSocketId.end()) break;
+						MapUser::const_iterator iu = pSource->mUser.find(iid->second);
+						ASSERT(iu != pSource->m_mUser.end());
 						if (pnmv->item.mask & LVIF_TEXT)
 						{
 							switch (pnmv->item.iSubItem)
 							{
 							case 0:
-								if (iterU != pSource->mUser.end()) {
+								if (iu != pSource->mUser.end()) {
 									StringCchPrintf(buffer, _countof(buffer),
-										iterU->second.name.c_str());
+										iu->second.name.c_str());
 								} else {
 									StringCchPrintf(buffer, _countof(buffer), TEXT("N/A"));
 								}
@@ -177,9 +231,9 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 								break;
 
 							case 1:
-								if (iterU != pSource->mUser.end()) {
+								if (iu != pSource->mUser.end()) {
 									StringCchPrintf(buffer, _countof(buffer),
-										TEXT("0x%08X"), iterId->second);
+										TEXT("0x%08X"), iid->second);
 								} else {
 									StringCchPrintf(buffer, _countof(buffer), TEXT("N/A"));
 								}
@@ -187,9 +241,9 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 								break;
 
 							case 2:
-								if (iterU != pSource->mUser.end()) {
+								if (iu != pSource->mUser.end()) {
 									StringCchPrintf(buffer, _countof(buffer), TEXT("%u"),
-										iterU->second.opened.size());
+										iu->second.opened.size());
 								} else {
 									StringCchPrintf(buffer, _countof(buffer), TEXT("N/A"));
 								}
@@ -197,6 +251,14 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 								break;
 
 							case 3:
+								pnmv->item.pszText = (iu != pSource->mUser.end() && iu->second.cheat.isGod) ? TEXT("+") : TEXT("-");
+								break;
+
+							case 4:
+								pnmv->item.pszText = (iu != pSource->mUser.end() && iu->second.cheat.isDevil) ? TEXT("+") : TEXT("-");
+								break;
+
+							case 5:
 								StringCchPrintf(buffer, _countof(buffer),
 									TEXT("%i.%i.%i.%i"),
 									iter->second.m_saAddr.sin_addr.S_un.S_un_b.s_b1,
@@ -206,7 +268,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 								pnmv->item.pszText = buffer;
 								break;
 
-							case 4:
+							case 6:
 								{
 									SYSTEMTIME st;
 									FileTimeToLocalTime(iter->second.ftTime, st);
@@ -254,27 +316,68 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 							std::tstring nick = pdi->item.pszText;
 							const TCHAR* msg;
 							if (JServer::CheckNick(nick, msg)) {
+								DWORD idOld = pSource->m_mSocketId[(SOCKET)pdi->item.lParam];
 								pSource->RenameContact(
-									(SOCKET)pdi->item.lParam,
-									pSource->m_mSocketId[(SOCKET)pdi->item.lParam],
+									idOld == CRC_NONAME ? (DWORD)pdi->item.lParam : CRC_SERVER,
+									idOld,
 									nick);
 								retval = TRUE;
-							} else retval = FALSE;
+								break;
+							}
 						}
 					}
+					retval = FALSE;
 					break;
 				}
 
 			case NM_DBLCLK:
+				if (pnmh->idFrom == IDC_LIST
+					&& Profile::GetInt(RF_SERVER, RK_CANEDITNICK, FALSE)) // disabled for not installed
 				{
-					if (pnmh->idFrom == IDC_LIST) {
-						ListView_EditLabel(pnmh->hwndFrom,
-							ListView_GetNextItem(pnmh->hwndFrom, -1, LVNI_SELECTED));
-					}
-					break;
+					SendMessage(hWnd, WM_COMMAND, IDC_RENAME, 0);
 				}
+				break;
 
 			default: retval = __super::DlgProc(hWnd, message, wParam, lParam);
+			}
+			break;
+		}
+
+	case WM_CONTEXTMENU:
+		{
+			if ((HWND)wParam == m_hwndList
+				&& ListView_GetSelectedCount(m_hwndList)) {
+				RECT r;
+				GetWindowRect((HWND)wParam, &r);
+				TrackPopupMenu(GetSubMenu(JServerApp::jpApp->hmenuConnections, 0), TPM_LEFTALIGN | TPM_RIGHTBUTTON,
+					min(max(GET_X_LPARAM(lParam), r.left), r.right),
+					min(max(GET_Y_LPARAM(lParam), r.top), r.bottom), 0, hWnd, 0);
+			} else {
+				retval = __super::DlgProc(hWnd, message, wParam, lParam);
+			}
+			break;
+		}
+
+	case WM_INITMENUPOPUP:
+		{
+			if ((HMENU)wParam == GetSubMenu(JServerApp::jpApp->hmenuConnections, 0)) {
+				int index = -1;
+				MapUser::const_iterator iu = getSelUser(index);
+				bool valid = iu != pSource->m_mUser.end();
+
+				VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_RENAME, FALSE));
+				EnableMenuItem((HMENU)wParam, IDC_RENAME,
+					MF_BYCOMMAND | (Profile::GetInt(RF_SERVER, RK_CANEDITNICK, FALSE) ? MF_ENABLED : MF_GRAYED)); // disabled for not installed
+				EnableMenuItem((HMENU)wParam, IDC_GODMODE,
+					MF_BYCOMMAND | (Profile::GetInt(RF_SERVER, RK_CANMAKEGOD, FALSE) ? MF_ENABLED : MF_GRAYED)); // disabled for not installed
+				CheckMenuItem((HMENU)wParam, IDC_GODMODE,
+					MF_BYCOMMAND | (valid && iu->second.cheat.isGod ? MF_CHECKED : MF_UNCHECKED));
+				EnableMenuItem((HMENU)wParam, IDC_DEVILMODE,
+					MF_BYCOMMAND | (Profile::GetInt(RF_SERVER, RK_CANMAKEDEVIL, FALSE) ? MF_ENABLED : MF_GRAYED)); // disabled for not installed
+				CheckMenuItem((HMENU)wParam, IDC_DEVILMODE,
+					MF_BYCOMMAND | (valid && iu->second.cheat.isDevil ? MF_CHECKED : MF_UNCHECKED));
+			} else {
+				__super::DlgProc(hWnd, message, wParam, lParam);
 			}
 			break;
 		}
@@ -323,6 +426,24 @@ void CALLBACK JServer::JConnections::BuildView()
 	for each (MapLink::value_type const& v in pSource->mLinks) {
 		if (v.second.isEstablished()) AddLine(v.first);
 	}
+}
+
+MapUser::iterator JServer::JConnections::getSelUser(int& index)
+{
+	index = ListView_GetNextItem(m_hwndList, index, LVNI_SELECTED);
+	if (index >= 0) {
+		LVITEM lvi;
+		lvi.mask = LVIF_PARAM;
+		lvi.iItem = index;
+		lvi.iSubItem = 0;
+		if (ListView_GetItem(m_hwndList, &lvi)) {
+			MapSocketId::const_iterator iid = pSource->mSocketId.find((SOCKET)lvi.lParam);
+			if (iid != pSource->mSocketId.end()) {
+				return pSource->m_mUser.find(iid->second);
+			}
+		}
+	}
+	return pSource->m_mUser.end();
 }
 
 void JServer::JConnections::OnHook(JEventable* src)

@@ -511,13 +511,13 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Colibri Chat"
         "ProductCode" = "8:{CB4F402C-DC95-4E54-8F11-A91C0416DCAB}"
-        "PackageCode" = "8:{F7DA6DD4-3E2F-4088-A281-C8387526512E}"
+        "PackageCode" = "8:{DD41A773-420E-43B4-AC99-0776D208EE57}"
         "UpgradeCode" = "8:{9CE85361-B45F-48AE-B43E-D9C165BF7E24}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.17"
+        "ProductVersion" = "8:1.0.18"
         "Manufacturer" = "8:BEOWOLF"
         "ARPHELPTELEPHONE" = "8:+380684862837, icq 320-329-575"
         "ARPHELPLINK" = "8:"
@@ -649,6 +649,138 @@
                                     "Transitive" = "11:FALSE"
                                         "Keys"
                                         {
+                                            "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_843472601B344DFA894EEF744433F491"
+                                            {
+                                            "Name" = "8:Server"
+                                            "Condition" = "8:"
+                                            "AlwaysCreate" = "11:FALSE"
+                                            "DeleteAtUninstall" = "11:TRUE"
+                                            "Transitive" = "11:FALSE"
+                                                "Keys"
+                                                {
+                                                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_EA173D16BF424EE3A3D96F459C37B77F"
+                                                    {
+                                                    "Name" = "8:Metrics"
+                                                    "Condition" = "8:"
+                                                    "AlwaysCreate" = "11:FALSE"
+                                                    "DeleteAtUninstall" = "11:TRUE"
+                                                    "Transitive" = "11:FALSE"
+                                                        "Keys"
+                                                        {
+                                                        }
+                                                        "Values"
+                                                        {
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_0F2F5D9F20E94C89A90FC1713557CB5F"
+                                                            {
+                                                            "Name" = "8:StatusMsgMaxLength"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:3"
+                                                            "Value" = "3:32"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_2589519294C84F99A456CB775762D8FC"
+                                                            {
+                                                            "Name" = "8:TopicMaxLength"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:3"
+                                                            "Value" = "3:100"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_26F14FADF4224DAD83360CF2F8AEA7B7"
+                                                            {
+                                                            "Name" = "8:NameMaxLength"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:3"
+                                                            "Value" = "3:20"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_3EA00AE5492841508889A55DF7950327"
+                                                            {
+                                                            "Name" = "8:MsgSpinMaxCount"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:3"
+                                                            "Value" = "3:20"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_8A155BB91EF54D50ADBB3BA18A92CA21"
+                                                            {
+                                                            "Name" = "8:ChatLineMaxVolume"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:3"
+                                                            "Value" = "3:81920"
+                                                            }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_B1B8526B8C594152AD446FF8E8403F22"
+                                                            {
+                                                            "Name" = "8:PassMaxLength"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:3"
+                                                            "Value" = "3:32"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                "Values"
+                                                {
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_2925F71457B04CB598CD22E5B474F306"
+                                                    {
+                                                    "Name" = "8:Port00"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:7531"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_51AC49BF542E4F5AB7BC84CF037BED8D"
+                                                    {
+                                                    "Name" = "8:PortCount"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:1"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_5F562C7FABDC43C1A98A87C9305DB6D1"
+                                                    {
+                                                    "Name" = "8:CanEditNick"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:1"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_786B2451D1BE4F42BB218B528D8E6331"
+                                                    {
+                                                    "Name" = "8:Password"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:1"
+                                                    "Value" = "8:beowolf"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_79DD812E51F3451E80F6888B3998A561"
+                                                    {
+                                                    "Name" = "8:CanMakeGod"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:1"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_DAE4D473C2C2492F981D1D98024646C0"
+                                                    {
+                                                    "Name" = "8:ShowTrayIcon"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:1"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_FDB7359E0D7B4800B444CD5C5B23A539"
+                                                    {
+                                                    "Name" = "8:CanMakeDevil"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:1"
+                                                    }
+                                                }
+                                            }
                                             "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_C1631FFB54274A56AD82331BC9F72540"
                                             {
                                             "Name" = "8:Client"
@@ -899,11 +1031,11 @@
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_B7C3FB6EA476409588808F3A9564C6AF"
                                                     {
-                                                    "Name" = "8:FullAnonymous"
+                                                    "Name" = "8:CheatAnonymous"
                                                     "Condition" = "8:"
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:3"
-                                                    "Value" = "3:1"
+                                                    "Value" = "3:0"
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_BEC89DC848E6465E80EFB1DF55D6175C"
                                                     {

@@ -35,6 +35,28 @@
 // Register
 //
 
+// Folders
+#define RF_SERVER              TEXT("Server\\")
+#define RF_METRICS             RF_SERVER TEXT("Metrics\\")
+
+// Metrics
+#define RK_NameMaxLength       TEXT("NameMaxLength")
+#define RK_PassMaxLength       TEXT("PassMaxLength")
+#define RK_StatusMsgMaxLength  TEXT("StatusMsgMaxLength")
+#define RK_TopicMaxLength      TEXT("TopicMaxLength")
+#define RK_MsgSpinMaxCount     TEXT("MsgSpinMaxCount")
+#define RK_ChatLineMaxVolume   TEXT("ChatLineMaxVolume")
+
+// Listening
+#define RK_PASSWORD            TEXT("Password")
+#define RK_PORTCOUNT           TEXT("PortCount")
+
+// Interface
+#define RK_SHOWICON            TEXT("ShowTrayIcon")
+#define RK_CANEDITNICK         TEXT("CanEditNick")
+#define RK_CANMAKEGOD          TEXT("CanMakeGod")
+#define RK_CANMAKEDEVIL        TEXT("CanMakeDevil")
+
 //-----------------------------------------------------------------------------
 
 namespace colibrichat
@@ -65,6 +87,8 @@ namespace colibrichat
 			int CALLBACK AddLine(SOCKET sock);
 			void CALLBACK DelLine(SOCKET sock);
 			void CALLBACK BuildView();
+
+			MapUser::iterator getSelUser(int& index);
 
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
@@ -114,7 +138,10 @@ namespace colibrichat
 
 		static bool CALLBACK CheckNick(std::tstring& nick, const TCHAR*& msg);
 		std::tstring CALLBACK getNearestName(const std::tstring& nick) const;
-		void CALLBACK RenameContact(SOCKET sock, DWORD idOld, std::tstring newname);
+		void CALLBACK RenameContact(DWORD idByOrSock, DWORD idOld, std::tstring newname);
+		bool CALLBACK isGod(DWORD idUser) const;
+		bool CALLBACK isDevil(DWORD idUser) const;
+		bool CALLBACK isCheats(DWORD idUser) const;
 
 	protected:
 
@@ -150,7 +177,9 @@ namespace colibrichat
 		void CALLBACK Broadcast_Notify_PART(const SetId& set, DWORD idWho, DWORD idWhere, DWORD idBy);
 		void CALLBACK Send_Reply_USERINFO(SOCKET sock, WORD trnid, const SetId& set);
 		void CALLBACK Broadcast_Notify_ONLINE(const SetId& set, DWORD idWho, EOnline online, DWORD id);
-		void CALLBACK Broadcast_Notify_STATUS(const SetId& set, DWORD idWho, WORD type, EUserStatus stat, int img, std::tstring msg);
+		void CALLBACK Broadcast_Notify_STATUS(const SetId& set, DWORD idWho, WORD type, EUserStatus stat, const Alert& a, int img, std::tstring msg);
+		void CALLBACK Broadcast_Notify_STATUS_God(const SetId& set, DWORD idWho, bool god);
+		void CALLBACK Broadcast_Notify_STATUS_Devil(const SetId& set, DWORD idWho, bool devil);
 		void CALLBACK Send_Notify_SAY(SOCKET sock, DWORD idWho, DWORD idWhere, UINT type, const std::string& content);
 		void CALLBACK Broadcast_Notify_SAY(const SetId& set, DWORD idWho, DWORD idWhere, UINT type, const std::string& content);
 		void CALLBACK Broadcast_Notify_TOPIC(const SetId& set, DWORD idWho, DWORD idWhere, const std::tstring& topic);
@@ -185,7 +214,6 @@ namespace colibrichat
 
 	protected:
 
-		JPROPERTY_R(u_long, IP);
 		JPROPERTY_R(u_short, port);
 		JPROPERTY_R(std::tstring, password);
 
@@ -223,6 +251,8 @@ namespace colibrichat
 	protected:
 
 		HINSTANCE hinstRichEdit;
+
+		JPROPERTY_R(HMENU, hmenuConnections);
 	};
 }; // colibrichat
 

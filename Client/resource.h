@@ -36,6 +36,10 @@
 #define IDA_RICHEDIT                    159
 #define IDD_MSGSEND                     161
 #define IDD_MSGRECV                     162
+#define IDR_MENU1                       168
+#define IDM_CHANLIST                    168
+#define IDM_USER1                       169
+#define IDM_USERGOD                     169
 #define idsRtfCmd                       200
 #define idsBold                         201
 #define idsItalic                       202
@@ -177,13 +181,22 @@
 #define IDC_CHANMEMBER                  40103
 #define IDC_CHANWRITER                  40104
 #define IDC_CHANREADER                  40105
+#define ID_OVERLAP_JOIN                 40106
+#define ID_OVERLAP_RENAME               40107
+#define ID_OVERLAP_RENAME40108          40108
+#define ID_OVERLAP_RENAME40109          40109
+#define ID_OVERLAP_REFRESHLIST          40110
+#define IDC_RENAME                      40111
+#define ID_OVERLAP_TOPIC                40112
+#define IDC_TOPIC                       40113
+#define ID_OVERLAP_RENAME40114          40114
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        164
-#define _APS_NEXT_COMMAND_VALUE         40106
+#define _APS_NEXT_RESOURCE_VALUE        169
+#define _APS_NEXT_COMMAND_VALUE         40115
 #define _APS_NEXT_CONTROL_VALUE         1061
 #define _APS_NEXT_SYMED_VALUE           102
 #endif

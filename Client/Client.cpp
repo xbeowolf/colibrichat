@@ -43,39 +43,6 @@ static TCHAR szHelpFile[MAX_PATH];
 std::map<EChanStatus, std::tstring> JClient::s_mapChanStatName;
 std::map<UINT, std::tstring> JClient::s_mapWsaErr;
 
-Alert JClient::s_mapAlert[] = {
-	{
-		true, true, true, true,
-		true, true, true, true, true,
-		true, true, true, true, true, true,
-	}, // eReady
-	{
-		false, false, false, false,
-		false, false, false, false, false,
-		false, false, false, false, false, false,
-	}, // eDND
-	{
-		false, true, false, false,
-		true, true, true, true, false,
-		false, true, true, false, true, true,
-	}, // eBusy
-	{
-		false, false, false, false,
-		false, true, false, true, true,
-		false, true, true, false, true, true,
-	}, // eNA
-	{
-		true, true, false, false,
-		true, true, true, true, true,
-		false, true, true, true, true, true,
-	}, // eAway
-	{
-		true, true, false, true,
-		true, true, true, true, true,
-		true, true, true, true, true, true,
-	}, // eInvisible
-};
-
 void JClient::initclass()
 {
 	// Channels access status descriptions
@@ -117,19 +84,65 @@ jpOnline(0)
 	m_nConnectCount = 0;
 	m_fAutoopen = true;
 	m_bSendByEnter = true;
-	m_bFullAnonymous = true;
+	m_bCheatAnonymous = false;
+
+	static Alert alert[] = {
+		{
+			true, true, true, true,
+			true, true, true, true, true, true,
+			true, true, true, true, true, true,
+		}, // eReady
+		{
+			false, false, false, false,
+			false, false, false, false, false, false,
+			false, false, false, false, false, false,
+		}, // eDND
+		{
+			false, true, false, false,
+			true, true, true, false, true, false,
+			false, true, true, false, true, true,
+		}, // eBusy
+		{
+			false, false, false, false,
+			false, true, false, false, true, true,
+			false, true, true, false, true, true,
+		}, // eNA
+		{
+			true, true, false, false,
+			true, true, true, true, true, true,
+			false, true, true, true, true, true,
+		}, // eAway
+		{
+			true, true, false, true,
+			true, true, true, true, true, true,
+			true, true, true, true, true, true,
+		}, // eInvisible
+	};
+	m_mAlert[eReady] = alert[eReady];
+	m_mAlert[eDND] = alert[eDND];
+	m_mAlert[eBusy] = alert[eBusy];
+	m_mAlert[eNA] = alert[eNA];
+	m_mAlert[eAway] = alert[eAway];
+	m_mAlert[eInvisible] = alert[eInvisible];
 
 	m_metrics.uNameMaxLength = 20;
 	m_metrics.uPassMaxLength = 32;
-	m_metrics.uTopicMaxLength = 100;
 	m_metrics.uStatusMsgMaxLength = 32;
+	m_metrics.uTopicMaxLength = 100;
 	m_metrics.nMsgSpinMaxCount = 20;
-	m_metrics.uChatLineMaxSize = 80*1024;
+	m_metrics.uChatLineMaxVolume = 80*1024;
 }
 
 void CALLBACK JClient::Init()
 {
 	__super::Init();
+
+	jpOnline = 0;
+	jpPageServer = 0;
+	jpPageList = 0;
+	// Clear pages
+	mPageUser.clear();
+	mPageChannel.clear();
 }
 
 void CALLBACK JClient::Done()
@@ -139,13 +152,6 @@ void CALLBACK JClient::Done()
 
 int  CALLBACK JClient::Run()
 {
-	// Clear pages if was previous run
-	jpOnline = 0;
-	jpPageServer = 0;
-	jpPageList = 0;
-	mPageUser.clear();
-	mPageChannel.clear();
-
 	__super::Run();
 
 	return m_State;
@@ -153,36 +159,36 @@ int  CALLBACK JClient::Run()
 
 void CALLBACK JClient::LoadState()
 {
-	FILETIME ft;
-	GetSystemFileTime(ft);
-
 	m_idOwn = CRC_NONAME;
+
 	User& user = m_mUser[m_idOwn];
 	user.name = Profile::GetString(RF_CLIENT, RK_NICK, NAME_NONAME);
+	const TCHAR* msg;
+	if (!CheckNick(user.name, msg)) user.name = NAME_NONAME; // ensure that nick is valid
 	user.opened.insert(CRC_SERVER); // make it permanent
-	user.ftCreation = ft;
 	user.IP.S_un.S_addr = ntohl(INADDR_LOOPBACK);
 	user.isOnline = eOnline;
 	user.idOnline = 0;
 	user.nStatus = (EUserStatus)Profile::GetInt(RF_CLIENT, RK_STATUS, eReady);
+	user.accessibility = m_mAlert[user.nStatus];
 	user.nStatusImg = Profile::GetInt(RF_CLIENT, RK_STATUSIMG, 0);
 	user.strStatus = Profile::GetString(RF_CLIENT, RK_STATUSMSG, TEXT("ready to talk"));
+
 	m_hostname = tstrToANSI(Profile::GetString(RF_CLIENT, RK_HOST, TEXT("127.0.0.1")));
 	m_port = (u_short)Profile::GetInt(RF_CLIENT, RK_PORT, CCP_PORT);
 	m_password = Profile::GetString(RF_CLIENT, RK_PASSWORD, TEXT("beowolf"));
 	m_bSendByEnter = Profile::GetInt(RF_CLIENT, RK_SENDBYENTER, true) != 0;
-	m_bFullAnonymous = Profile::GetInt(RF_CLIENT, RK_FULLANONYMOUS, true) != 0;
+	m_bCheatAnonymous = Profile::GetInt(RF_CLIENT, RK_CHEATANONYMOUS, false) != 0;
 }
 
 void CALLBACK JClient::SaveState()
 {
-	User& user = m_mUser[m_idOwn];
-
 	Profile::WriteString(RF_CLIENT, RK_HOST, ANSIToTstr(m_hostname).c_str());
 	Profile::WriteInt(RF_CLIENT, RK_PORT, m_port);
 	Profile::WriteString(RF_CLIENT, RK_PASSWORD, m_password.c_str());
 	Profile::WriteInt(RF_CLIENT, RK_SENDBYENTER, m_bSendByEnter);
 
+	User& user = m_mUser[m_idOwn];
 	Profile::WriteString(RF_CLIENT, RK_NICK, user.name.c_str());
 	Profile::WriteInt(RF_CLIENT, RK_STATUS, user.nStatus);
 	Profile::WriteInt(RF_CLIENT, RK_STATUSIMG, user.nStatusImg);
@@ -197,9 +203,6 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	case WM_INITDIALOG:
 		{
 			JClientApp::jpApp->AddWindow(hWnd);
-			if (State != JService::eInit) Init();
-
-			Run();
 
 			m_hwndTab = GetDlgItem(hWnd, IDC_TAB);
 
@@ -234,6 +237,9 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			ContactSel(ContactAdd(NAME_SERVER, CRC_SERVER, eServer));
 			ContactAdd(NAME_LIST, CRC_LIST, eList);
 
+			if (State != JService::eInit) Init();
+			Run();
+
 			if (Profile::GetInt(RF_CLIENT, RK_STATE, FALSE))
 				Connect();
 			else
@@ -254,7 +260,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 			Profile::WriteInt(RF_CLIENT, RK_STATE, m_clientsock != 0);
 			saveAutoopen();
-			Disconnect();
+			if (m_clientsock != 0) Disconnect();
 
 			// Close all opened waves
 			MCI_GENERIC_PARMS mci;
@@ -406,7 +412,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 							GetDlgItemText(jpPageServer->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
 							nick = nickbuf.c_str();
 							if (JClient::CheckNick(nick, msg)) { // check content
-								if (m_clientsock) Send_Cmd_NICK(m_clientsock, nick);
+								if (m_clientsock) Send_Cmd_NICK(m_clientsock, m_idOwn, nick);
 								else if (!m_nConnectCount) SendMessage(jpPageServer->hwndPage, WM_COMMAND, IDC_CONNECT, 0);
 							} else {
 								DisplayMessage(jpPageServer->hwndNick, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
@@ -603,12 +609,7 @@ void CALLBACK JClient::Connect(bool getsetting)
 
 void CALLBACK JClient::Disconnect()
 {
-	if (m_clientsock != 0)
-		DeleteLink(m_clientsock);
-	// Update interface
-	if (jpPageServer->hwndPage) {
-		CheckDlgButton(jpPageServer->hwndPage, IDC_CONNECT, FALSE);
-	}
+	DeleteLink(m_clientsock);
 }
 
 void CALLBACK JClient::saveAutoopen() const
@@ -642,7 +643,7 @@ void CALLBACK JClient::openAutoopen()
 
 int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact type)
 {
-	if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fFlashPageNew
+	if (m_mUser[m_idOwn].accessibility.fFlashPageNew
 		&& Profile::GetInt(RF_CLIENT, RK_FLASHPAGENEW, TRUE)
 		&& !m_mUser[m_idOwn].isOnline)
 		FlashWindow(m_hwndPage, TRUE);
@@ -711,6 +712,7 @@ int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 	tci.iImage = jp->ImageIndex();
 	tci.lParam = jp->getID();
 	TabCtrl_InsertItem(m_hwndTab, pos, &tci);
+	if (jpOnline) VERIFY(InvalidateRect(jpOnline->hwndPage, 0, TRUE));
 
 	jp->setAlert(eRed);
 	m_clientsock ? jp->Enable() : jp->Disable();
@@ -785,21 +787,21 @@ void CALLBACK JClient::ContactRename(DWORD idOld, DWORD idNew, const std::tstrin
 	int pos = -1;
 	MapPageUser::iterator ipu = mPageUser.find(idOld);
 	if (ipu != mPageUser.end()) {
+		ipu->second->AppendScript(tformat(TEXT("[style=Info][b]%s[/b] is now known as [b]%s[/b][/style]"), oldname.c_str(), newname.c_str()));
+		ipu->second->setAlert(eYellow);
 		ipu->second->rename(idNew, newname);
 		mPageUser[idNew] = ipu->second;
 		mPageUser.erase(idOld);
-		ipu->second->AppendScript(tformat(TEXT("[style=Info][b]%s[/b] is now known as [b]%s[/b][/style]"), oldname.c_str(), newname.c_str()));
-		ipu->second->setAlert(eYellow);
 	} else {
 		MapPageChannel::iterator ipc = mPageChannel.find(idOld);
 		if (ipc != mPageChannel.end()) {
-			ipc->second->rename(idNew, newname);
-			mPageChannel[idNew] = ipc->second;
-			mPageChannel.erase(idOld);
 			if (!ipc->second->m_channel.isAnonymous) {
 				ipc->second->AppendScript(tformat(TEXT("[style=Info]channel name is now [b]%s[/b][/style]"), newname.c_str()));
 				ipc->second->setAlert(eYellow);
 			}
+			ipc->second->rename(idNew, newname);
+			mPageChannel[idNew] = ipc->second;
+			mPageChannel.erase(idOld);
 		}
 	}
 
@@ -961,6 +963,24 @@ std::tstring JClient::getSafeName(DWORD idUser) const
 	}
 }
 
+bool CALLBACK JClient::isGod(DWORD idUser) const
+{
+	MapUser::const_iterator iu = m_mUser.find(idUser != CRC_NONAME ? idUser : m_idOwn);
+	return iu != m_mUser.end() && iu->second.cheat.isGod;
+}
+
+bool CALLBACK JClient::isDevil(DWORD idUser) const
+{
+	MapUser::const_iterator iu = m_mUser.find(idUser != CRC_NONAME ? idUser : m_idOwn);
+	return iu != m_mUser.end() && iu->second.cheat.isDevil;
+}
+
+bool CALLBACK JClient::isCheats(DWORD idUser) const
+{
+	MapUser::const_iterator iu = m_mUser.find(idUser != CRC_NONAME ? idUser : m_idOwn);
+	return iu != m_mUser.end() && (iu->second.cheat.isGod || iu->second.cheat.isDevil);
+}
+
 void CALLBACK JClient::InsertUser(DWORD idUser, const User& user)
 {
 	SetId set;
@@ -991,11 +1011,15 @@ void JClient::OnHook(JEventable* src)
 	using namespace fastdelegate;
 
 	__super::OnHook(src);
+
+	EvNick += MakeDelegate(this, &JClient::OnNick);
 }
 
 void JClient::OnUnhook(JEventable* src)
 {
 	using namespace fastdelegate;
+
+	EvNick -= MakeDelegate(this, &JClient::OnNick);
 
 	__super::OnUnhook(src);
 }
@@ -1031,6 +1055,14 @@ void JClient::OnLinkClose(SOCKET sock, UINT err)
 
 	if (isClient) {
 		m_clientsock = 0; // not connected
+
+		User user = m_mUser[m_idOwn];
+		user.opened.clear();
+		user.opened.insert(CRC_SERVER); // make it permanent
+		m_mUser.clear();
+		m_idOwn = CRC_NONAME;
+		m_mUser[m_idOwn] = user;
+
 		// Update interface
 		EvLog(tformat(TEXT("[style=msg]Disconnected. Reason: [i]%s[/i][/style]"), JClient::s_mapWsaErr[err].c_str()), true);
 	}
@@ -1038,7 +1070,12 @@ void JClient::OnLinkClose(SOCKET sock, UINT err)
 	__super::OnLinkClose(sock, err);
 
 	// If not disconnected by user, try to reconnect again
-	if (err && isClient && m_bReconnect) Connect();
+	if (isClient) {
+		if (err && m_bReconnect) Connect();
+		else if (jpPageServer->hwndPage) {
+			CheckDlgButton(jpPageServer->hwndPage, IDC_CONNECT, FALSE);
+		}
+	}
 }
 
 void JClient::OnLinkFail(SOCKET sock, UINT err)
@@ -1068,13 +1105,13 @@ void JClient::OnLinkIdentify(SOCKET sock, const SetAccess& access)
 	std::tstring nickbuf(m_metrics.uNameMaxLength, 0), nick;
 	GetDlgItemText(jpPageServer->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
 	nick = nickbuf.c_str();
-	Send_Cmd_NICK(sock, nick);
+	Send_Cmd_NICK(sock, m_idOwn, nick);
 
 	EUserStatus stat = (EUserStatus)SendDlgItemMessage(jpPageServer->hwndPage, IDC_STATUS, CB_GETCURSEL, 0, 0);
 	int img = (int)SendDlgItemMessage(jpPageServer->hwndPage, IDC_STATUSIMG, CB_GETCURSEL, 0, 0);
 	std::tstring msg(m_metrics.uStatusMsgMaxLength, 0);
 	GetDlgItemText(jpPageServer->hwndPage, IDC_STATUSMSG, &msg[0], (int)msg.size()+1);
-	Send_Cmd_STATUS(sock, stat, img, msg);
+	Send_Cmd_STATUS(sock, stat, m_mAlert[stat], img, msg);
 
 	// Autoopen
 	if (m_fAutoopen) {
@@ -1118,6 +1155,11 @@ void JClient::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 	}
 
 	__super::OnTransactionProcess(sock, message, trnid, is);
+}
+
+void JClient::OnNick(DWORD idOld, DWORD idNew, const std::tstring& newname)
+{
+	ContactRename(idOld, idNew, newname);
 }
 
 //
@@ -1175,7 +1217,7 @@ void CALLBACK JClient::Recv_Notify_NICK(SOCKET sock, WORD trnid, io::mem& is)
 	ASSERT(idOld != idNew);
 	bool isOwn = idOld == m_idOwn;
 
-	ContactRename(idOld, idNew, newname);
+	EvNick(idOld, idNew, newname);
 
 	if (isOwn) {
 		// Update interface
@@ -1337,7 +1379,7 @@ void CALLBACK JClient::Recv_Notify_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 		JPtr<JPageUser> jp = mPageUser[idWho];
 		ASSERT(jp);
 		jp->AppendScript(tformat(TEXT("[style=Info][b]%s[/b] call you to private talk[/style]"), user.name.c_str()));
-		if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fPlayMessage)
+		if (m_mUser[m_idOwn].accessibility.fPlayMessage)
 			PlaySound(JClientApp::jpApp->strWavPrivate.c_str());
 
 		EvReport(tformat(TEXT("[b]%s[/b] opens private talk"), user.name.c_str()), eInformation, eHigher);
@@ -1346,7 +1388,7 @@ void CALLBACK JClient::Recv_Notify_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 		if (ipc != mPageChannel.end()) {
 			ipc->second->Join(idWho);
 			ipc->second->setAlert(eYellow);
-			if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fPlayChatSounds)
+			if (m_mUser[m_idOwn].accessibility.fPlayChatSounds)
 				PlaySound(JClientApp::jpApp->strWavJoin.c_str());
 		} else {
 			Send_Cmd_PART(sock, m_idOwn, idWhere);
@@ -1402,7 +1444,7 @@ void CALLBACK JClient::Recv_Notify_PART(SOCKET sock, WORD trnid, io::mem& is)
 		if (ipc != mPageChannel.end()) {
 			ipc->second->Part(idWho, idBy);
 			ipc->second->setAlert(eYellow);
-			if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fPlayChatSounds)
+			if (m_mUser[m_idOwn].accessibility.fPlayChatSounds)
 				PlaySound(JClientApp::jpApp->strWavPart.c_str());
 			if (idWho == m_idOwn) {
 				ipc->second->Disable();
@@ -1489,9 +1531,12 @@ void CALLBACK JClient::Recv_Notify_STATUS(SOCKET sock, WORD trnid, io::mem& is)
 {
 	DWORD idWho;
 	WORD type;
-	EUserStatus stat;
-	int img;
+	EUserStatus stat = eReady;
+	Alert a = m_mAlert[stat];
+	int img = 0;
 	std::tstring msg;
+	bool god = false;
+	bool devil = false;
 
 	try
 	{
@@ -1499,12 +1544,19 @@ void CALLBACK JClient::Recv_Notify_STATUS(SOCKET sock, WORD trnid, io::mem& is)
 		io::unpack(is, type);
 		if (type & STATUS_MODE) {
 			io::unpack(is, stat);
+			io::unpack(is, a);
 		}
 		if (type & STATUS_IMG) {
 			io::unpack(is, img);
 		}
 		if (type & STATUS_MSG) {
 			io::unpack(is, msg);
+		}
+		if (type & STATUS_GOD) {
+			io::unpack(is, god);
+		}
+		if (type & STATUS_DEVIL) {
+			io::unpack(is, devil);
 		}
 	}
 	catch (io::exception e)
@@ -1523,12 +1575,19 @@ void CALLBACK JClient::Recv_Notify_STATUS(SOCKET sock, WORD trnid, io::mem& is)
 	if (iu != m_mUser.end()) {
 		if (type & STATUS_MODE) {
 			iu->second.nStatus = stat;
+			iu->second.accessibility = a;
 		}
 		if (type & STATUS_IMG) {
 			iu->second.nStatusImg = img;
 		}
 		if (type & STATUS_MSG) {
 			iu->second.strStatus = msg;
+		}
+		if (type & STATUS_GOD) {
+			iu->second.cheat.isGod = god;
+		}
+		if (type & STATUS_DEVIL) {
+			iu->second.cheat.isDevil = devil;
 		}
 
 		MapPageChannel::iterator ipc = mPageChannel.find(jpOnline ? jpOnline->getID() : 0);
@@ -1568,11 +1627,11 @@ void CALLBACK JClient::Recv_Notify_SAY(SOCKET sock, WORD trnid, io::mem& is)
 	if (ipu != mPageUser.end()) { // private talk
 		jp = ipu->second;
 		jp->setAlert(eRed);
-		if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fFlashPageSayPrivate
+		if (m_mUser[m_idOwn].accessibility.fFlashPageSayPrivate
 			&& Profile::GetInt(RF_CLIENT, RK_FLASHPAGESAYPRIVATE, TRUE)
 			&& !m_mUser[m_idOwn].isOnline)
 			FlashWindow(m_hwndPage, TRUE);
-		if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fPlayPrivateSounds)
+		if (m_mUser[m_idOwn].accessibility.fPlayPrivateSounds)
 			PlaySound(idWho != m_idOwn
 			? JClientApp::jpApp->strWavPrivateline.c_str()
 			: JClientApp::jpApp->strWavMeline.c_str());
@@ -1581,11 +1640,11 @@ void CALLBACK JClient::Recv_Notify_SAY(SOCKET sock, WORD trnid, io::mem& is)
 		if (ipc != mPageChannel.end()) { // channel
 			jp = ipc->second;
 			jp->setAlert(eRed);
-			if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fFlahPageSayChannel
+			if (m_mUser[m_idOwn].accessibility.fFlahPageSayChannel
 				&& Profile::GetInt(RF_CLIENT, RK_FLASHPAGESAYCHANNEL, FALSE)
 				&& !m_mUser[m_idOwn].isOnline)
 				FlashWindow(m_hwndPage, TRUE);
-			if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fPlayChatSounds)
+			if (m_mUser[m_idOwn].accessibility.fPlayChatSounds)
 				PlaySound(idWho != m_idOwn
 				? JClientApp::jpApp->strWavChatline.c_str()
 				: JClientApp::jpApp->strWavMeline.c_str());
@@ -1619,6 +1678,8 @@ void CALLBACK JClient::Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 		}
 	}
 
+	EvTopic(idWho, idWhere, topic);
+
 	JPtr<JPageLog> jp;
 	MapPageUser::iterator ipu = mPageUser.find(idWhere);
 	if (ipu != mPageUser.end()) { // private talk
@@ -1626,22 +1687,15 @@ void CALLBACK JClient::Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
 		if (ipc != mPageChannel.end()) { // channel
 			jp = ipc->second;
-			ipc->second->m_channel.topic = topic;
-			ipc->second->m_channel.idTopicWriter = idWho;
-			ipc->second->setAlert(eRed);
-			if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fFlashPageChangeTopic
+			if (m_mUser[m_idOwn].accessibility.fFlashPageChangeTopic
 				&& Profile::GetInt(RF_CLIENT, RK_FLASHPAGETOPIC, TRUE)
 				&& !m_mUser[m_idOwn].isOnline)
 				FlashWindow(m_hwndPage, TRUE);
 		}
 	}
 	if (jp) {
-		jp->AppendScript(tformat(TEXT("[style=Descr][color=%s]%s[/color] changes topic to:\n%s[/style]"),
-			idWho != m_idOwn ? TEXT("red") : TEXT("blue"),
-			jp->getSafeName(idWho).c_str(),
-			topic.c_str()));
 		if (jpOnline == jp) ShowTopic(jp->gettopic());
-		if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fPlayChatSounds)
+		if (m_mUser[m_idOwn].accessibility.fPlayChatSounds)
 			PlaySound(JClientApp::jpApp->strWavTopic.c_str());
 	}
 }
@@ -1736,7 +1790,7 @@ void CALLBACK JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem&
 			idWho != m_idOwn ? TEXT("red") : TEXT("blue"),
 			jp->getSafeName(idWho).c_str(),
 			msg.c_str()));
-		if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fPlayChatSounds)
+		if (m_mUser[m_idOwn].accessibility.fPlayChatSounds)
 			PlaySound(JClientApp::jpApp->strWavTopic.c_str());
 	}
 }
@@ -1781,7 +1835,7 @@ void CALLBACK JClient::Recv_Notify_ACCESS(SOCKET sock, WORD trnid, io::mem& is)
 			idWho != m_idOwn ? TEXT("red") : TEXT("blue"), jp->getSafeName(idWho).c_str(),
 			s_mapChanStatName[stat].c_str(),
 			idBy != m_idOwn ? TEXT("red") : TEXT("blue"), jp->getSafeName(idBy).c_str()));
-		if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fPlayChatSounds)
+		if (m_mUser[m_idOwn].accessibility.fPlayChatSounds)
 			PlaySound(JClientApp::jpApp->strWavConfirm.c_str());
 	}
 }
@@ -1900,12 +1954,10 @@ void CALLBACK JClient::Recv_Notify_BEEP(SOCKET sock, WORD trnid, io::mem& is)
 		}
 	}
 
-	if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fCanSignal) {
-		PlaySound(JClientApp::jpApp->strWavBeep.c_str());
+	PlaySound(JClientApp::jpApp->strWavBeep.c_str());
 
-		// Report about message
-		EvReport(tformat(TEXT("sound signal from [b]%s[/b]"), getSafeName(idBy).c_str()), eInformation, eHigh);
-	}
+	// Report about message
+	EvReport(tformat(TEXT("sound signal from [b]%s[/b]"), getSafeName(idBy).c_str()), eInformation, eHigh);
 }
 
 void CALLBACK JClient::Recv_Notify_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& is)
@@ -1945,7 +1997,7 @@ void CALLBACK JClient::Recv_Notify_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& i
 			}
 			VERIFY(CloseClipboard());
 
-			if (JClient::s_mapAlert[m_mUser[m_idOwn].nStatus].fPlayClipboard)
+			if (m_mUser[m_idOwn].accessibility.fPlayClipboard)
 				PlaySound(JClientApp::jpApp->strWavClipboard.c_str());
 
 			// Report about message
@@ -2036,10 +2088,10 @@ void CALLBACK JClient::Recv_Notify_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& i
 // Beowolf Network Protocol Messages sending
 //
 
-void CALLBACK JClient::Send_Cmd_NICK(SOCKET sock, const std::tstring& nick)
+void CALLBACK JClient::Send_Cmd_NICK(SOCKET sock, DWORD idWho, const std::tstring& nick)
 {
 	std::ostringstream os;
-	io::pack(os, m_idOwn);
+	io::pack(os, idWho);
 	io::pack(os, nick);
 	PushTrn(sock, COMMAND(CCPM_NICK), 0, os.str());
 }
@@ -2076,11 +2128,12 @@ void CALLBACK JClient::Send_Cmd_ONLINE(SOCKET sock, EOnline online, DWORD id)
 	PushTrn(sock, COMMAND(CCPM_ONLINE), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_STATUS_Mode(SOCKET sock, EUserStatus stat)
+void CALLBACK JClient::Send_Cmd_STATUS_Mode(SOCKET sock, EUserStatus stat, const Alert& a)
 {
 	std::ostringstream os;
 	io::pack(os, (WORD)STATUS_MODE);
 	io::pack(os, stat);
+	io::pack(os, a);
 	PushTrn(sock, COMMAND(CCPM_STATUS), 0, os.str());
 }
 
@@ -2100,11 +2153,12 @@ void CALLBACK JClient::Send_Cmd_STATUS_Msg(SOCKET sock, const std::tstring& msg)
 	PushTrn(sock, COMMAND(CCPM_STATUS), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_STATUS(SOCKET sock, EUserStatus stat, int img, const std::tstring& msg)
+void CALLBACK JClient::Send_Cmd_STATUS(SOCKET sock, EUserStatus stat, const Alert& a, int img, const std::tstring& msg)
 {
 	std::ostringstream os;
 	io::pack(os, (WORD)(STATUS_MODE | STATUS_IMG | STATUS_MSG));
 	io::pack(os, stat);
+	io::pack(os, a);
 	io::pack(os, img);
 	io::pack(os, msg);
 	PushTrn(sock, COMMAND(CCPM_STATUS), 0, os.str());
@@ -2273,8 +2327,10 @@ void CALLBACK JClientApp::Init()
 	m_hmenuTab = LoadMenu(hinstApp, MAKEINTRESOURCE(IDM_TAB));
 	m_hmenuLog = LoadMenu(hinstApp, MAKEINTRESOURCE(IDM_LOG));
 	m_hmenuChannel = LoadMenu(hinstApp, MAKEINTRESOURCE(IDM_CHANNEL));
+	m_hmenuList = LoadMenu(hinstApp, MAKEINTRESOURCE(IDM_CHANLIST));
 	m_hmenuRichEdit = LoadMenu(hinstApp, MAKEINTRESOURCE(IDM_RICHEDIT));
 	m_hmenuUser = LoadMenu(hinstApp, MAKEINTRESOURCE(IDM_USER));
+	m_hmenuUserGod = LoadMenu(hinstApp, MAKEINTRESOURCE(IDM_USERGOD));
 	// Create the image list
 	m_himlEdit = ImageList_LoadImage(hinstApp, MAKEINTRESOURCE(IDB_EDIT), 16, 12, CLR_DEFAULT, IMAGE_BITMAP, LR_CREATEDIBSECTION);
 	m_himlTab = ImageList_LoadImage(hinstApp, MAKEINTRESOURCE(IDB_TAB), 16, 12, CLR_DEFAULT, IMAGE_BITMAP, LR_CREATEDIBSECTION);
@@ -2309,8 +2365,10 @@ void CALLBACK JClientApp::Done()
 	VERIFY(DestroyMenu(m_hmenuTab));
 	VERIFY(DestroyMenu(m_hmenuLog));
 	VERIFY(DestroyMenu(m_hmenuChannel));
+	VERIFY(DestroyMenu(m_hmenuList));
 	VERIFY(DestroyMenu(m_hmenuRichEdit));
 	VERIFY(DestroyMenu(m_hmenuUser));
+	VERIFY(DestroyMenu(m_hmenuUserGod));
 	// Destroy the image list
 	VERIFY(ImageList_Destroy(m_himlEdit));
 	VERIFY(ImageList_Destroy(m_himlTab));

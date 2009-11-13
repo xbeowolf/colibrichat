@@ -60,7 +60,7 @@
 
 // Editor
 #define RK_SENDBYENTER         TEXT("SendByEnter")
-#define RK_FULLANONYMOUS       TEXT("FullAnonymous")
+#define RK_CHEATANONYMOUS      TEXT("CheatAnonymous")
 #define RK_QUOTATIONBLUE       TEXT("QuotationBlue")
 #define RK_QUOTATIONRED        TEXT("QuotationRed")
 
@@ -137,8 +137,10 @@
 #define IML_MANCYANOFF         9
 #define IML_MANBLUEOFF         10
 #define IML_MANMAGENTAOFF      11
-#define IML_MANVOID            60
-#define IML_MAN_COUNT          61
+#define IML_MANVOID            12
+#define IML_MANGOD             13
+#define IML_MANDEVIL           14
+#define IML_MAN_COUNT          15
 // Status images
 #define IML_STATUSIMG_COUNT    38
 
@@ -154,17 +156,6 @@ namespace colibrichat
 {
 	enum ETimeFormat {etimeNone, etimeHHMM, etimeHHMMSS};
 	enum EAlert {eGreen, eBlue, eYellow, eRed};
-
-#pragma pack(push, 1)
-
-	struct Alert {
-		bool fFlashPageNew, fFlashPageSayPrivate, fFlahPageSayChannel, fFlashPageChangeTopic;
-		bool fCanOpenPrivate, fCanAlert, fCanMessage, fCanSignal, fCanRecvClipboard;
-		bool fPlayChatSounds, fPlayPrivateSounds, fPlayAlert, fPlayMessage, fPlayBeep, fPlayClipboard;
-	};
-	typedef std::map<EUserStatus, Alert> MapAlert;
-
-#pragma pack(pop)
 
 	class JClient : public JEngine, public JDialog, protected initdoneable<JClient>
 	{
@@ -326,6 +317,8 @@ namespace colibrichat
 			void CALLBACK Enable();
 			void CALLBACK Disable();
 
+			MapChannel::const_iterator getSelChannel() const;
+
 		protected:
 
 			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
@@ -348,6 +341,8 @@ namespace colibrichat
 			void OnLinkIdentify(SOCKET sock, const SetAccess& access);
 			void OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is);
 			void OnMetrics(const Metrics& metrics);
+			void OnTopic(DWORD idWho, DWORD idWhere, const std::tstring& topic);
+			void OnNick(DWORD idOld, DWORD idNew, const std::tstring& newname);
 
 		protected:
 
@@ -483,6 +478,8 @@ namespace colibrichat
 
 			void OnLinkIdentify(SOCKET sock, const SetAccess& access);
 			void OnLinkClose(SOCKET sock, UINT err);
+			void OnNick(DWORD idOld, DWORD idNew, const std::tstring& newname);
+			void OnTopic(DWORD idWho, DWORD idWhere, const std::tstring& topic);
 
 		protected:
 
@@ -500,7 +497,7 @@ namespace colibrichat
 		{
 		public:
 
-			CALLBACK JTopic(JClient* p, JPageChannel* chan);
+			CALLBACK JTopic(JClient* p, DWORD id, const std::tstring& n, const std::tstring& t);
 
 		protected:
 
@@ -516,7 +513,9 @@ namespace colibrichat
 
 		protected:
 
-			JPtr<JPageChannel> jpChannel;
+			JPROPERTY_R(DWORD, idChannel);
+			JPROPERTY_RREF_CONST(std::tstring, name);
+			JPROPERTY_RREF_CONST(std::tstring, topic);
 		};
 
 		class JSplashRtfEditor : public JDialog, public rtf::Editor, public JAttachment<JClient>, protected initdoneable<JSplashRtfEditor>
@@ -705,6 +704,9 @@ namespace colibrichat
 
 		// Users managment
 		std::tstring getSafeName(DWORD idUser) const;
+		bool CALLBACK isGod(DWORD idUser = CRC_NONAME) const;
+		bool CALLBACK isDevil(DWORD idUser = CRC_NONAME) const;
+		bool CALLBACK isCheats(DWORD idUser = CRC_NONAME) const;
 		void CALLBACK InsertUser(DWORD idUser, const User& user);
 		void CALLBACK LinkUser(DWORD idUser, DWORD idLink);
 		void CALLBACK UnlinkUser(DWORD idUser, DWORD idLink);
@@ -731,15 +733,15 @@ namespace colibrichat
 		void CALLBACK Recv_Notify_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is);
 
 		// Beowolf Network Protocol Messages sending
-		void CALLBACK Send_Cmd_NICK(SOCKET sock, const std::tstring& nick);
+		void CALLBACK Send_Cmd_NICK(SOCKET sock, DWORD idWho, const std::tstring& nick);
 		void CALLBACK Send_Quest_JOIN(SOCKET sock, const std::tstring& name, const std::tstring& pass = TEXT(""), int type = eUser | eChannel | eBoard);
 		void CALLBACK Send_Cmd_PART(SOCKET sock, DWORD idWho, DWORD idWhere);
 		void CALLBACK Send_Quest_USERINFO(SOCKET sock, const SetId& set);
 		void CALLBACK Send_Cmd_ONLINE(SOCKET sock, EOnline online, DWORD id);
-		void CALLBACK Send_Cmd_STATUS_Mode(SOCKET sock, EUserStatus stat);
+		void CALLBACK Send_Cmd_STATUS_Mode(SOCKET sock, EUserStatus stat, const Alert& a);
 		void CALLBACK Send_Cmd_STATUS_Img(SOCKET sock, int img);
 		void CALLBACK Send_Cmd_STATUS_Msg(SOCKET sock, const std::tstring& msg);
-		void CALLBACK Send_Cmd_STATUS(SOCKET sock, EUserStatus stat, int img, const std::tstring& msg);
+		void CALLBACK Send_Cmd_STATUS(SOCKET sock, EUserStatus stat, const Alert& a, int img, const std::tstring& msg);
 		void CALLBACK Send_Cmd_SAY(SOCKET sock, DWORD idWhere, UINT type, const std::string& content);
 		void CALLBACK Send_Cmd_TOPIC(SOCKET sock, DWORD idWhere, const std::tstring& topic);
 		void CALLBACK Send_Cmd_CHANOPTIONS(SOCKET sock, DWORD idWhere, int op, DWORD val);
@@ -759,19 +761,25 @@ namespace colibrichat
 		void OnLinkFail(SOCKET sock, UINT err);
 		void OnLinkIdentify(SOCKET sock, const SetAccess& access);
 		void OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is);
+		void OnNick(DWORD idOld, DWORD idNew, const std::tstring& newname);
 
 	public:
 
 		static std::map<EChanStatus, std::tstring> s_mapChanStatName;
 		static std::map<UINT, std::tstring> s_mapWsaErr;
-		static Alert s_mapAlert[];
 
 		// --- Events ---
 
+		// Events on sockets
 		fastdelegate::FastDelegateList1<DWORD>
 			EvPageClose;
+		// Events on transactions
 		fastdelegate::FastDelegateList1<const Metrics&>
 			EvMetrics;
+		fastdelegate::FastDelegateList3<DWORD, DWORD, const std::tstring&>
+			EvNick;
+		fastdelegate::FastDelegateList3<DWORD, DWORD, const std::tstring&>
+			EvTopic;
 
 	protected:
 
@@ -786,7 +794,8 @@ namespace colibrichat
 		JPROPERTY_R(int, nConnectCount);
 
 		JPROPERTY_R(bool, bSendByEnter);
-		JPROPERTY_R(bool, bFullAnonymous);
+		JPROPERTY_R(bool, bCheatAnonymous);
+		Alert s_mapAlert[6];
 		JPROPERTY_RREF_CONST(MapAlert, mAlert);
 
 		// Baloon tooltip
@@ -837,8 +846,10 @@ namespace colibrichat
 		JPROPERTY_R(HMENU, hmenuTab);
 		JPROPERTY_R(HMENU, hmenuLog);
 		JPROPERTY_R(HMENU, hmenuChannel);
+		JPROPERTY_R(HMENU, hmenuList);
 		JPROPERTY_R(HMENU, hmenuRichEdit);
 		JPROPERTY_R(HMENU, hmenuUser);
+		JPROPERTY_R(HMENU, hmenuUserGod);
 
 		JPROPERTY_R(HIMAGELIST, himlEdit);
 		JPROPERTY_R(HIMAGELIST, himlTab);

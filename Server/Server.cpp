@@ -42,7 +42,6 @@ CALLBACK JServer::JServer()
 	// Dialogs
 	jpConnections = new JConnections();
 
-	m_IP = INADDR_ANY;
 	m_port = CCP_PORT;
 	m_password = TEXT("beowolf");
 
@@ -50,10 +49,10 @@ CALLBACK JServer::JServer()
 
 	m_metrics.uNameMaxLength = 20;
 	m_metrics.uPassMaxLength = 32;
-	m_metrics.uTopicMaxLength = 100;
 	m_metrics.uStatusMsgMaxLength = 32;
+	m_metrics.uTopicMaxLength = 100;
 	m_metrics.nMsgSpinMaxCount = 20;
-	m_metrics.uChatLineMaxSize = 80*1024;
+	m_metrics.uChatLineMaxVolume = 80*1024;
 }
 
 void CALLBACK JServer::Init()
@@ -70,14 +69,23 @@ void CALLBACK JServer::Init()
 
 	CreateMsgWindow();
 
-	// Create listening socket
+	// Create listening sockets
+	int count = Profile::GetInt(RF_SERVER, RK_PORTCOUNT, 1);
+	std::set<u_short> port;
+	for (int i = 0; i < count; i++) {
+		u_short v = (u_short)Profile::GetInt(RF_SERVER, tformat(TEXT("Port%02i"), i).c_str(), CCP_PORT);
+		if (v < 1000) v = CCP_PORT; // do not use system ports
+		port.insert(v);
+	}
 	Link link;
-	link.m_saAddr.sin_family = AF_INET;
-	link.m_saAddr.sin_addr.S_un.S_addr = htonl(m_IP);
-	link.m_saAddr.sin_port = htons(m_port);
-	link.Select(FD_ACCEPT | FD_CLOSE);
-	link.Listen();
-	InsertLink(link);
+	for each (u_short v in port) {
+		link.m_saAddr.sin_family = AF_INET;
+		link.m_saAddr.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
+		link.m_saAddr.sin_port = htons(v);
+		link.Select(FD_ACCEPT | FD_CLOSE);
+		link.Listen();
+		InsertLink(link);
+	}
 }
 
 void CALLBACK JServer::Done()
@@ -104,10 +112,26 @@ BOOL CALLBACK JServer::DestroyMsgWindow()
 
 void CALLBACK JServer::LoadState()
 {
+	m_password = Profile::GetString(RF_SERVER, RK_PASSWORD, TEXT("beowolf"));
+
+	m_bShowIcon = Profile::GetInt(RF_SERVER, RK_SHOWICON, TRUE) != 0;
+
+	m_metrics.uNameMaxLength = (size_t)Profile::GetInt(RF_METRICS, RK_NameMaxLength, 20);
+	m_metrics.uPassMaxLength = (size_t)Profile::GetInt(RF_METRICS, RK_PassMaxLength, 32);
+	m_metrics.uStatusMsgMaxLength = (size_t)Profile::GetInt(RF_METRICS, RK_StatusMsgMaxLength, 32);
+	m_metrics.uTopicMaxLength = (size_t)Profile::GetInt(RF_METRICS, RK_TopicMaxLength, 100);
+	m_metrics.nMsgSpinMaxCount = (size_t)Profile::GetInt(RF_METRICS, RK_MsgSpinMaxCount, 20);
+	m_metrics.uChatLineMaxVolume = (size_t)Profile::GetInt(RF_METRICS, RK_ChatLineMaxVolume, 80*1024);
 }
 
 void CALLBACK JServer::SaveState()
 {
+	Profile::WriteInt(RF_METRICS, RK_NameMaxLength, (UINT)m_metrics.uNameMaxLength);
+	Profile::WriteInt(RF_METRICS, RK_PassMaxLength, (UINT)m_metrics.uPassMaxLength);
+	Profile::WriteInt(RF_METRICS, RK_StatusMsgMaxLength, (UINT)m_metrics.uStatusMsgMaxLength);
+	Profile::WriteInt(RF_METRICS, RK_TopicMaxLength, (UINT)m_metrics.uTopicMaxLength);
+	Profile::WriteInt(RF_METRICS, RK_MsgSpinMaxCount, (UINT)m_metrics.nMsgSpinMaxCount);
+	Profile::WriteInt(RF_METRICS, RK_ChatLineMaxVolume, (UINT)m_metrics.uChatLineMaxVolume);
 }
 
 LRESULT WINAPI JServer::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -333,12 +357,12 @@ std::tstring CALLBACK JServer::getNearestName(const std::tstring& nick) const
 	return buffer;
 }
 
-void CALLBACK JServer::RenameContact(SOCKET sock, DWORD idOld, std::tstring newname)
+void CALLBACK JServer::RenameContact(DWORD idByOrSock, DWORD idOld, std::tstring newname)
 {
 	DWORD idNew = dCRC(newname.c_str());
 	if (idNew == idOld) return;
 
-	DWORD result = NICK_TAKEN;
+	DWORD result;
 	if (hasCRC(idNew)) {
 		if (idNew == CRC_SERVER || idNew == CRC_LIST) {
 			result = NICK_TAKEN;
@@ -346,6 +370,8 @@ void CALLBACK JServer::RenameContact(SOCKET sock, DWORD idOld, std::tstring newn
 			result = NICK_TAKENUSER;
 		} else if (m_mChannel.find(idNew) != m_mChannel.end()) {
 			result = NICK_TAKENCHANNEL;
+		} else {
+			result = NICK_TAKEN;
 		}
 		newname = getNearestName(newname);
 		idNew = dCRC(newname.c_str());
@@ -358,6 +384,7 @@ void CALLBACK JServer::RenameContact(SOCKET sock, DWORD idOld, std::tstring newn
 	if (iu != m_mUser.end()) { // private talk
 		opened = iu->second.opened;
 		iu->second.name = newname;
+		SOCKET sock = m_mIdSocket[idOld];
 		m_mUser[idNew] = iu->second;
 		m_mSocketId[sock] = idNew;
 		m_mIdSocket[idNew] = sock;
@@ -372,7 +399,24 @@ void CALLBACK JServer::RenameContact(SOCKET sock, DWORD idOld, std::tstring newn
 			ic->second.setStatus(idNew, ic->second.getStatus(idOld));
 			ic->second.setStatus(idOld, eOutsider);
 		}
-		opened.insert(idNew); // send reply to sender
+		opened.insert(idNew); // send notify to receiver
+		if (idByOrSock == idOld) idByOrSock = idNew;
+		else opened.insert(idByOrSock); // send reply to sender
+	} else if (idOld == CRC_NONAME) { // new user
+		sockaddr_in si;
+		int len = sizeof(si);
+		getpeername((SOCKET)idByOrSock, (struct sockaddr*)&si, &len);
+
+		// Create new user
+		User user;
+		user.name = newname;
+		user.IP = si.sin_addr;
+
+		m_mUser[idNew] = user;
+		m_mSocketId[(SOCKET)idByOrSock] = idNew;
+		m_mIdSocket[idNew] = (SOCKET)idByOrSock;
+
+		opened.insert(idNew); // send notify to receiver
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idOld);
 		if (ic != m_mChannel.end()) { // channel
@@ -384,25 +428,30 @@ void CALLBACK JServer::RenameContact(SOCKET sock, DWORD idOld, std::tstring newn
 				unlinkCRC(idOld, v);
 			}
 			m_mChannel.erase(idOld);
-		} else { // create new user by default
-			sockaddr_in si;
-			int len = sizeof(si);
-			getpeername(sock, (struct sockaddr*)&si, &len);
-
-			// Create new user
-			User user;
-			user.Init();
-			user.name = newname;
-			user.IP = si.sin_addr;
-
-			m_mUser[idNew] = user;
-			m_mSocketId[sock] = idNew;
-			m_mIdSocket[idNew] = sock;
-
-			opened.insert(idNew); // send reply to sender
+			opened.insert(idByOrSock); // send reply to sender
+		} else {
+			ASSERT(false); // no valid way to here
 		}
 	}
 	Broadcast_Notify_NICK(opened, result, idOld, idNew, newname);
+}
+
+bool CALLBACK JServer::isGod(DWORD idUser) const
+{
+	MapUser::const_iterator iu = m_mUser.find(idUser);
+	return iu != m_mUser.end() && iu->second.cheat.isGod;
+}
+
+bool CALLBACK JServer::isDevil(DWORD idUser) const
+{
+	MapUser::const_iterator iu = m_mUser.find(idUser);
+	return iu != m_mUser.end() && iu->second.cheat.isDevil;
+}
+
+bool CALLBACK JServer::isCheats(DWORD idUser) const
+{
+	MapUser::const_iterator iu = m_mUser.find(idUser);
+	return iu != m_mUser.end() && (iu->second.cheat.isGod || iu->second.cheat.isDevil);
 }
 
 void JServer::OnHook(JEventable* src)
@@ -578,20 +627,29 @@ void CALLBACK JServer::Recv_Cmd_NICK(SOCKET sock, WORD trnid, io::mem& is)
 	DWORD idBy = m_mSocketId[sock];
 	MapUser::iterator iu = m_mUser.find(idOld);
 	if (iu != m_mUser.end()) { // private talk
+#ifdef CHEATS
+		if (idOld == idBy || isGod(idBy)) {
+#else
 		if (idOld == idBy) {
-			RenameContact(sock, idOld, name);
+#endif
+			RenameContact(idBy, idOld, name);
 			// Report about message
 			EvReport(tformat(TEXT("nickname renamed: %s"), name.c_str()), eInformation, eNormal);
 		}
 	} else if (idOld == CRC_NONAME) { // new user
-		RenameContact(sock, idOld, name);
+		ASSERT(idBy == idOld);
+		RenameContact((DWORD)sock, idOld, name);
 		// Report about message
 		EvReport(tformat(TEXT("nickname added: %s"), name.c_str()), eInformation, eNormal);
 	} else {
 		MapChannel::const_iterator ic = m_mChannel.find(idOld);
 		if (ic != m_mChannel.end()) { // channel
+#ifdef CHEATS
+			if (ic->second.getStatus(idBy) == eFounder || isGod(idBy)) {
+#else
 			if (ic->second.getStatus(idBy) == eFounder) {
-				RenameContact(sock, idOld, name);
+#endif
+				RenameContact(idBy, idOld, name);
 				// Report about message
 				EvReport(tformat(TEXT("channel name modified to: %s"), name.c_str()), eInformation, eNormal);
 			}
@@ -648,27 +706,41 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idDst);
 		if (ic != m_mChannel.end() && type & eChannel) { // channel
-			if (ic->second.opened.size() < ic->second.nLimit) {
-				if (ic->second.nAutoStatus > eOutsider) {
-					if (ic->second.password.empty() || ic->second.password == pass) {
-						if (ic->second.opened.find(idSrc) == ic->second.opened.end()) {
-							if (ic->second.getStatus(idSrc) == eOutsider) {
-								ic->second.setStatus(idSrc, ic->second.nAutoStatus);
+			if (ic->second.opened.find(idSrc) == ic->second.opened.end()) {
+#ifdef CHEATS
+				if (ic->second.opened.size() < ic->second.nLimit || isGod(idSrc)) {
+#else
+				if (ic->second.opened.size() < ic->second.nLimit) {
+#endif
+#ifdef CHEATS
+					if (ic->second.nAutoStatus > eOutsider || isGod(idSrc)) {
+#else
+					if (ic->second.nAutoStatus > eOutsider) {
+#endif
+#ifdef CHEATS
+						if (ic->second.password.empty() || ic->second.password == pass || isGod(idSrc)) {
+#else
+						if (ic->second.password.empty() || ic->second.password == pass) {
+#endif
+							if (ic->second.getStatus(idSrc) == eOutsider) { // give default status if user never been on channel
+								ic->second.setStatus(idSrc, ic->second.nAutoStatus > eOutsider
+									? ic->second.nAutoStatus
+									: eWriter);
 							}
 							Broadcast_Notify_JOIN(ic->second.opened, idSrc, idDst, m_mUser[idSrc]);
 							linkCRC(idDst, idSrc);
 							Send_Reply_JOIN_Channel(sock, trnid, idDst, ic->second);
 						} else {
-							Send_Reply_JOIN_Result(sock, trnid, CHAN_ALREADY, eChannel, idDst);
+							Send_Reply_JOIN_Result(sock, trnid, CHAN_BADPASS, eChannel, idDst);
 						}
 					} else {
-						Send_Reply_JOIN_Result(sock, trnid, CHAN_BADPASS, eChannel, idDst);
+						Send_Reply_JOIN_Result(sock, trnid, CHAN_DENY, eChannel, idDst);
 					}
 				} else {
-					Send_Reply_JOIN_Result(sock, trnid, CHAN_DENY, eChannel, idDst);
+					Send_Reply_JOIN_Result(sock, trnid, CHAN_LIMIT, eChannel, idDst);
 				}
 			} else {
-				Send_Reply_JOIN_Result(sock, trnid, CHAN_LIMIT, eChannel, idDst);
+				Send_Reply_JOIN_Result(sock, trnid, CHAN_ALREADY, eChannel, idDst);
 			}
 		} else { // create new channel if nothing was found
 			if (type & eChannel) {
@@ -681,14 +753,14 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 				chan.password = pass;
 				chan.topic = TEXT("");
 				chan.idTopicWriter = 0;
-				chan.founder.insert(idSrc);
 				chan.nAutoStatus = eWriter;
 				chan.nLimit = -1;
 				chan.isHidden = false;
 				chan.isAnonymous = false;
 				chan.crBackground = RGB(0xFF, 0xFF, 0xFF);
-				m_mChannel[idDst] = chan;
 
+				chan.setStatus(idSrc, eFounder);
+				m_mChannel[idDst] = chan;
 				linkCRC(idDst, idSrc);
 				Send_Reply_JOIN_Channel(sock, trnid, idDst, m_mChannel[idDst]);
 			} else if (type & eBoard) {
@@ -742,7 +814,11 @@ void CALLBACK JServer::Recv_Cmd_PART(SOCKET sock, WORD trnid, io::mem& is)
 		if (ic != m_mChannel.end()) { // channel
 			bool isModer = ic->second.getStatus(idBy) >= eModerator;
 			bool canKick = ic->second.getStatus(idBy) >= ic->second.getStatus(idWho);
+#ifdef CHEATS
+			if (idWho == idBy || (isModer && canKick && !isDevil(idWho)) || isDevil(idBy)) {
+#else
 			if (idWho == idBy || (isModer && canKick)) {
+#endif
 				// Report about message
 				EvReport(tformat(TEXT("parts %s from %s"), iuWho->second.name.c_str(), ic->second.name.c_str()), eInformation, eNormal);
 
@@ -821,6 +897,7 @@ void CALLBACK JServer::Recv_Cmd_STATUS(SOCKET sock, WORD trnid, io::mem& is)
 {
 	WORD type;
 	EUserStatus stat;
+	Alert a;
 	int img;
 	std::tstring msg;
 
@@ -833,6 +910,7 @@ void CALLBACK JServer::Recv_Cmd_STATUS(SOCKET sock, WORD trnid, io::mem& is)
 		io::unpack(is, type);
 		if (type & STATUS_MODE) {
 			io::unpack(is, stat);
+			io::unpack(is, a);
 		}
 		if (type & STATUS_IMG) {
 			io::unpack(is, img);
@@ -857,6 +935,7 @@ void CALLBACK JServer::Recv_Cmd_STATUS(SOCKET sock, WORD trnid, io::mem& is)
 	if (iu != m_mUser.end()) {
 		if (type & STATUS_MODE) {
 			iu->second.nStatus = stat;
+			iu->second.accessibility = a;
 		}
 		if (type & STATUS_IMG) {
 			iu->second.nStatusImg = img;
@@ -867,7 +946,7 @@ void CALLBACK JServer::Recv_Cmd_STATUS(SOCKET sock, WORD trnid, io::mem& is)
 
 		SetId set = iu->second.opened;
 		set.insert(idSrc);
-		Broadcast_Notify_STATUS(set, idSrc, type, stat, img, msg);
+		Broadcast_Notify_STATUS(set, idSrc, type, stat, a, img, msg);
 	}
 
 	// Report about message
@@ -906,8 +985,13 @@ void CALLBACK JServer::Recv_Cmd_SAY(SOCKET sock, WORD trnid, io::mem& is)
 	} else {
 		MapChannel::const_iterator ic = m_mChannel.find(idWhere);
 		if (ic != m_mChannel.end()) { // channel
+#ifdef CHEATS
+			if (ic->second.getStatus(idSrc) > eReader || isCheats(idSrc))
+				Broadcast_Notify_SAY(ic->second.opened, !ic->second.isAnonymous || isGod(idSrc) ? idSrc : CRC_ANONYMOUS, idWhere, type, content);
+#else
 			if (ic->second.getStatus(idSrc) > eReader)
 				Broadcast_Notify_SAY(ic->second.opened, !ic->second.isAnonymous ? idSrc : CRC_ANONYMOUS, idWhere, type, content);
+#endif
 		}
 	}
 }
@@ -939,11 +1023,18 @@ void CALLBACK JServer::Recv_Cmd_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWhere);
 		if (ic != m_mChannel.end()) { // channel
-			if (ic->second.getStatus(idSrc) >= eMember) {
+#ifdef CHEATS
+			if (ic->second.getStatus(idSrc) >= eMember || isGod(idSrc))
+#else
+			if (ic->second.getStatus(idSrc) >= eMember)
+#endif
+			{
 				ic->second.topic = topic;
 				ic->second.idTopicWriter = idSrc;
 
-				Broadcast_Notify_TOPIC(ic->second.opened, idSrc, idWhere, topic);
+				SetId set = ic->second.opened;
+				set.insert(idSrc);
+				Broadcast_Notify_TOPIC(set, idSrc, idWhere, topic);
 			}
 		}
 	}
@@ -990,7 +1081,11 @@ void CALLBACK JServer::Recv_Cmd_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem& is
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWhere);
 		if (ic != m_mChannel.end()) { // channel
+#ifdef CHEATS
+			if (ic->second.getStatus(idSrc) >= eAdmin || isGod(idSrc)) {
+#else
 			if (ic->second.getStatus(idSrc) >= eAdmin) {
+#endif
 				switch (op)
 				{
 				case CHANOP_AUTOSTATUS:
@@ -1010,7 +1105,9 @@ void CALLBACK JServer::Recv_Cmd_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem& is
 					break;
 				}
 
-				Broadcast_Notify_CHANOPTIONS(ic->second.opened, idSrc, idWhere, op, val);
+				SetId set = ic->second.opened;
+				set.insert(idSrc);
+				Broadcast_Notify_CHANOPTIONS(set, idSrc, idWhere, op, val);
 			}
 		}
 	}
@@ -1046,8 +1143,21 @@ void CALLBACK JServer::Recv_Cmd_ACCESS(SOCKET sock, WORD trnid, io::mem& is)
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWhere);
 		if (ic != m_mChannel.end()) { // channel
-			ic->second.setStatus(idWho, stat);
-			Broadcast_Notify_ACCESS(ic->second.opened, idWho, idWhere, stat, idSrc);
+			EChanStatus statSrc = ic->second.getStatus(idSrc), statWho = ic->second.getStatus(idWho);
+			bool canModer =
+				(idWho == idSrc || statSrc > statWho || statSrc >= eModerator) &&
+				(statSrc > stat || statSrc == eFounder);
+#ifdef CHEATS
+			if (canModer || isGod(idSrc)) {
+#else
+			if (canModer) {
+#endif
+				ic->second.setStatus(idWho, stat);
+
+				SetId set = ic->second.opened;
+				set.insert(idSrc);
+				Broadcast_Notify_ACCESS(set, idWho, idWhere, stat, idSrc);
+			}
 		}
 	}
 }
@@ -1076,7 +1186,12 @@ void CALLBACK JServer::Recv_Cmd_BEEP(SOCKET sock, WORD trnid, io::mem& is)
 	DWORD idBy = m_mSocketId[sock];
 	MapUser::const_iterator iu = m_mUser.find(idWho);
 	if (iu != m_mUser.end()) { // private talk
-		Send_Notify_BEEP(m_mIdSocket[idWho], idBy);
+#ifdef CHEATS
+		if (iu->second.accessibility.fCanSignal || isGod(idBy))
+#else
+		if (iu->second.accessibility.fCanSignal)
+#endif
+			Send_Notify_BEEP(m_mIdSocket[idWho], idBy);
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWho);
 		if (ic != m_mChannel.end()) { // channel
@@ -1113,7 +1228,12 @@ void CALLBACK JServer::Recv_Cmd_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& is)
 	DWORD idBy = m_mSocketId[sock];
 	MapUser::const_iterator iu = m_mUser.find(idWho);
 	if (iu != m_mUser.end()) { // private talk
-		Send_Notify_CLIPBOARD(m_mIdSocket[idWho], idBy, (const char*)ptr, size);
+#ifdef CHEATS
+		if (iu->second.accessibility.fCanRecvClipboard || isGod(idBy))
+#else
+		if (iu->second.accessibility.fCanRecvClipboard)
+#endif
+			Send_Notify_CLIPBOARD(m_mIdSocket[idWho], idBy, (const char*)ptr, size);
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWho);
 		if (ic != m_mChannel.end()) { // channel
@@ -1153,8 +1273,15 @@ void CALLBACK JServer::Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 	DWORD idBy = m_mSocketId[sock];
 	MapUser::const_iterator iu = m_mUser.find(idWho);
 	if (iu != m_mUser.end()) { // private talk
-		Send_Notify_MESSAGE(m_mIdSocket[idWho], idBy, ft, (const char*)ptr, size);
-		Send_Reply_MESSAGE(sock, trnid, idWho, MESSAGE_SENT);
+#ifdef CHEATS
+		if (iu->second.accessibility.fCanMessage || isGod(idBy))
+#else
+		if (iu->second.accessibility.fCanMessage)
+#endif
+		{
+			Send_Notify_MESSAGE(m_mIdSocket[idWho], idBy, ft, (const char*)ptr, size);
+			Send_Reply_MESSAGE(sock, trnid, idWho, MESSAGE_SENT);
+		}
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWho);
 		if (ic != m_mChannel.end()) { // channel
@@ -1194,7 +1321,12 @@ void CALLBACK JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is)
 	DWORD idBy = m_mSocketId[sock];
 	MapUser::const_iterator iu = m_mUser.find(idWho);
 	if (iu != m_mUser.end()) { // private talk
-		Send_Notify_SPLASHRTF(m_mIdSocket[idWho], idBy, (const char*)ptr, size);
+#ifdef CHEATS
+		if (iu->second.accessibility.fCanSplash || isGod(idBy))
+#else
+		if (iu->second.accessibility.fCanSplash)
+#endif
+			Send_Notify_SPLASHRTF(m_mIdSocket[idWho], idBy, (const char*)ptr, size);
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWho);
 		if (ic != m_mChannel.end()) { // channel
@@ -1227,16 +1359,22 @@ void CALLBACK JServer::Send_Reply_LIST(SOCKET sock, WORD trnid)
 {
 	std::ostringstream os;
 	// Count all visible channels
+#ifdef CHEATS
+	DWORD idBy = m_mSocketId[sock];
+	bool god = isGod(idBy);
+#else
+	bool god = false;
+#endif
 	size_t size = 0;
 	for each (MapChannel::value_type const& v in m_mChannel)
 	{
-		if (!v.second.isHidden) size++;
+		if (!v.second.isHidden || god) size++;
 	}
 	io::pack(os, size);
 	// Pack all visible channels
 	for each (MapChannel::value_type const& v in m_mChannel)
 	{
-		if (!v.second.isHidden) {
+		if (!v.second.isHidden || god) {
 			io::pack(os, v.first);
 			io::pack(os, v.second);
 		}
@@ -1337,13 +1475,14 @@ void CALLBACK JServer::Broadcast_Notify_ONLINE(const SetId& set, DWORD idWho, EO
 	BroadcastTrn(set, true, NOTIFY(CCPM_ONLINE), os.str());
 }
 
-void CALLBACK JServer::Broadcast_Notify_STATUS(const SetId& set, DWORD idWho, WORD type, EUserStatus stat, int img, std::tstring msg)
+void CALLBACK JServer::Broadcast_Notify_STATUS(const SetId& set, DWORD idWho, WORD type, EUserStatus stat, const Alert& a, int img, std::tstring msg)
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, type);
 	if (type & STATUS_MODE) {
 		io::pack(os, stat);
+		io::pack(os, a);
 	}
 	if (type & STATUS_IMG) {
 		io::pack(os, img);
@@ -1351,6 +1490,24 @@ void CALLBACK JServer::Broadcast_Notify_STATUS(const SetId& set, DWORD idWho, WO
 	if (type & STATUS_MSG) {
 		io::pack(os, msg);
 	}
+	BroadcastTrn(set, true, NOTIFY(CCPM_STATUS), os.str());
+}
+
+void CALLBACK JServer::Broadcast_Notify_STATUS_God(const SetId& set, DWORD idWho, bool god)
+{
+	std::ostringstream os;
+	io::pack(os, idWho);
+	io::pack(os, (WORD)STATUS_GOD);
+	io::pack(os, god);
+	BroadcastTrn(set, true, NOTIFY(CCPM_STATUS), os.str());
+}
+
+void CALLBACK JServer::Broadcast_Notify_STATUS_Devil(const SetId& set, DWORD idWho, bool devil)
+{
+	std::ostringstream os;
+	io::pack(os, idWho);
+	io::pack(os, (WORD)STATUS_DEVIL);
+	io::pack(os, devil);
 	BroadcastTrn(set, true, NOTIFY(CCPM_STATUS), os.str());
 }
 
@@ -1513,6 +1670,9 @@ void CALLBACK JServerApp::Init()
 
 	Profile::SetKey(TEXT("BEOWOLF"), APPNAME);
 
+	// Load popup menus
+	m_hmenuConnections = LoadMenu(hinstApp, MAKEINTRESOURCE(IDM_CONNECTIONS));
+
 	jpServer = new JServer;
 	jpServer->Init();
 }
@@ -1526,6 +1686,8 @@ void CALLBACK JServerApp::Done()
 {
 	if (jpServer->State != JService::eStopped) jpServer->Stop();
 	jpServer->Done();
+	// Free associated resources
+	VERIFY(DestroyMenu(m_hmenuConnections));
 	// Unregister the window RH-server classes.
 	VERIFY(UnregisterClass(WC_MSG, hinstApp));
 }

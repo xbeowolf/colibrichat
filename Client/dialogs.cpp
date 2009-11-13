@@ -33,13 +33,14 @@ using namespace colibrichat;
 // JClient::JTopic dialog
 //
 
-CALLBACK JClient::JTopic::JTopic(JClient* p, JPageChannel* chan)
+CALLBACK JClient::JTopic::JTopic(JClient* p, DWORD id, const std::tstring& n, const std::tstring& t)
 : JAttachedDialog<JClient>(p)
 {
 	ASSERT(p);
-	ASSERT(chan);
 
-	jpChannel = chan;
+	m_idChannel = id;
+	m_name = n;
+	m_topic = t;
 
 	SetupHooks();
 }
@@ -60,9 +61,9 @@ LRESULT WINAPI JClient::JTopic::DlgProc(HWND hWnd, UINT message, WPARAM wParam, 
 
 			TCHAR buffer[40];
 			GetWindowText(hWnd, buffer, _countof(buffer));
-			SetWindowText(hWnd, tformat(TEXT("%s: #%s"), buffer, jpChannel->channel.name.c_str()).c_str());
+			SetWindowText(hWnd, tformat(TEXT("%s: #%s"), buffer, m_name.c_str()).c_str());
 
-			SetDlgItemText(hWnd, IDC_TOPICTEXT, jpChannel->channel.topic.c_str());
+			SetDlgItemText(hWnd, IDC_TOPICTEXT, m_topic.c_str());
 
 			OnMetrics(pSource->m_metrics);
 
@@ -87,9 +88,9 @@ LRESULT WINAPI JClient::JTopic::DlgProc(HWND hWnd, UINT message, WPARAM wParam, 
 			{
 			case IDOK:
 				{
-					std::tstring topic(pSource->m_metrics.uTopicMaxLength, 0);
-					GetDlgItemText(hWnd, IDC_TOPICTEXT, &topic[0], (int)topic.size()+1);
-					pSource->Send_Cmd_TOPIC(pSource->m_clientsock, jpChannel->getID(), topic);
+					std::tstring buffer(pSource->m_metrics.uTopicMaxLength, 0);
+					GetDlgItemText(hWnd, IDC_TOPICTEXT, &buffer[0], (int)buffer.size()+1);
+					pSource->Send_Cmd_TOPIC(pSource->m_clientsock, m_idChannel, buffer);
 					DestroyWindow(hWnd);
 					break;
 				}
@@ -146,7 +147,7 @@ void JClient::JTopic::OnPageClose(DWORD id)
 {
 	ASSERT(pSource);
 
-	if (m_hwndPage && id == jpChannel->getID())
+	if (m_hwndPage && id == m_idChannel)
 		SendMessage(m_hwndPage, WM_COMMAND, IDCANCEL, 0);
 }
 
@@ -1089,9 +1090,9 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 
 			if (m_fAlert) {
 				SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-				if (JClient::s_mapAlert[pSource->m_mUser[pSource->m_idOwn].nStatus].fPlayAlert)
+				if (pSource->m_mUser[pSource->m_idOwn].accessibility.fPlayAlert)
 					pSource->PlaySound(JClientApp::jpApp->strWavAlert.c_str());
-				if (JClient::s_mapAlert[pSource->m_mUser[pSource->m_idOwn].nStatus].fFlashPageSayPrivate
+				if (pSource->m_mUser[pSource->m_idOwn].accessibility.fFlashPageSayPrivate
 					&& Profile::GetInt(RF_CLIENT, RK_FLASHPAGESAYPRIVATE, TRUE)
 					&& !pSource->m_mUser[pSource->m_idOwn].isOnline)
 					FlashWindow(m_hwndPage, TRUE);
@@ -1164,7 +1165,7 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 				{
 					MapUser::const_iterator iu = pSource->m_mUser.find(m_idWho);
 					if (iu == pSource->m_mUser.end()) break;
-					if (JClient::s_mapAlert[iu->second.nStatus].fCanMessage) {
+					if (iu->second.accessibility.fCanMessage) {
 						ASSERT(pSource->m_clientsock);
 						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_MSGSEND), pSource->hwndPage, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JMessageEditor(pSource, iu->second.name, false));
 						DestroyWindow(hWnd);
@@ -1176,7 +1177,7 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 				{
 					MapUser::const_iterator iu = pSource->m_mUser.find(m_idWho);
 					if (iu == pSource->m_mUser.end()) break;
-					if (JClient::s_mapAlert[iu->second.nStatus].fCanOpenPrivate) {
+					if (iu->second.accessibility.fCanOpenPrivate) {
 						ASSERT(pSource->m_clientsock);
 						pSource->Send_Quest_JOIN(pSource->m_clientsock, iu->second.name);
 						DestroyWindow(hWnd);
