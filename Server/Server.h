@@ -197,7 +197,7 @@ namespace colibrichat
 
 		void OnLinkClose(SOCKET sock, UINT err);
 		void OnLinkEstablished(SOCKET sock);
-		void OnLinkPassword(SOCKET sock, const TCHAR* password, const SetAccess& access);
+		void OnLinkStart(SOCKET sock);
 		void OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is);
 
 		// --- Commands ---

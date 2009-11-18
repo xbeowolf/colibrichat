@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\Common"
+				AdditionalIncludeDirectories="..\..\SDK;..\..\Common"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -120,7 +120,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\Common"
+				AdditionalIncludeDirectories="..\..\SDK;..\..\Common"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -195,6 +195,10 @@
 			</File>
 			<File
 				RelativePath=".\dialogs.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\LuaEntry.cpp"
 				>
 			</File>
 			<File
@@ -314,6 +318,10 @@
 				</File>
 				<File
 					RelativePath="..\..\Common\JService.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Common\LuaGluer.h"
 					>
 				</File>
 				<File
@@ -455,6 +463,42 @@
 					>
 				</File>
 			</Filter>
+		</Filter>
+		<Filter
+			Name="Libraries"
+			Filter="lib"
+			>
+			<File
+				RelativePath="..\lib\lua5.1.lib"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Script"
+			Filter="lua;txt;ini;cfg"
+			>
+			<File
+				RelativePath=".\events.lua"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="copy &quot;$(InputPath)&quot; &quot;$(OutDir)\$(InputFileName)&quot;"
+						Outputs="$(OutDir)\$(InputFileName)"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="copy &quot;$(InputPath)&quot; &quot;$(OutDir)\$(InputFileName)&quot;"
+						Outputs="$(OutDir)\$(InputFileName)"
+					/>
+				</FileConfiguration>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

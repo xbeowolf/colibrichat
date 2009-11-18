@@ -525,10 +525,8 @@ void JServer::OnLinkEstablished(SOCKET sock)
 	}
 }
 
-void JServer::OnLinkPassword(SOCKET sock, const TCHAR* password, const SetAccess& access)
+void JServer::OnLinkStart(SOCKET sock)
 {
-	__super::OnLinkPassword(sock, password, access);
-
 	Send_Notify_METRICS(sock, m_metrics);
 }
 

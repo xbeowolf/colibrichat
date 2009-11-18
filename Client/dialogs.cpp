@@ -11,7 +11,6 @@
 
 // Windows API
 #include <strsafe.h>
-#include <richedit.h>
 
 // Common
 #include "stylepr.h"

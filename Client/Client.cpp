@@ -11,7 +11,6 @@
 
 // Windows API
 #include <strsafe.h>
-#include <richedit.h>
 
 // Common
 #include "stylepr.h"
@@ -82,7 +81,6 @@ jpOnline(0)
 	m_clientsock = 0;
 	m_bReconnect = true;
 	m_nConnectCount = 0;
-	m_fAutoopen = true;
 	m_bSendByEnter = true;
 	m_bCheatAnonymous = false;
 
@@ -137,6 +135,16 @@ void CALLBACK JClient::Init()
 {
 	__super::Init();
 
+	// Inits Lua virtual machine
+	m_luaEvents = lua_open();
+	ASSERT(m_luaEvents);
+	luaL_openlibs(m_luaEvents);
+	// register Lua data
+	CLuaGluer<JClient>::Register(m_luaEvents);
+	// insert itself to script
+	setglobal(m_luaEvents, this, "chat");
+	ASSERT(lua_gettop(m_luaEvents) == 0);
+
 	jpOnline = 0;
 	jpPageServer = 0;
 	jpPageList = 0;
@@ -147,12 +155,32 @@ void CALLBACK JClient::Init()
 
 void CALLBACK JClient::Done()
 {
+	if (m_luaEvents) {
+		ASSERT(lua_gettop(m_luaEvents) == 0);
+		// Close Lua virtual machine
+		lua_close(m_luaEvents);
+		m_luaEvents = 0;
+	}
+
 	__super::Done();
 }
 
 int  CALLBACK JClient::Run()
 {
 	__super::Run();
+
+	// process the script
+	if (m_luaEvents) {
+		if (luaL_dofile(m_luaEvents, "events.lua")) {
+			const char* msg = lua_tostring(m_luaEvents, -1);
+			int t = lua_gettop(m_luaEvents);
+			EvReport(tformat(TEXT("Error in script: %s"), ANSIToTstr(msg).c_str()), eError, eTop);
+			// Close Lua virtual machine
+			lua_close(m_luaEvents);
+			m_luaEvents = 0;
+		}
+	}
+	ASSERT(lua_gettop(m_luaEvents) == 0);
 
 	return m_State;
 }
@@ -240,10 +268,12 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			if (State != JService::eInit) Init();
 			Run();
 
-			if (Profile::GetInt(RF_CLIENT, RK_STATE, FALSE))
-				Connect();
-			else
-				EvLog(TEXT("[style=msg]Ready to connect[/style]"), true);
+			// Lua response
+			if (m_luaEvents) {
+				lua_getglobal(m_luaEvents, "wmCreate");
+				ASSERT(lua_gettop(m_luaEvents) == 1);
+				lua_call(m_luaEvents, 0, 0);
+			}
 
 			retval = TRUE;
 			break;
@@ -258,9 +288,12 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			ti.uId = (UINT_PTR)hwndPage;
 			SendMessage(m_hwndBaloon, TTM_DELTOOL, 0, (LPARAM)&ti);
 
-			Profile::WriteInt(RF_CLIENT, RK_STATE, m_clientsock != 0);
-			saveAutoopen();
-			if (m_clientsock != 0) Disconnect();
+			// Lua response
+			if (m_luaEvents) {
+				lua_getglobal(m_luaEvents, "wmDestroy");
+				ASSERT(lua_gettop(m_luaEvents) == 1);
+				lua_call(m_luaEvents, 0, 0);
+			}
 
 			// Close all opened waves
 			MCI_GENERIC_PARMS mci;
@@ -285,7 +318,12 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_ENTERSIZEMOVE:
 		{
-			HideBaloon();
+			// Lua response
+			if (m_luaEvents) {
+				lua_getglobal(m_luaEvents, "wmEnterSizeMove");
+				ASSERT(lua_gettop(m_luaEvents) == 1);
+				lua_call(m_luaEvents, 0, 0);
+			}
 			break;
 		}
 
@@ -347,15 +385,24 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_ACTIVATEAPP:
 		{
-			HideBaloon();
 			// Give opportunity to close application without online status sending
 			PostMessage(hWnd, WM_ACTIVATEAPP2, wParam, lParam);
 			break;
 		}
 
 	case WM_ACTIVATEAPP2:
-		if (jpOnline) jpOnline->activate();
-		if (m_clientsock) Send_Cmd_ONLINE(m_clientsock, wParam != 0 ? eOnline : eOffline, jpOnline ? jpOnline->getID() : 0);
+		{
+			if (jpOnline) jpOnline->activate();
+			if (m_clientsock) Send_Cmd_ONLINE(m_clientsock, wParam != 0 ? eOnline : eOffline, jpOnline ? jpOnline->getID() : 0);
+
+			// Lua response
+			if (m_luaEvents) {
+				lua_getglobal(m_luaEvents, "wmActivateApp");
+				lua_pushboolean(m_luaEvents, wParam != 0);
+				ASSERT(lua_gettop(m_luaEvents) == 2);
+				lua_call(m_luaEvents, 1, 0);
+			}
+		}
 		break;
 
 	case BEM_JDIALOG:
@@ -371,7 +418,14 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_COMMAND:
 		{
-			HideBaloon();
+			// Lua response
+			if (m_luaEvents) {
+				lua_getglobal(m_luaEvents, "wmCommand");
+				lua_pushinteger(m_luaEvents, LOWORD(wParam));
+				ASSERT(lua_gettop(m_luaEvents) == 2);
+				lua_call(m_luaEvents, 1, 0);
+			}
+
 			switch (LOWORD(wParam))
 			{
 			case IDOK:
@@ -605,11 +659,6 @@ void CALLBACK JClient::Connect(bool getsetting)
 		jpPageServer->Enable();
 		EnableWindow(jpPageServer->hwndNick, FALSE);
 	}
-}
-
-void CALLBACK JClient::Disconnect()
-{
-	DeleteLink(m_clientsock);
 }
 
 void CALLBACK JClient::saveAutoopen() const
@@ -1046,7 +1095,12 @@ void JClient::OnLinkConnect(SOCKET sock)
 #endif
 		(m_clientsock, m_password.c_str());
 
-	m_nConnectCount = 0;
+	// Lua response
+	if (m_luaEvents) {
+		lua_getglobal(m_luaEvents, "onLinkConnect");
+		ASSERT(lua_gettop(m_luaEvents) == 1);
+		lua_call(m_luaEvents, 0, 0);
+	}
 }
 
 void JClient::OnLinkClose(SOCKET sock, UINT err)
@@ -1098,10 +1152,8 @@ void JClient::OnLinkFail(SOCKET sock, UINT err)
 	}
 }
 
-void JClient::OnLinkIdentify(SOCKET sock, const SetAccess& access)
+void JClient::OnLinkStart(SOCKET sock)
 {
-	__super::OnLinkIdentify(sock, access);
-
 	std::tstring nickbuf(m_metrics.uNameMaxLength, 0), nick;
 	GetDlgItemText(jpPageServer->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
 	nick = nickbuf.c_str();
@@ -1113,10 +1165,11 @@ void JClient::OnLinkIdentify(SOCKET sock, const SetAccess& access)
 	GetDlgItemText(jpPageServer->hwndPage, IDC_STATUSMSG, &msg[0], (int)msg.size()+1);
 	Send_Cmd_STATUS(sock, stat, m_mAlert[stat], img, msg);
 
-	// Autoopen
-	if (m_fAutoopen) {
-		openAutoopen();
-		m_fAutoopen = false;
+	// Lua response
+	if (m_luaEvents) {
+		lua_getglobal(m_luaEvents, "onLinkStart");
+		ASSERT(lua_gettop(m_luaEvents) == 1);
+		lua_call(m_luaEvents, 0, 0);
 	}
 }
 

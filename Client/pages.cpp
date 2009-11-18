@@ -11,7 +11,6 @@
 
 // Windows API
 #include <strsafe.h>
-#include <richedit.h>
 
 // Common
 #include "stylepr.h"
@@ -213,7 +212,7 @@ void JClient::JPage::OnHook(JEventable* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkIdentify += MakeDelegate(this, &JClient::JPage::OnLinkIdentify);
+	pSource->EvLinkStart += MakeDelegate(this, &JClient::JPage::OnLinkStart);
 	pSource->EvLinkClose += MakeDelegate(this, &JClient::JPage::OnLinkClose);
 }
 
@@ -222,7 +221,7 @@ void JClient::JPage::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
-	pSource->EvLinkIdentify -= MakeDelegate(this, &JClient::JPage::OnLinkIdentify);
+	pSource->EvLinkStart -= MakeDelegate(this, &JClient::JPage::OnLinkStart);
 	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JPage::OnLinkClose);
 
 	__super::OnUnhook(src);
@@ -230,7 +229,7 @@ void JClient::JPage::OnUnhook(JEventable* src)
 	SetSource(0);
 }
 
-void JClient::JPage::OnLinkIdentify(SOCKET sock, const SetAccess& access)
+void JClient::JPage::OnLinkStart(SOCKET sock)
 {
 	ASSERT(pSource);
 	if (m_hwndPage) {
@@ -720,7 +719,7 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 			case IDC_CONNECT:
 				{
 					if (pSource->m_clientsock) {
-						pSource->Disconnect();
+						pSource->DeleteLink(pSource->m_clientsock);
 					} else if (pSource->m_nConnectCount) {
 						pSource->m_nConnectCount = 0;
 						KillTimer(pSource->hwndPage, IDT_CONNECT);
@@ -1302,7 +1301,7 @@ void JClient::JPageList::OnHook(JEventable* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkIdentify += MakeDelegate(this, &JClient::JPageList::OnLinkIdentify);
+	pSource->EvLinkStart += MakeDelegate(this, &JClient::JPageList::OnLinkStart);
 	pSource->EvTransactionProcess += MakeDelegate(this, &JClient::JPageList::OnTransactionProcess);
 	pSource->EvMetrics += MakeDelegate(this, &JClient::JPageList::OnMetrics);
 	pSource->EvTopic += MakeDelegate(this, &JClient::JPageList::OnTopic);
@@ -1314,7 +1313,7 @@ void JClient::JPageList::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
-	pSource->EvLinkIdentify -= MakeDelegate(this, &JClient::JPageList::OnLinkIdentify);
+	pSource->EvLinkStart -= MakeDelegate(this, &JClient::JPageList::OnLinkStart);
 	pSource->EvTransactionProcess -= MakeDelegate(this, &JClient::JPageList::OnTransactionProcess);
 	pSource->EvMetrics -= MakeDelegate(this, &JClient::JPageList::OnMetrics);
 	pSource->EvTopic -= MakeDelegate(this, &JClient::JPageList::OnTopic);
@@ -1323,7 +1322,7 @@ void JClient::JPageList::OnUnhook(JEventable* src)
 	__super::OnUnhook(src);
 }
 
-void JClient::JPageList::OnLinkIdentify(SOCKET sock, const SetAccess& access)
+void JClient::JPageList::OnLinkStart(SOCKET sock)
 {
 	ASSERT(pSource);
 
@@ -1979,7 +1978,7 @@ void JClient::JPageUser::OnHook(JEventable* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkIdentify += MakeDelegate(this, &JClient::JPageUser::OnLinkIdentify);
+	pSource->EvLinkStart += MakeDelegate(this, &JClient::JPageUser::OnLinkStart);
 	pSource->EvLinkClose += MakeDelegate(this, &JClient::JPageUser::OnLinkClose);
 }
 
@@ -1988,13 +1987,13 @@ void JClient::JPageUser::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
-	pSource->EvLinkIdentify -= MakeDelegate(this, &JClient::JPageUser::OnLinkIdentify);
+	pSource->EvLinkStart -= MakeDelegate(this, &JClient::JPageUser::OnLinkStart);
 	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JPageUser::OnLinkClose);
 
 	__super::OnUnhook(src);
 }
 
-void JClient::JPageUser::OnLinkIdentify(SOCKET sock, const SetAccess& access)
+void JClient::JPageUser::OnLinkStart(SOCKET sock)
 {
 	ASSERT(pSource);
 	if (m_hwndPage) {
@@ -2955,7 +2954,7 @@ void JClient::JPageChannel::OnHook(JEventable* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkIdentify += MakeDelegate(this, &JClient::JPageChannel::OnLinkIdentify);
+	pSource->EvLinkStart += MakeDelegate(this, &JClient::JPageChannel::OnLinkStart);
 	pSource->EvLinkClose += MakeDelegate(this, &JClient::JPageChannel::OnLinkClose);
 	pSource->EvTopic += MakeDelegate(this, &JClient::JPageChannel::OnTopic);
 	pSource->EvNick += MakeDelegate(this, &JClient::JPageChannel::OnNick);
@@ -2966,7 +2965,7 @@ void JClient::JPageChannel::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
-	pSource->EvLinkIdentify -= MakeDelegate(this, &JClient::JPageChannel::OnLinkIdentify);
+	pSource->EvLinkStart -= MakeDelegate(this, &JClient::JPageChannel::OnLinkStart);
 	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JPageChannel::OnLinkClose);
 	pSource->EvTopic -= MakeDelegate(this, &JClient::JPageChannel::OnTopic);
 	pSource->EvNick -= MakeDelegate(this, &JClient::JPageChannel::OnNick);
@@ -2974,7 +2973,7 @@ void JClient::JPageChannel::OnUnhook(JEventable* src)
 	__super::OnUnhook(src);
 }
 
-void JClient::JPageChannel::OnLinkIdentify(SOCKET sock, const SetAccess& access)
+void JClient::JPageChannel::OnLinkStart(SOCKET sock)
 {
 	ASSERT(pSource);
 	if (m_hwndPage) {

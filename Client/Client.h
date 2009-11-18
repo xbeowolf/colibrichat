@@ -20,6 +20,9 @@
 // Windows
 #include <Mmsystem.h>
 
+// Lua
+#include "LuaGluer.h"
+
 // Common
 #include "patterns.h"
 #include "app.h"
@@ -157,7 +160,7 @@ namespace colibrichat
 	enum ETimeFormat {etimeNone, etimeHHMM, etimeHHMMSS};
 	enum EAlert {eGreen, eBlue, eYellow, eRed};
 
-	class JClient : public JEngine, public JDialog, protected initdoneable<JClient>
+	class JClient : public JEngine, public JDialog, protected initdoneable<JClient>, protected CLuaGluer<JClient>
 	{
 	public:
 
@@ -221,7 +224,7 @@ namespace colibrichat
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
-			void OnLinkIdentify(SOCKET sock, const SetAccess& access);
+			void OnLinkStart(SOCKET sock);
 			void OnLinkClose(SOCKET sock, UINT err);
 
 		protected:
@@ -338,7 +341,7 @@ namespace colibrichat
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
-			void OnLinkIdentify(SOCKET sock, const SetAccess& access);
+			void OnLinkStart(SOCKET sock);
 			void OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is);
 			void OnMetrics(const Metrics& metrics);
 			void OnTopic(DWORD idWho, DWORD idWhere, const std::tstring& topic);
@@ -421,7 +424,7 @@ namespace colibrichat
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
-			void OnLinkIdentify(SOCKET sock, const SetAccess& access);
+			void OnLinkStart(SOCKET sock);
 			void OnLinkClose(SOCKET sock, UINT err);
 
 		protected:
@@ -476,7 +479,7 @@ namespace colibrichat
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
-			void OnLinkIdentify(SOCKET sock, const SetAccess& access);
+			void OnLinkStart(SOCKET sock);
 			void OnLinkClose(SOCKET sock, UINT err);
 			void OnNick(DWORD idOld, DWORD idNew, const std::tstring& newname);
 			void OnTopic(DWORD idWho, DWORD idWhere, const std::tstring& topic);
@@ -659,6 +662,8 @@ namespace colibrichat
 		// Constructor
 		static void initclass();
 		static void doneclass();
+		static const char className[];
+		static CLuaGluer<JClient>::_tRegType methods[];
 		CALLBACK JClient();
 		DWORD CALLBACK getMinVersion() const {return BNP_ENGINEVERSMIN;}
 		DWORD CALLBACK getCurVersion() const {return BNP_ENGINEVERSNUM;}
@@ -679,7 +684,6 @@ namespace colibrichat
 
 		// Connecting/disconecting to server
 		void CALLBACK Connect(bool getsetting = false);
-		void CALLBACK Disconnect();
 
 		// Autoopen
 		void CALLBACK saveAutoopen() const;
@@ -759,9 +763,24 @@ namespace colibrichat
 		void OnLinkConnect(SOCKET sock);
 		void OnLinkClose(SOCKET sock, UINT err);
 		void OnLinkFail(SOCKET sock, UINT err);
-		void OnLinkIdentify(SOCKET sock, const SetAccess& access);
+		void OnLinkStart(SOCKET sock);
 		void OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is);
 		void OnNick(DWORD idOld, DWORD idNew, const std::tstring& newname);
+
+		// Lua gluer
+		int lua_regFuncs(lua_State *luaVM);
+		int lua_getGlobal(lua_State *luaVM);
+		int lua_getVars(lua_State *luaVM);
+		int lua_setVars(lua_State *luaVM);
+		int lua_PlaySound(lua_State *luaVM);
+		int lua_ShowTopic(lua_State *luaVM);
+		int lua_saveAutoopen(lua_State *luaVM);
+		int lua_openAutoopen(lua_State *luaVM);
+		int lua_Log(lua_State *luaVM);
+		int lua_HideBaloon(lua_State *luaVM);
+		int lua_Connect(lua_State *luaVM);
+		int lua_Disconnect(lua_State *luaVM);
+		int lua_getSocket(lua_State *luaVM);
 
 	public:
 
@@ -817,6 +836,9 @@ namespace colibrichat
 		JPROPERTY_RREF_CONST(std::set<MCIDEVICEID>, wDeviceID);
 
 		JPROPERTY_RREF_CONST(Metrics, metrics);
+
+		// Lua managment
+		JPROPERTY_R(lua_State*, luaEvents);
 	};
 
 	class JClientApp : public JApplication // Singleton
