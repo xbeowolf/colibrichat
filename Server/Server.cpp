@@ -9,9 +9,6 @@
 
 #include "stdafx.h"
 
-// Windows API
-#include <strsafe.h>
-
 // Common
 #include "dCRC.h"
 #include "Profile.h"
@@ -41,9 +38,10 @@ CALLBACK JServer::JServer()
 {
 	// Dialogs
 	jpConnections = new JConnections();
+	jpPasswords = new JPasswords();
 
 	m_port = CCP_PORT;
-	m_password = TEXT("beowolf");
+	m_passwordNet = TEXT("beowolf");
 
 	m_bShowIcon = true;
 
@@ -53,12 +51,15 @@ CALLBACK JServer::JServer()
 	m_metrics.uTopicMaxLength = 100;
 	m_metrics.nMsgSpinMaxCount = 20;
 	m_metrics.uChatLineMaxVolume = 80*1024;
+	m_metrics.flags.bTransmitClipboard = true;
 }
 
 void CALLBACK JServer::Init()
 {
 	jpConnections->SetSource(this);
 	jpConnections->SetupHooks();
+	jpPasswords->SetSource(this);
+	jpPasswords->SetupHooks();
 
 	__super::Init();
 
@@ -112,7 +113,9 @@ BOOL CALLBACK JServer::DestroyMsgWindow()
 
 void CALLBACK JServer::LoadState()
 {
-	m_password = Profile::GetString(RF_SERVER, RK_PASSWORD, TEXT("beowolf"));
+	m_passwordNet = Profile::GetString(RF_SERVER, RK_PASSWORDNET, TEXT("beowolf"));
+	m_passwordGod = Profile::GetString(RF_SERVER, RK_PASSWORDGOD, TEXT("godpassword"));
+	m_passwordDevil = Profile::GetString(RF_SERVER, RK_PASSWORDDEVIL, TEXT("devilpassword"));
 
 	m_bShowIcon = Profile::GetInt(RF_SERVER, RK_SHOWICON, TRUE) != 0;
 
@@ -122,16 +125,22 @@ void CALLBACK JServer::LoadState()
 	m_metrics.uTopicMaxLength = (size_t)Profile::GetInt(RF_METRICS, RK_TopicMaxLength, 100);
 	m_metrics.nMsgSpinMaxCount = (size_t)Profile::GetInt(RF_METRICS, RK_MsgSpinMaxCount, 20);
 	m_metrics.uChatLineMaxVolume = (size_t)Profile::GetInt(RF_METRICS, RK_ChatLineMaxVolume, 80*1024);
+	m_metrics.flags.bTransmitClipboard = Profile::GetInt(RF_METRICS, RK_TransmitClipboard, true) != 0;
 }
 
 void CALLBACK JServer::SaveState()
 {
+	Profile::WriteString(RF_SERVER, RK_PASSWORDNET, m_passwordNet.c_str());
+	Profile::WriteString(RF_SERVER, RK_PASSWORDGOD, m_passwordGod.c_str());
+	Profile::WriteString(RF_SERVER, RK_PASSWORDDEVIL, m_passwordDevil.c_str());
+
 	Profile::WriteInt(RF_METRICS, RK_NameMaxLength, (UINT)m_metrics.uNameMaxLength);
 	Profile::WriteInt(RF_METRICS, RK_PassMaxLength, (UINT)m_metrics.uPassMaxLength);
 	Profile::WriteInt(RF_METRICS, RK_StatusMsgMaxLength, (UINT)m_metrics.uStatusMsgMaxLength);
 	Profile::WriteInt(RF_METRICS, RK_TopicMaxLength, (UINT)m_metrics.uTopicMaxLength);
 	Profile::WriteInt(RF_METRICS, RK_MsgSpinMaxCount, (UINT)m_metrics.nMsgSpinMaxCount);
 	Profile::WriteInt(RF_METRICS, RK_ChatLineMaxVolume, (UINT)m_metrics.uChatLineMaxVolume);
+	Profile::WriteInt(RF_METRICS, RK_TransmitClipboard, (UINT)m_metrics.flags.bTransmitClipboard);
 }
 
 LRESULT WINAPI JServer::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -188,6 +197,12 @@ LRESULT WINAPI JServer::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			case IDC_SHELL_CONNECTIONS:
 				{
 					Connections();
+					break;
+				}
+
+			case IDC_SHELL_PASSWORDS:
+				{
+					Passwords();
 					break;
 				}
 
@@ -261,7 +276,7 @@ bool CALLBACK JServer::CheckAccess(const TCHAR* password, SetAccess& access) con
 {
 	if (!password) {
 		__super::CheckAccess(password, access);
-	} else if (m_password == password || m_password.empty()) {
+	} else if (m_passwordNet == password || m_passwordNet.empty()) {
 		access.insert(BNPM_MESSAGE);
 	} else return false;
 	return true;
@@ -274,6 +289,8 @@ bool CALLBACK JServer::hasCRC(DWORD crc) const
 		crc == CRC_LIST ||
 		crc == CRC_NONAME ||
 		crc == CRC_ANONYMOUS ||
+		crc == CRC_GOD ||
+		crc == CRC_DEVIL ||
 		m_mUser.find(crc) != m_mUser.end() ||
 		m_mChannel.find(crc) != m_mChannel.end();
 }
@@ -350,7 +367,7 @@ std::tstring CALLBACK JServer::getNearestName(const std::tstring& nick) const
 	TCHAR digits[16];
 	DWORD i = 0;
 	while (hasCRC(dCRC(buffer.c_str()))) {
-		StringCchPrintf(digits, _countof(digits), TEXT("%u"), i);
+		_stprintf_s(digits, _countof(digits), TEXT("%u"), i);
 		buffer = nick.substr(0, m_metrics.uNameMaxLength - lstrlen(digits)) + digits;
 		i++;
 	}
@@ -501,7 +518,7 @@ void JServer::OnLinkClose(SOCKET sock, UINT err)
 		tnid.uID = 1;
 		tnid.uFlags = NIF_TIP;
 		tnid.uVersion = NOTIFYICON_VERSION;
-		StringCchPrintf(tnid.szTip, _countof(tnid.szTip), APPNAME TEXT("\n%u connections"), countEstablished());
+		_stprintf_s(tnid.szTip, _countof(tnid.szTip), APPNAME TEXT("\n%u connections"), countEstablished());
 		Shell_NotifyIcon(NIM_MODIFY, &tnid);
 	}
 }
@@ -520,7 +537,7 @@ void JServer::OnLinkEstablished(SOCKET sock)
 		tnid.uID = 1;
 		tnid.uFlags = NIF_TIP;
 		tnid.uVersion = NOTIFYICON_VERSION;
-		StringCchPrintf(tnid.szTip, _countof(tnid.szTip), APPNAME TEXT("\n%u connections"), countEstablished());
+		_stprintf_s(tnid.szTip, _countof(tnid.szTip), APPNAME TEXT("\n%u connections"), countEstablished());
 		Shell_NotifyIcon(NIM_MODIFY, &tnid);
 	}
 }
@@ -692,78 +709,106 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 
 	DWORD idDst = dCRC(name.c_str());
 	DWORD idSrc = m_mSocketId[sock];
-	MapUser::const_iterator iu = m_mUser.find(idDst);
-	if (iu != m_mUser.end() && type & eUser) { // private talk
-		if (iu->second.opened.find(idDst) == iu->second.opened.end()) {
-			Send_Reply_JOIN_User(sock, trnid, idDst, iu->second);
-			Send_Notify_JOIN(m_mIdSocket[idDst], idSrc, idDst, m_mUser[idSrc]);
-			linkCRC(idDst, idSrc);
+	if (name == NAME_GOD && type & eCheat) {
+		if (pass == m_passwordGod) {
+			MapUser::iterator iu = m_mUser.find(idSrc);
+			if (iu != m_mUser.end()) {
+				iu->second.cheat.isGod = !iu->second.cheat.isGod;
+				SetId set = iu->second.opened;
+				set.insert(iu->first);
+				Broadcast_Notify_STATUS_God(set, iu->first, iu->second.cheat.isGod);
+				Send_Reply_JOIN_Result(sock, trnid, CHAN_OK, eCheat, idDst);
+			}
 		} else {
-			Send_Reply_JOIN_Result(sock, trnid, CHAN_ALREADY, eUser, idDst);
+			Send_Reply_JOIN_Result(sock, trnid, CHAN_BADPASS, eCheat, idDst);
+		}
+	} else if (name == NAME_DEVIL && type & eCheat) {
+		if (pass == passwordDevil) {
+			MapUser::iterator iu = m_mUser.find(idSrc);
+			if (iu != m_mUser.end()) {
+				iu->second.cheat.isDevil = !iu->second.cheat.isDevil;
+				SetId set = iu->second.opened;
+				set.insert(iu->first);
+				Broadcast_Notify_STATUS_Devil(set, iu->first, iu->second.cheat.isDevil);
+				Send_Reply_JOIN_Result(sock, trnid, CHAN_OK, eCheat, idDst);
+			}
+		} else {
+			Send_Reply_JOIN_Result(sock, trnid, CHAN_BADPASS, eCheat, idDst);
 		}
 	} else {
-		MapChannel::iterator ic = m_mChannel.find(idDst);
-		if (ic != m_mChannel.end() && type & eChannel) { // channel
-			if (ic->second.opened.find(idSrc) == ic->second.opened.end()) {
+		MapUser::const_iterator iu = m_mUser.find(idDst);
+		if (iu != m_mUser.end() && type & eUser) { // private talk
+			if (iu->second.opened.find(idDst) == iu->second.opened.end()) {
+				Send_Reply_JOIN_User(sock, trnid, idDst, iu->second);
+				Send_Notify_JOIN(m_mIdSocket[idDst], idSrc, idDst, m_mUser[idSrc]);
+				linkCRC(idDst, idSrc);
+			} else {
+				Send_Reply_JOIN_Result(sock, trnid, CHAN_ALREADY, eUser, idDst);
+			}
+		} else {
+			MapChannel::iterator ic = m_mChannel.find(idDst);
+			if (ic != m_mChannel.end() && type & eChannel) { // channel
+				if (ic->second.opened.find(idSrc) == ic->second.opened.end()) {
 #ifdef CHEATS
-				if (ic->second.opened.size() < ic->second.nLimit || isGod(idSrc)) {
+					if (ic->second.opened.size() < ic->second.nLimit || isGod(idSrc)) {
 #else
-				if (ic->second.opened.size() < ic->second.nLimit) {
+					if (ic->second.opened.size() < ic->second.nLimit) {
 #endif
 #ifdef CHEATS
-					if (ic->second.nAutoStatus > eOutsider || isGod(idSrc)) {
+						if (ic->second.nAutoStatus > eOutsider || isGod(idSrc)) {
 #else
-					if (ic->second.nAutoStatus > eOutsider) {
+						if (ic->second.nAutoStatus > eOutsider) {
 #endif
 #ifdef CHEATS
-						if (ic->second.password.empty() || ic->second.password == pass || isGod(idSrc)) {
+							if (ic->second.password.empty() || ic->second.password == pass || isGod(idSrc)) {
 #else
-						if (ic->second.password.empty() || ic->second.password == pass) {
+							if (ic->second.password.empty() || ic->second.password == pass) {
 #endif
-							if (ic->second.getStatus(idSrc) == eOutsider) { // give default status if user never been on channel
-								ic->second.setStatus(idSrc, ic->second.nAutoStatus > eOutsider
-									? ic->second.nAutoStatus
-									: eWriter);
+								if (ic->second.getStatus(idSrc) == eOutsider) { // give default status if user never been on channel
+									ic->second.setStatus(idSrc, ic->second.nAutoStatus > eOutsider
+										? ic->second.nAutoStatus
+										: eWriter);
+								}
+								Broadcast_Notify_JOIN(ic->second.opened, idSrc, idDst, m_mUser[idSrc]);
+								linkCRC(idDst, idSrc);
+								Send_Reply_JOIN_Channel(sock, trnid, idDst, ic->second);
+							} else {
+								Send_Reply_JOIN_Result(sock, trnid, CHAN_BADPASS, eChannel, idDst);
 							}
-							Broadcast_Notify_JOIN(ic->second.opened, idSrc, idDst, m_mUser[idSrc]);
-							linkCRC(idDst, idSrc);
-							Send_Reply_JOIN_Channel(sock, trnid, idDst, ic->second);
 						} else {
-							Send_Reply_JOIN_Result(sock, trnid, CHAN_BADPASS, eChannel, idDst);
+							Send_Reply_JOIN_Result(sock, trnid, CHAN_DENY, eChannel, idDst);
 						}
 					} else {
-						Send_Reply_JOIN_Result(sock, trnid, CHAN_DENY, eChannel, idDst);
+						Send_Reply_JOIN_Result(sock, trnid, CHAN_LIMIT, eChannel, idDst);
 					}
 				} else {
-					Send_Reply_JOIN_Result(sock, trnid, CHAN_LIMIT, eChannel, idDst);
+					Send_Reply_JOIN_Result(sock, trnid, CHAN_ALREADY, eChannel, idDst);
 				}
-			} else {
-				Send_Reply_JOIN_Result(sock, trnid, CHAN_ALREADY, eChannel, idDst);
+			} else { // create new channel if nothing was found
+				if (type & eChannel) {
+					FILETIME ft;
+					GetSystemFileTime(ft);
+
+					Channel chan;
+					chan.name = name;
+					chan.ftCreation = ft;
+					chan.password = pass;
+					chan.topic = TEXT("");
+					chan.idTopicWriter = 0;
+					chan.nAutoStatus = eWriter;
+					chan.nLimit = -1;
+					chan.isHidden = false;
+					chan.isAnonymous = false;
+					chan.crBackground = RGB(0xFF, 0xFF, 0xFF);
+
+					chan.setStatus(idSrc, eFounder);
+					m_mChannel[idDst] = chan;
+					linkCRC(idDst, idSrc);
+					Send_Reply_JOIN_Channel(sock, trnid, idDst, m_mChannel[idDst]);
+				} else if (type & eBoard) {
+					Send_Reply_JOIN_Result(sock, trnid, CHAN_ABSENT, eBoard, idDst);
+				} else Send_Reply_JOIN_Result(sock, trnid, CHAN_ABSENT, (EContact)type, idDst);
 			}
-		} else { // create new channel if nothing was found
-			if (type & eChannel) {
-				FILETIME ft;
-				GetSystemFileTime(ft);
-
-				Channel chan;
-				chan.name = name;
-				chan.ftCreation = ft;
-				chan.password = pass;
-				chan.topic = TEXT("");
-				chan.idTopicWriter = 0;
-				chan.nAutoStatus = eWriter;
-				chan.nLimit = -1;
-				chan.isHidden = false;
-				chan.isAnonymous = false;
-				chan.crBackground = RGB(0xFF, 0xFF, 0xFF);
-
-				chan.setStatus(idSrc, eFounder);
-				m_mChannel[idDst] = chan;
-				linkCRC(idDst, idSrc);
-				Send_Reply_JOIN_Channel(sock, trnid, idDst, m_mChannel[idDst]);
-			} else if (type & eBoard) {
-				Send_Reply_JOIN_Result(sock, trnid, CHAN_ABSENT, eBoard, idDst);
-			} else Send_Reply_JOIN_Result(sock, trnid, CHAN_ABSENT, (EContact)type, idDst);
 		}
 	}
 
@@ -1227,9 +1272,9 @@ void CALLBACK JServer::Recv_Cmd_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& is)
 	MapUser::const_iterator iu = m_mUser.find(idWho);
 	if (iu != m_mUser.end()) { // private talk
 #ifdef CHEATS
-		if (iu->second.accessibility.fCanRecvClipboard || isGod(idBy))
+		if ((m_metrics.flags.bTransmitClipboard && iu->second.accessibility.fCanRecvClipboard) || isGod(idBy))
 #else
-		if (iu->second.accessibility.fCanRecvClipboard)
+		if (m_metrics.flags.bTransmitClipboard && iu->second.accessibility.fCanRecvClipboard)
 #endif
 			Send_Notify_CLIPBOARD(m_mIdSocket[idWho], idBy, (const char*)ptr, size);
 	} else {
@@ -1619,6 +1664,17 @@ void CALLBACK JServer::Connections()
 	}
 }
 
+void CALLBACK JServer::Passwords()
+{
+	if (m_hwndPage)
+	{
+		if (jpPasswords->hwndPage)
+			SetForegroundWindow(jpPasswords->hwndPage);
+		else
+			CreateDialogParam(JServerApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_PASSWORDS), m_hwndPage, JPasswords::DlgProcStub, (LPARAM)(JDialog*)jpPasswords);
+	}
+}
+
 void CALLBACK JServer::About()
 {
 	if (m_hwndPage && m_bShowIcon)
@@ -1667,6 +1723,9 @@ void CALLBACK JServerApp::Init()
 	VERIFY(RegisterClass(&MsgClass));
 
 	Profile::SetKey(TEXT("BEOWOLF"), APPNAME);
+
+	hiMain16 = LoadIcon(hinstApp, MAKEINTRESOURCE(IDI_SMALL));
+	hiMain32 = LoadIcon(hinstApp, MAKEINTRESOURCE(IDI_SERVER));
 
 	// Load popup menus
 	m_hmenuConnections = LoadMenu(hinstApp, MAKEINTRESOURCE(IDM_CONNECTIONS));

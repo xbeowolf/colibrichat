@@ -39,7 +39,7 @@
 #define APPDATE                TEXT(__DATE__)
 #define APPDATEW               WTEXT(__DATE__)
 #define APPDATEA               ATEXT(__DATE__)
-#define APPVER                 TEXT("1.0")
+#define APPVER                 TEXT("1.1")
 
 //
 // Register
@@ -54,7 +54,7 @@
 #define RK_NICK                TEXT("Nickname")
 #define RK_HOST                TEXT("Host")
 #define RK_PORT                TEXT("Port")
-#define RK_PASSWORD            TEXT("Password")
+#define RK_PASSWORDNET         TEXT("PasswordNetEngine")
 #define RK_STATE               TEXT("ConnectionState")
 #define RK_STATUS              TEXT("Status")
 #define RK_STATUSIMG           TEXT("StatusImage")
@@ -241,9 +241,9 @@ namespace colibrichat
 
 			HWND getDefFocusWnd() const {return m_hwndLog;}
 
-			void CALLBACK AppendRtf(const std::string& content) const;
+			void CALLBACK AppendRtf(std::string& content, bool toascii = false) const;
 			void CALLBACK AppendScript(const std::tstring& content, bool withtime = true) const;
-			virtual void CALLBACK Say(DWORD idUser, const std::string& content);
+			virtual void CALLBACK Say(DWORD idWho, std::string& content);
 
 		protected:
 
@@ -345,7 +345,7 @@ namespace colibrichat
 			void OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is);
 			void OnMetrics(const Metrics& metrics);
 			void OnTopic(DWORD idWho, DWORD idWhere, const std::tstring& topic);
-			void OnNick(DWORD idOld, DWORD idNew, const std::tstring& newname);
+			void OnNick(DWORD idOld, const std::tstring& oldname, DWORD idNew, const std::tstring& newname);
 
 		protected:
 
@@ -373,7 +373,7 @@ namespace colibrichat
 
 			DWORD CALLBACK getID() const {return m_ID;}
 
-			void CALLBACK Say(DWORD idUser, const std::string& content);
+			void CALLBACK Say(DWORD idWho, std::string& content);
 			virtual bool CALLBACK CanSend() const {return true;}
 
 		protected:
@@ -461,8 +461,8 @@ namespace colibrichat
 			bool CALLBACK replace(DWORD idOld, DWORD idNew);
 			void CALLBACK redrawUser(DWORD idUser);
 
-			void CALLBACK Join(DWORD idUser);
-			void CALLBACK Part(DWORD idUser, DWORD idBy);
+			void CALLBACK Join(DWORD idWho);
+			void CALLBACK Part(DWORD idWho, DWORD idBy);
 
 			int  CALLBACK indexIcon(DWORD idUser) const;
 			MapUser::const_iterator getSelUser() const;
@@ -481,7 +481,7 @@ namespace colibrichat
 
 			void OnLinkStart(SOCKET sock);
 			void OnLinkClose(SOCKET sock, UINT err);
-			void OnNick(DWORD idOld, DWORD idNew, const std::tstring& newname);
+			void OnNick(DWORD idOld, const std::tstring& oldname, DWORD idNew, const std::tstring& newname);
 			void OnTopic(DWORD idWho, DWORD idWhere, const std::tstring& topic);
 
 		protected:
@@ -694,9 +694,10 @@ namespace colibrichat
 		int  CALLBACK ContactAdd(const std::tstring& name, DWORD id, EContact type);
 		void CALLBACK ContactDel(DWORD id);
 		void CALLBACK ContactSel(int index);
-		void CALLBACK ContactRename(DWORD idOld, DWORD idNew, const std::tstring& newname);
+		void CALLBACK ContactRename(DWORD idOld, const std::tstring& oldname, DWORD idNew, const std::tstring& newname);
 		int  CALLBACK getTabIndex(DWORD id);
 		JPtr<JPage> CALLBACK getPage(DWORD id);
+		JPtr<JPageLog> CALLBACK getPageLog(DWORD id);
 		static bool CALLBACK CheckNick(std::tstring& nick, const TCHAR*& msg);
 		void CALLBACK ShowTopic(const std::tstring& topic);
 
@@ -738,7 +739,7 @@ namespace colibrichat
 
 		// Beowolf Network Protocol Messages sending
 		void CALLBACK Send_Cmd_NICK(SOCKET sock, DWORD idWho, const std::tstring& nick);
-		void CALLBACK Send_Quest_JOIN(SOCKET sock, const std::tstring& name, const std::tstring& pass = TEXT(""), int type = eUser | eChannel | eBoard);
+		void CALLBACK Send_Quest_JOIN(SOCKET sock, const std::tstring& name, const std::tstring& pass = TEXT(""), int type = eCheat | eUser | eChannel | eBoard);
 		void CALLBACK Send_Cmd_PART(SOCKET sock, DWORD idWho, DWORD idWhere);
 		void CALLBACK Send_Quest_USERINFO(SOCKET sock, const SetId& set);
 		void CALLBACK Send_Cmd_ONLINE(SOCKET sock, EOnline online, DWORD id);
@@ -765,7 +766,7 @@ namespace colibrichat
 		void OnLinkFail(SOCKET sock, UINT err);
 		void OnLinkStart(SOCKET sock);
 		void OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is);
-		void OnNick(DWORD idOld, DWORD idNew, const std::tstring& newname);
+		void OnNick(DWORD idOld, const std::tstring& oldname, DWORD idNew, const std::tstring& newname);
 
 		// Lua gluer
 		int lua_regFuncs(lua_State *luaVM);
@@ -780,7 +781,24 @@ namespace colibrichat
 		int lua_HideBaloon(lua_State *luaVM);
 		int lua_Connect(lua_State *luaVM);
 		int lua_Disconnect(lua_State *luaVM);
+		int lua_getConnectCount(lua_State *luaVM);
+		int lua_setConnectCount(lua_State *luaVM);
 		int lua_getSocket(lua_State *luaVM);
+		int lua_checkConnectionButton(lua_State *luaVM);
+		int lua_WaitConnectStart(lua_State *luaVM);
+		int lua_WaitConnectStop(lua_State *luaVM);
+		int lua_MinimizeWindow(lua_State *luaVM);
+		int lua_MaximizeWindow(lua_State *luaVM);
+		int lua_RestoreWindow(lua_State *luaVM);
+		int lua_FlashWindow(lua_State *luaVM);
+		int lua_DestroyWindow(lua_State *luaVM);
+		int lua_PageEnable(lua_State *luaVM);
+		int lua_PageDisable(lua_State *luaVM);
+		int lua_PageAppendScript(lua_State *luaVM);
+		int lua_Say(lua_State *luaVM);
+		int lua_Message(lua_State *luaVM);
+		int lua_Alert(lua_State *luaVM);
+		int lua_Beep(lua_State *luaVM);
 
 	public:
 
@@ -795,7 +813,7 @@ namespace colibrichat
 		// Events on transactions
 		fastdelegate::FastDelegateList1<const Metrics&>
 			EvMetrics;
-		fastdelegate::FastDelegateList3<DWORD, DWORD, const std::tstring&>
+		fastdelegate::FastDelegateList4<DWORD, const std::tstring&, DWORD, const std::tstring&>
 			EvNick;
 		fastdelegate::FastDelegateList3<DWORD, DWORD, const std::tstring&>
 			EvTopic;
@@ -808,7 +826,7 @@ namespace colibrichat
 		JPROPERTY_R(SOCKET, clientsock);
 		JPROPERTY_RREF_CONST(std::string, hostname);
 		JPROPERTY_R(u_short, port);
-		JPROPERTY_RREF_CONST(std::tstring, password);
+		JPROPERTY_RREF_CONST(std::tstring, passwordNet);
 		JPROPERTY_R(bool, bReconnect);
 		JPROPERTY_R(int, nConnectCount);
 

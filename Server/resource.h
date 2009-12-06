@@ -14,6 +14,17 @@
 #define IDR_MENU1                       111
 #define IDR_MENU2                       113
 #define IDM_CONNECTIONS                 113
+#define IDD_PASSWORDS                   114
+#define IDS_PASS_NET                    120
+#define IDS_STRING121                   121
+#define IDS_PASS_GOD                    121
+#define IDS_PASS_DEVIL                  122
+#define IDC_PASSWORDNET1                1001
+#define IDC_PASSWORDNET2                1002
+#define IDC_PASSWORDGOD1                1003
+#define IDC_PASSWORDGOD2                1004
+#define IDC_PASSWORDDEVIL1              1005
+#define IDC_PASSWORDDEVIL2              1006
 #define ID_OVERLAP_CONNECTIONS          40007
 #define ID_OVERLAP_ABOUT                40008
 #define ID_OVERLAP_EXIT                 40009
@@ -28,14 +39,17 @@
 #define IDC_GODMODE                     40018
 #define ID_OVERLAP_DEVILMODE            40019
 #define IDC_DEVILMODE                   40020
+#define ID_OVERLAP_PASSWORDS            40021
+#define IDC_PASSWORDS                   40022
+#define IDC_SHELL_PASSWORDS             40023
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        114
-#define _APS_NEXT_COMMAND_VALUE         40021
-#define _APS_NEXT_CONTROL_VALUE         1001
+#define _APS_NEXT_RESOURCE_VALUE        115
+#define _APS_NEXT_COMMAND_VALUE         40024
+#define _APS_NEXT_CONTROL_VALUE         1003
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -9,9 +9,6 @@
 
 #include "stdafx.h"
 
-// Windows API
-#include <strsafe.h>
-
 // Common
 #include "dCRC.h"
 #include "Profile.h"
@@ -72,6 +69,10 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				retval = FALSE;
 				break;
 			}
+
+			// Set main window icons
+			SNDMSG(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)JServerApp::jpApp->hiMain16);
+			SNDMSG(hWnd, WM_SETICON, ICON_BIG, (LPARAM)JServerApp::jpApp->hiMain32);
 
 			ListView_SetExtendedListViewStyle(m_hwndList,
 				LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_HEADERDRAGDROP | LVS_EX_ONECLICKACTIVATE | LVS_EX_SUBITEMIMAGES);
@@ -222,30 +223,30 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 							{
 							case 0:
 								if (iu != pSource->mUser.end()) {
-									StringCchPrintf(buffer, _countof(buffer),
+									_stprintf_s(buffer, _countof(buffer),
 										iu->second.name.c_str());
 								} else {
-									StringCchPrintf(buffer, _countof(buffer), TEXT("N/A"));
+									_stprintf_s(buffer, _countof(buffer), TEXT("N/A"));
 								}
 								pnmv->item.pszText = buffer;
 								break;
 
 							case 1:
 								if (iu != pSource->mUser.end()) {
-									StringCchPrintf(buffer, _countof(buffer),
+									_stprintf_s(buffer, _countof(buffer),
 										TEXT("0x%08X"), iid->second);
 								} else {
-									StringCchPrintf(buffer, _countof(buffer), TEXT("N/A"));
+									_stprintf_s(buffer, _countof(buffer), TEXT("N/A"));
 								}
 								pnmv->item.pszText = buffer;
 								break;
 
 							case 2:
 								if (iu != pSource->mUser.end()) {
-									StringCchPrintf(buffer, _countof(buffer), TEXT("%u"),
+									_stprintf_s(buffer, _countof(buffer), TEXT("%u"),
 										iu->second.opened.size());
 								} else {
-									StringCchPrintf(buffer, _countof(buffer), TEXT("N/A"));
+									_stprintf_s(buffer, _countof(buffer), TEXT("N/A"));
 								}
 								pnmv->item.pszText = buffer;
 								break;
@@ -259,7 +260,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 								break;
 
 							case 5:
-								StringCchPrintf(buffer, _countof(buffer),
+								_stprintf_s(buffer, _countof(buffer),
 									TEXT("%i.%i.%i.%i"),
 									iter->second.m_saAddr.sin_addr.S_un.S_un_b.s_b1,
 									iter->second.m_saAddr.sin_addr.S_un.S_un_b.s_b2,
@@ -273,7 +274,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 									SYSTEMTIME st;
 									FileTimeToLocalTime(iter->second.ftTime, st);
 
-									StringCchPrintf(buffer, _countof(buffer),
+									_stprintf_s(buffer, _countof(buffer),
 										TEXT("%02i:%02i:%02i, %02i.%02i.%04i"),
 										st.wHour, st.wMinute, st.wSecond,
 										st.wDay, st.wMonth, st.wYear);
@@ -476,6 +477,135 @@ void JServer::JConnections::OnLinkClose(SOCKET sock, UINT err)
 {
 	ASSERT(pSource);
 	if (m_hwndPage) DelLine(sock);
+}
+
+//
+// JPasswords
+//
+
+CALLBACK JServer::JPasswords::JPasswords()
+: JAttachedDialog<JServer>()
+{
+}
+
+LRESULT WINAPI JServer::JPasswords::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	LRESULT retval = TRUE;
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		{
+			if (!pSource)
+			{
+				retval = FALSE;
+				break;
+			}
+
+			// Set main window icons
+			SNDMSG(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)JServerApp::jpApp->hiMain16);
+			SNDMSG(hWnd, WM_SETICON, ICON_BIG, (LPARAM)JServerApp::jpApp->hiMain32);
+
+			SetDlgItemText(m_hwndPage, IDC_PASSWORDNET1, pSource->m_passwordNet.c_str());
+			SetDlgItemText(m_hwndPage, IDC_PASSWORDNET2, pSource->m_passwordNet.c_str());
+			SetDlgItemText(m_hwndPage, IDC_PASSWORDGOD1, pSource->m_passwordGod.c_str());
+			SetDlgItemText(m_hwndPage, IDC_PASSWORDGOD2, pSource->m_passwordGod.c_str());
+			SetDlgItemText(m_hwndPage, IDC_PASSWORDDEVIL1, pSource->m_passwordDevil.c_str());
+			SetDlgItemText(m_hwndPage, IDC_PASSWORDDEVIL2, pSource->m_passwordDevil.c_str());
+
+			OnMetrics(pSource->m_metrics);
+
+			retval = TRUE;
+			break;
+		}
+
+	case WM_DESTROY:
+		{
+			break;
+		}
+
+	case WM_ACTIVATE:
+		if (JServerApp::jpApp)
+		{
+			JServerApp::jpApp->hdlgCurrent = wParam ? hWnd : 0;
+			JServerApp::jpApp->haccelCurrent = 0;
+		}
+		break;
+
+	case WM_COMMAND:
+		{
+			switch (LOWORD(wParam))
+			{
+			case IDOK:
+				{
+					std::tstring buffer1(pSource->m_metrics.uPassMaxLength, 0);
+					std::tstring buffer2(pSource->m_metrics.uPassMaxLength, 0);
+					GetDlgItemText(m_hwndPage, IDC_PASSWORDNET1, (TCHAR*)buffer1.data(), (int)buffer1.size() + 1);
+					GetDlgItemText(m_hwndPage, IDC_PASSWORDNET2, (TCHAR*)buffer2.data(), (int)buffer2.size() + 1);
+					if (buffer1 == buffer2) {
+						std::tstring buffer1(pSource->m_metrics.uPassMaxLength, 0);
+						std::tstring buffer2(pSource->m_metrics.uPassMaxLength, 0);
+						GetDlgItemText(m_hwndPage, IDC_PASSWORDGOD1, (TCHAR*)buffer1.data(), (int)buffer1.size() + 1);
+						GetDlgItemText(m_hwndPage, IDC_PASSWORDGOD2, (TCHAR*)buffer2.data(), (int)buffer2.size() + 1);
+						if (buffer1 == buffer2) {
+							std::tstring buffer1(pSource->m_metrics.uPassMaxLength, 0);
+							std::tstring buffer2(pSource->m_metrics.uPassMaxLength, 0);
+							GetDlgItemText(m_hwndPage, IDC_PASSWORDDEVIL1, (TCHAR*)buffer1.data(), (int)buffer1.size() + 1);
+							GetDlgItemText(m_hwndPage, IDC_PASSWORDDEVIL2, (TCHAR*)buffer2.data(), (int)buffer2.size() + 1);
+							if (buffer1 == buffer2) {
+							} else {
+								MessageBox(m_hwndPage, JServerApp::jpApp->LoadStringW(IDS_PASS_DEVIL).c_str(), JServerApp::jpApp->sAppName.c_str(), MB_OK | MB_ICONEXCLAMATION);
+								SetFocus(GetDlgItem(m_hwndPage, IDC_PASSWORDDEVIL1));
+								break;
+							}
+							pSource->m_passwordDevil = buffer1.c_str();
+						} else {
+							MessageBox(m_hwndPage, JServerApp::jpApp->LoadStringW(IDS_PASS_GOD).c_str(), JServerApp::jpApp->sAppName.c_str(), MB_OK | MB_ICONEXCLAMATION);
+							SetFocus(GetDlgItem(m_hwndPage, IDC_PASSWORDGOD1));
+							break;
+						}
+						pSource->m_passwordGod = buffer1.c_str();
+					} else {
+						MessageBox(m_hwndPage, JServerApp::jpApp->LoadStringW(IDS_PASS_NET).c_str(), JServerApp::jpApp->sAppName.c_str(), MB_OK | MB_ICONEXCLAMATION);
+						SetFocus(GetDlgItem(m_hwndPage, IDC_PASSWORDNET1));
+						break;
+					}
+					pSource->m_passwordNet = buffer1.c_str();
+
+					DestroyWindow(hWnd);
+					break;
+				}
+
+			case IDCANCEL:
+				DestroyWindow(hWnd);
+				break;
+
+			default: retval = FALSE;
+			}
+			break;
+		}
+
+	case WM_HELP:
+		{
+			//WinHelp(hWnd, szHelpFile, HELP_CONTEXTPOPUP, ((LPHELPINFO)lParam)->dwContextId);
+			break;
+		}
+
+	default: retval = FALSE;
+	}
+	return retval;
+}
+
+void JServer::JPasswords::OnMetrics(const Metrics& metrics)
+{
+	ASSERT(pSource);
+	if (!m_hwndPage) return; // ignore if window closed
+
+	SendDlgItemMessage(m_hwndPage, IDC_PASSWORDNET1, EM_LIMITTEXT, metrics.uPassMaxLength, 0);
+	SendDlgItemMessage(m_hwndPage, IDC_PASSWORDNET2, EM_LIMITTEXT, metrics.uPassMaxLength, 0);
+	SendDlgItemMessage(m_hwndPage, IDC_PASSWORDGOD1, EM_LIMITTEXT, metrics.uPassMaxLength, 0);
+	SendDlgItemMessage(m_hwndPage, IDC_PASSWORDGOD2, EM_LIMITTEXT, metrics.uPassMaxLength, 0);
+	SendDlgItemMessage(m_hwndPage, IDC_PASSWORDDEVIL1, EM_LIMITTEXT, metrics.uPassMaxLength, 0);
+	SendDlgItemMessage(m_hwndPage, IDC_PASSWORDDEVIL2, EM_LIMITTEXT, metrics.uPassMaxLength, 0);
 }
 
 //-----------------------------------------------------------------------------

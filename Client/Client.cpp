@@ -9,9 +9,6 @@
 
 #include "stdafx.h"
 
-// Windows API
-#include <strsafe.h>
-
 // Common
 #include "stylepr.h"
 //#include "dCRC.h"
@@ -129,6 +126,7 @@ jpOnline(0)
 	m_metrics.uTopicMaxLength = 100;
 	m_metrics.nMsgSpinMaxCount = 20;
 	m_metrics.uChatLineMaxVolume = 80*1024;
+	m_metrics.flags.bTransmitClipboard = true;
 }
 
 void CALLBACK JClient::Init()
@@ -171,7 +169,7 @@ int  CALLBACK JClient::Run()
 
 	// process the script
 	if (m_luaEvents) {
-		if (luaL_dofile(m_luaEvents, "events.lua")) {
+		if (luaL_dofile(m_luaEvents, "events.client.lua")) {
 			const char* msg = lua_tostring(m_luaEvents, -1);
 			int t = lua_gettop(m_luaEvents);
 			EvReport(tformat(TEXT("Error in script: %s"), ANSIToTstr(msg).c_str()), eError, eTop);
@@ -204,7 +202,7 @@ void CALLBACK JClient::LoadState()
 
 	m_hostname = tstrToANSI(Profile::GetString(RF_CLIENT, RK_HOST, TEXT("127.0.0.1")));
 	m_port = (u_short)Profile::GetInt(RF_CLIENT, RK_PORT, CCP_PORT);
-	m_password = Profile::GetString(RF_CLIENT, RK_PASSWORD, TEXT("beowolf"));
+	m_passwordNet = Profile::GetString(RF_CLIENT, RK_PASSWORDNET, TEXT("beowolf"));
 	m_bSendByEnter = Profile::GetInt(RF_CLIENT, RK_SENDBYENTER, true) != 0;
 	m_bCheatAnonymous = Profile::GetInt(RF_CLIENT, RK_CHEATANONYMOUS, false) != 0;
 }
@@ -213,7 +211,7 @@ void CALLBACK JClient::SaveState()
 {
 	Profile::WriteString(RF_CLIENT, RK_HOST, ANSIToTstr(m_hostname).c_str());
 	Profile::WriteInt(RF_CLIENT, RK_PORT, m_port);
-	Profile::WriteString(RF_CLIENT, RK_PASSWORD, m_password.c_str());
+	Profile::WriteString(RF_CLIENT, RK_PASSWORDNET, m_passwordNet.c_str());
 	Profile::WriteInt(RF_CLIENT, RK_SENDBYENTER, m_bSendByEnter);
 
 	User& user = m_mUser[m_idOwn];
@@ -273,6 +271,11 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 				lua_getglobal(m_luaEvents, "wmCreate");
 				ASSERT(lua_gettop(m_luaEvents) == 1);
 				lua_call(m_luaEvents, 0, 0);
+			} else {
+				if (Profile::GetInt(RF_CLIENT, RK_STATE, FALSE))
+					Connect();
+				else
+					EvLog(TEXT("[style=msg]Ready to connect[/style]"), true);
 			}
 
 			retval = TRUE;
@@ -281,19 +284,22 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_DESTROY:
 		{
+			// Lua response
+			if (m_luaEvents) {
+				lua_getglobal(m_luaEvents, "wmDestroy");
+				ASSERT(lua_gettop(m_luaEvents) == 1);
+				lua_call(m_luaEvents, 0, 0);
+			} else {
+				Profile::WriteInt(RF_CLIENT, RK_STATE, m_clientsock != 0);
+				if (m_clientsock != 0) DeleteLink(m_clientsock);
+			}
+
 			HideBaloon(hwndPage);
 			TOOLINFO ti;
 			ti.cbSize = sizeof(ti);
 			ti.hwnd = hwndPage;
 			ti.uId = (UINT_PTR)hwndPage;
 			SendMessage(m_hwndBaloon, TTM_DELTOOL, 0, (LPARAM)&ti);
-
-			// Lua response
-			if (m_luaEvents) {
-				lua_getglobal(m_luaEvents, "wmDestroy");
-				ASSERT(lua_gettop(m_luaEvents) == 1);
-				lua_call(m_luaEvents, 0, 0);
-			}
 
 			// Close all opened waves
 			MCI_GENERIC_PARMS mci;
@@ -305,6 +311,19 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			Stop();
 
 			JClientApp::jpApp->DelWindow(hWnd);
+			break;
+		}
+
+	case WM_CLOSE:
+		{
+			// Lua response
+			if (m_luaEvents) {
+				lua_getglobal(m_luaEvents, "wmClose");
+				ASSERT(lua_gettop(m_luaEvents) == 1);
+				lua_call(m_luaEvents, 0, 0);
+			} else {
+				DestroyWindow(hWnd);
+			}
 			break;
 		}
 
@@ -323,6 +342,8 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 				lua_getglobal(m_luaEvents, "wmEnterSizeMove");
 				ASSERT(lua_gettop(m_luaEvents) == 1);
 				lua_call(m_luaEvents, 0, 0);
+			} else {
+				HideBaloon();
 			}
 			break;
 		}
@@ -401,6 +422,8 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 				lua_pushboolean(m_luaEvents, wParam != 0);
 				ASSERT(lua_gettop(m_luaEvents) == 2);
 				lua_call(m_luaEvents, 1, 0);
+			} else {
+				HideBaloon();
 			}
 		}
 		break;
@@ -424,6 +447,8 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 				lua_pushinteger(m_luaEvents, LOWORD(wParam));
 				ASSERT(lua_gettop(m_luaEvents) == 2);
 				lua_call(m_luaEvents, 1, 0);
+			} else {
+				HideBaloon();
 			}
 
 			switch (LOWORD(wParam))
@@ -507,7 +532,14 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 				}
 
 			case IDCANCEL:
-				DestroyWindow(hWnd);
+				// Lua response
+				if (m_luaEvents) {
+					lua_getglobal(m_luaEvents, "idcCancel");
+					ASSERT(lua_gettop(m_luaEvents) == 1);
+					lua_call(m_luaEvents, 0, 0);
+				} else {
+					SendMessage(hWnd, WM_CLOSE, 0, 0);
+				}
 				break;
 
 			default:
@@ -616,7 +648,7 @@ void CALLBACK JClient::Connect(bool getsetting)
 		m_hostname = tstrToANSI(host);
 		m_port = (u_short)GetDlgItemInt(jpPageServer->hwndPage, IDC_PORT, FALSE, FALSE);
 		GetDlgItemText(jpPageServer->hwndPage, IDC_PASS, pass, _countof(pass));
-		m_password = pass;
+		m_passwordNet = pass;
 
 		// Checkup nick for future identification
 		std::tstring nickbuf(m_metrics.uNameMaxLength, 0), nick;
@@ -663,16 +695,14 @@ void CALLBACK JClient::Connect(bool getsetting)
 
 void CALLBACK JClient::saveAutoopen() const
 {
-	if (Profile::GetInt(RF_AUTOOPEN, RK_USEAUTOOPEN, FALSE)) {
-		int i = 0;
-		for each (MapPageChannel::value_type const& v in mPageChannel) {
-			Profile::WriteInt(RF_AUTOOPEN, tformat(TEXT("type%02i"), i).c_str(), (UINT)v.second->gettype());
-			Profile::WriteString(RF_AUTOOPEN, tformat(TEXT("name%02i"), i).c_str(), v.second->m_channel.name.c_str());
-			Profile::WriteString(RF_AUTOOPEN, tformat(TEXT("pass%02i"), i).c_str(), v.second->m_channel.password.c_str());
-			i++;
-		}
-		Profile::WriteInt(RF_AUTOOPEN, RK_CHANCOUNT, i);
+	int i = 0;
+	for each (MapPageChannel::value_type const& v in mPageChannel) {
+		Profile::WriteInt(RF_AUTOOPEN, tformat(TEXT("type%02i"), i).c_str(), (UINT)v.second->gettype());
+		Profile::WriteString(RF_AUTOOPEN, tformat(TEXT("name%02i"), i).c_str(), v.second->m_channel.name.c_str());
+		Profile::WriteString(RF_AUTOOPEN, tformat(TEXT("pass%02i"), i).c_str(), v.second->m_channel.password.c_str());
+		i++;
 	}
+	Profile::WriteInt(RF_AUTOOPEN, RK_CHANCOUNT, i);
 }
 
 void CALLBACK JClient::openAutoopen()
@@ -697,71 +727,74 @@ int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 		&& !m_mUser[m_idOwn].isOnline)
 		FlashWindow(m_hwndPage, TRUE);
 
-	int pos = getTabIndex(id);
-	if (pos >= 0) return pos;
-	JPtr<JPage> jp;
-	ASSERT(!getPage(id));
+	JPtr<JPage> jp = getPage(id);
+	int pos;
+	if (jp) {
+		pos = getTabIndex(id);
+	} else {
+		ASSERT(getTabIndex(id) < 0);
 
-	switch (type)
-	{
-	case eServer:
+		switch (type)
 		{
-			pos = 0;
-			jp = jpPageServer = new JPageServer;
-			break;
+		case eServer:
+			{
+				pos = 0;
+				jp = jpPageServer = new JPageServer;
+				break;
+			}
+		case eList:
+			{
+				pos = (jpPageServer ? 1 : 0);
+				jp = jpPageList = new JPageList;
+				break;
+			}
+		case eUser:
+			{
+				pos = (jpPageServer ? 1 : 0) + (jpPageList ? 1 : 0) +
+					(int)mPageChannel.size() + (int)mPageUser.size();
+				jp = mPageUser[id] = new JPageUser(id, name);
+				break;
+			}
+		case eChannel:
+			{
+				pos = (jpPageServer ? 1 : 0) + (jpPageList ? 1 : 0) +
+					(int)mPageChannel.size();
+				jp = mPageChannel[id] = new JPageChannel(id, name);
+				break;
+			}
+		default:
+			return -1;
 		}
-	case eList:
-		{
-			pos = (jpPageServer ? 1 : 0);
-			jp = jpPageList = new JPageList;
-			break;
+
+		ASSERT(jp);
+		jp->SetSource(this);
+		jp->SetupHooks();
+		CreateDialogParam(JClientApp::jpApp->hinstApp, jp->Template(), m_hwndPage, (DLGPROC)JDialog::DlgProcStub, (LPARAM)(JDialog*)jp);
+
+		RECT rcMain;
+		GetClientRect(m_hwndPage, &rcMain);
+		if (!EqualRect(&m_rcPage, &rcMain)) {
+			RECT rc;
+			int cx = rcMain.right - rcMain.left, cy = rcMain.bottom - rcMain.top;
+			HDWP hdwp = BeginDeferWindowPos(1);
+			SetRect(&rc, jp->rcPageNC.left, jp->rcPageNC.top,
+				cx - rcPage.right + jp->rcPageNC.right,
+				cy - rcPage.bottom + jp->rcPageNC.bottom);
+			DeferWindowPos(hdwp, jp->hwndPage, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER);
+			EndDeferWindowPos(hdwp);
 		}
-	case eUser:
-		{
-			pos = (jpPageServer ? 1 : 0) + (jpPageList ? 1 : 0) +
-				(int)mPageChannel.size() + (int)mPageUser.size();
-			jp = mPageUser[id] = new JPageUser(id, name);
-			break;
-		}
-	case eChannel:
-		{
-			pos = (jpPageServer ? 1 : 0) + (jpPageList ? 1 : 0) +
-				(int)mPageChannel.size();
-			jp = mPageChannel[id] = new JPageChannel(id, name);
-			break;
-		}
-	default:
-		return -1;
+
+		TCITEM tci;
+		tci.mask = TCIF_TEXT | TCIF_PARAM | TCIF_IMAGE;
+		tci.dwState = 0;
+		tci.dwStateMask = 0;
+		tci.pszText = (TCHAR*)name.c_str();
+		tci.cchTextMax = (int)name.length();
+		tci.iImage = jp->ImageIndex();
+		tci.lParam = jp->getID();
+		TabCtrl_InsertItem(m_hwndTab, pos, &tci);
+		if (jpOnline) VERIFY(InvalidateRect(jpOnline->hwndPage, 0, TRUE));
 	}
-
-	ASSERT(jp);
-	jp->SetSource(this);
-	jp->SetupHooks();
-	CreateDialogParam(JClientApp::jpApp->hinstApp, jp->Template(), m_hwndPage, (DLGPROC)JDialog::DlgProcStub, (LPARAM)(JDialog*)jp);
-
-	RECT rcMain;
-	GetClientRect(m_hwndPage, &rcMain);
-	if (!EqualRect(&m_rcPage, &rcMain)) {
-		RECT rc;
-		int cx = rcMain.right - rcMain.left, cy = rcMain.bottom - rcMain.top;
-		HDWP hdwp = BeginDeferWindowPos(1);
-		SetRect(&rc, jp->rcPageNC.left, jp->rcPageNC.top,
-			cx - rcPage.right + jp->rcPageNC.right,
-			cy - rcPage.bottom + jp->rcPageNC.bottom);
-		DeferWindowPos(hdwp, jp->hwndPage, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER);
-		EndDeferWindowPos(hdwp);
-	}
-
-	TCITEM tci;
-	tci.mask = TCIF_TEXT | TCIF_PARAM | TCIF_IMAGE;
-	tci.dwState = 0;
-	tci.dwStateMask = 0;
-	tci.pszText = (TCHAR*)name.c_str();
-	tci.cchTextMax = (int)name.length();
-	tci.iImage = jp->ImageIndex();
-	tci.lParam = jp->getID();
-	TabCtrl_InsertItem(m_hwndTab, pos, &tci);
-	if (jpOnline) VERIFY(InvalidateRect(jpOnline->hwndPage, 0, TRUE));
 
 	jp->setAlert(eRed);
 	m_clientsock ? jp->Enable() : jp->Disable();
@@ -816,15 +849,13 @@ void CALLBACK JClient::ContactSel(int index)
 	if (focus && m_mUser[m_idOwn].isOnline && GetFocus() != m_hwndTab) SetFocus(focus);
 }
 
-void CALLBACK JClient::ContactRename(DWORD idOld, DWORD idNew, const std::tstring& newname)
+void CALLBACK JClient::ContactRename(DWORD idOld, const std::tstring& oldname, DWORD idNew, const std::tstring& newname)
 {
-	std::tstring oldname;
 	if (m_mUser[m_idOwn].opened.find(idOld) != m_mUser[m_idOwn].opened.end()) {
 		m_mUser[m_idOwn].opened.insert(idNew);
 		m_mUser[m_idOwn].opened.erase(idOld);
 	}
 	if (m_mUser.find(idOld) != m_mUser.end()) {
-		oldname = m_mUser[idOld].name;
 		m_mUser[idOld].name = newname;
 		m_mUser[idNew] = m_mUser[idOld];
 		m_mUser.erase(idOld);
@@ -896,6 +927,17 @@ JPtr<JClient::JPage> CALLBACK JClient::getPage(DWORD id)
 	else return 0;
 }
 
+JPtr<JClient::JPageLog> CALLBACK JClient::getPageLog(DWORD id)
+{
+	if (id == CRC_SERVER)
+		return jpPageServer;
+	else if (mPageUser.find(id) != mPageUser.end())
+		return mPageUser[id];
+	else if (mPageChannel.find(id) != mPageChannel.end())
+		return mPageChannel[id];
+	else return 0;
+}
+
 bool CALLBACK JClient::CheckNick(std::tstring& nick, const TCHAR*& msg)
 {
 	for each (std::tstring::value_type const& v in nick) {
@@ -958,7 +1000,7 @@ void CALLBACK JClient::HideBaloon(HWND hwnd)
 		ti.hwnd = m_hwndPage;
 		ti.uId = (UINT_PTR)(hwnd ? hwnd : m_isBaloon);
 		SendMessage(m_hwndBaloon, TTM_TRACKACTIVATE, FALSE, (LPARAM)&ti);
-		if (!hwnd) m_isBaloon = 0;
+		m_isBaloon = 0;
 		KillTimer(m_hwndPage, IDT_BALOONPOP);
 	}
 }
@@ -1003,6 +1045,10 @@ std::tstring JClient::getSafeName(DWORD idUser) const
 		return NAME_NONAME;
 	case CRC_ANONYMOUS:
 		return NAME_ANONYMOUS;
+	case CRC_GOD:
+		return NAME_GOD;
+	case CRC_DEVIL:
+		return NAME_DEVIL;
 	default:
 		MapUser::const_iterator iu = m_mUser.find(idUser);
 		if (iu == m_mUser.end() || iu->second.name.empty())
@@ -1093,21 +1139,21 @@ void JClient::OnLinkConnect(SOCKET sock)
 #else
 	Send_Quest_IdentifyA
 #endif
-		(m_clientsock, m_password.c_str());
+		(m_clientsock, m_passwordNet.c_str());
 
 	// Lua response
 	if (m_luaEvents) {
 		lua_getglobal(m_luaEvents, "onLinkConnect");
 		ASSERT(lua_gettop(m_luaEvents) == 1);
 		lua_call(m_luaEvents, 0, 0);
+	} else {
+		m_nConnectCount = 0;
 	}
 }
 
 void JClient::OnLinkClose(SOCKET sock, UINT err)
 {
-	bool isClient = sock == m_clientsock;
-
-	if (isClient) {
+	if (sock == m_clientsock) {
 		m_clientsock = 0; // not connected
 
 		User user = m_mUser[m_idOwn];
@@ -1116,39 +1162,50 @@ void JClient::OnLinkClose(SOCKET sock, UINT err)
 		m_mUser.clear();
 		m_idOwn = CRC_NONAME;
 		m_mUser[m_idOwn] = user;
-
-		// Update interface
-		EvLog(tformat(TEXT("[style=msg]Disconnected. Reason: [i]%s[/i][/style]"), JClient::s_mapWsaErr[err].c_str()), true);
 	}
 
 	__super::OnLinkClose(sock, err);
 
-	// If not disconnected by user, try to reconnect again
-	if (isClient) {
+	// Lua response
+	if (m_luaEvents) {
+		lua_getglobal(m_luaEvents, "onLinkClose");
+		lua_pushinteger(m_luaEvents, err);
+		ASSERT(lua_gettop(m_luaEvents) == 2);
+		lua_call(m_luaEvents, 1, 0);
+	} else {
 		if (err && m_bReconnect) Connect();
 		else if (jpPageServer->hwndPage) {
 			CheckDlgButton(jpPageServer->hwndPage, IDC_CONNECT, FALSE);
 		}
+
+		// Update interface
+		EvLog(tformat(TEXT("[style=msg]Disconnected. Reason: [i]%s[/i][/style]"), JClient::s_mapWsaErr[err].c_str()), true);
 	}
 }
 
 void JClient::OnLinkFail(SOCKET sock, UINT err)
 {
-	bool isClient = sock == m_clientsock;
-
-	if (isClient) {
+	if (sock == m_clientsock) {
 		m_clientsock = 0; // not connected
-		// Update interface
-		EvLog(tformat(TEXT("[style=msg]Connecting failed. Reason: [i]%s[/i][/style]"), JClient::s_mapWsaErr[err].c_str()), true);
 	}
 
 	__super::OnLinkFail(sock, err);
 
-	// If not disconnected by user, try to reconnect again
-	if (err && isClient && m_bReconnect) {
-		SetTimer(m_hwndPage, IDT_CONNECT, Profile::GetInt(RF_CLIENT, RK_TIMERCONNECT, TIMER_CONNECT), 0);
+	// Lua response
+	if (m_luaEvents) {
+		lua_getglobal(m_luaEvents, "onLinkFail");
+		lua_pushinteger(m_luaEvents, err);
+		ASSERT(lua_gettop(m_luaEvents) == 2);
+		lua_call(m_luaEvents, 1, 0);
+	} else {
 		// Update interface
-		EvLog(tformat(TEXT("[style=msg]Waiting %u seconds and try again (attempt #%i).[/style]"), TIMER_CONNECT/1000, m_nConnectCount), true);
+		EvLog(tformat(TEXT("[style=msg]Connecting failed. Reason: [i]%s[/i][/style]"), JClient::s_mapWsaErr[err].c_str()), true);
+		// If not disconnected by user, try to reconnect again
+		if (err && m_bReconnect) {
+			SetTimer(m_hwndPage, IDT_CONNECT, Profile::GetInt(RF_CLIENT, RK_TIMERCONNECT, TIMER_CONNECT), 0);
+			// Update interface
+			EvLog(tformat(TEXT("[style=msg]Waiting %u seconds and try again (attempt #%i).[/style]"), TIMER_CONNECT/1000, m_nConnectCount), true);
+		}
 	}
 }
 
@@ -1210,9 +1267,9 @@ void JClient::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 	__super::OnTransactionProcess(sock, message, trnid, is);
 }
 
-void JClient::OnNick(DWORD idOld, DWORD idNew, const std::tstring& newname)
+void JClient::OnNick(DWORD idOld, const std::tstring& oldname, DWORD idNew, const std::tstring& newname)
 {
-	ContactRename(idOld, idNew, newname);
+	ContactRename(idOld, oldname, idNew, newname);
 }
 
 //
@@ -1244,7 +1301,7 @@ void CALLBACK JClient::Recv_Notify_NICK(SOCKET sock, WORD trnid, io::mem& is)
 {
 	DWORD result;
 	DWORD idOld, idNew;
-	std::tstring newname;
+	std::tstring newname, oldname;
 
 	try
 	{
@@ -1268,9 +1325,10 @@ void CALLBACK JClient::Recv_Notify_NICK(SOCKET sock, WORD trnid, io::mem& is)
 	}
 
 	ASSERT(idOld != idNew);
-	bool isOwn = idOld == m_idOwn;
+	bool isOwn = idOld == m_idOwn || idOld == CRC_NONAME;
+	oldname = getSafeName(idOld);
 
-	EvNick(idOld, idNew, newname);
+	EvNick(idOld, oldname, idNew, newname);
 
 	if (isOwn) {
 		// Update interface
@@ -1294,6 +1352,23 @@ void CALLBACK JClient::Recv_Notify_NICK(SOCKET sock, WORD trnid, io::mem& is)
 			break;
 		}
 		EvReport(tformat(TEXT("%s, now nickname is [b]%s[/b]"), msg, newname.c_str()), eInformation, eHigh);
+	}
+
+	// Lua response
+	if (m_luaEvents) {
+		if (isOwn) {
+			lua_getglobal(m_luaEvents, "onNickOwn");
+			lua_pushstring(m_luaEvents, tstrToANSI(newname).c_str());
+			ASSERT(lua_gettop(m_luaEvents) == 2);
+			lua_call(m_luaEvents, 1, 0);
+		}
+		{ // in any case
+			lua_getglobal(m_luaEvents, "onNick");
+			lua_pushstring(m_luaEvents, tstrToANSI(oldname).c_str());
+			lua_pushstring(m_luaEvents, tstrToANSI(newname).c_str());
+			ASSERT(lua_gettop(m_luaEvents) == 3);
+			lua_call(m_luaEvents, 2, 0);
+		}
 	}
 }
 
@@ -1328,6 +1403,16 @@ void CALLBACK JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 
 					ContactSel(pos);
 
+					// Lua response
+					if (m_luaEvents) {
+						lua_getglobal(m_luaEvents, "onOpenPrivate");
+						lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(ID)).c_str());
+						ASSERT(lua_gettop(m_luaEvents) == 2);
+						lua_call(m_luaEvents, 1, 0);
+					} else {
+						jp->AppendScript(tformat(TEXT("[style=Info]now talk with [b]%s[/b][/style]"), getSafeName(ID).c_str()));
+					}
+
 					EvReport(tformat(TEXT("opened private talk with [b]%s[/b]"), user.name.c_str()), eInformation, eHigher);
 					break;
 				}
@@ -1356,6 +1441,16 @@ void CALLBACK JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 					ContactSel(pos);
 
 					Send_Quest_USERINFO(sock, wanted);
+
+					// Lua response
+					if (m_luaEvents) {
+						lua_getglobal(m_luaEvents, "onOpenChannel");
+						lua_pushstring(m_luaEvents, tstrToANSI(chan.name).c_str());
+						ASSERT(lua_gettop(m_luaEvents) == 2);
+						lua_call(m_luaEvents, 1, 0);
+					} else {
+						jp->AppendScript(tformat(TEXT("[style=Info]now talking in [b]#%s[/b][/style]"), chan.name.c_str()));
+					}
 
 					EvReport(tformat(TEXT("joins to [b]#%s[/b] channel"), chan.name.c_str()), eInformation, eHigher);
 					break;
@@ -1429,13 +1524,24 @@ void CALLBACK JClient::Recv_Notify_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 		// Create interface
 		ContactAdd(user.name, idWho, eUser);
 
-		JPtr<JPageUser> jp = mPageUser[idWho];
-		ASSERT(jp);
-		jp->AppendScript(tformat(TEXT("[style=Info][b]%s[/b] call you to private talk[/style]"), user.name.c_str()));
 		if (m_mUser[m_idOwn].accessibility.fPlayMessage)
 			PlaySound(JClientApp::jpApp->strWavPrivate.c_str());
 
-		EvReport(tformat(TEXT("[b]%s[/b] opens private talk"), user.name.c_str()), eInformation, eHigher);
+		// Lua response
+		if (m_luaEvents) {
+			lua_getglobal(m_luaEvents, "onJoinPrivate");
+			lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+			ASSERT(lua_gettop(m_luaEvents) == 2);
+			lua_call(m_luaEvents, 1, 0);
+		} else {
+			JPtr<JPageUser> jp = mPageUser[idWho];
+			ASSERT(jp);
+			jp->AppendScript(tformat(TEXT("[style=Info][b]%s[/b] call you to private talk[/style]"), user.name.c_str()));
+		}
+
+		EvReport(tformat(TEXT("[b]%s[/b] opens private talk"),
+			user.name.c_str()),
+			eInformation, eAbove);
 	} else { // channel
 		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
 		if (ipc != mPageChannel.end()) {
@@ -1443,6 +1549,11 @@ void CALLBACK JClient::Recv_Notify_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 			ipc->second->setAlert(eYellow);
 			if (m_mUser[m_idOwn].accessibility.fPlayChatSounds)
 				PlaySound(JClientApp::jpApp->strWavJoin.c_str());
+
+			EvReport(tformat(TEXT("[b]%s[/b] joins to [b]%s[/b]"),
+				getSafeName(idWho).c_str(),
+				ipc->second->m_channel.name.c_str()),
+				eInformation, eUnder);
 		} else {
 			Send_Cmd_PART(sock, m_idOwn, idWhere);
 		}
@@ -1476,22 +1587,32 @@ void CALLBACK JClient::Recv_Notify_PART(SOCKET sock, WORD trnid, io::mem& is)
 
 	MapPageUser::iterator ipu = mPageUser.find(idWhere);
 	if (ipu != mPageUser.end()) { // private talk, can be already closed
-		// Parting message
-		std::tstring nick = getSafeName(idWho);
-		std::tstring msg;
-		if (idWho == idBy) {
-			msg = tformat(TEXT("[style=Info][b]%s[/b] leave private talk[/style]"), nick.c_str());
-		} else if (idBy == CRC_SERVER) {
-			msg = tformat(TEXT("[style=Info][b]%s[/b] was disconnected[/style]"), nick.c_str());
-		} else {
-			std::tstring by = getSafeName(idBy);
-			msg = tformat(TEXT("[style=Info][b]%s[/b] was kicked by [b]%s[/b][/style]"), nick.c_str(), by.c_str());
-		}
-		ipu->second->AppendScript(msg);
 		ipu->second->setAlert(eYellow);
 		ipu->second->Disable();
 
-		EvReport(msg, eInformation, eHigher);
+		// Lua response
+		if (m_luaEvents) {
+			lua_getglobal(m_luaEvents, "onPartPrivate");
+			lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+			lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idBy)).c_str());
+			ASSERT(lua_gettop(m_luaEvents) == 3);
+			lua_call(m_luaEvents, 2, 0);
+		} else {
+			// Parting message
+			std::tstring nick = getSafeName(idWho);
+			std::tstring msg;
+			if (idWho == idBy) {
+				msg = tformat(TEXT("[style=Info][b]%s[/b] leave private talk[/style]"), nick.c_str());
+			} else if (idBy == CRC_SERVER) {
+				msg = tformat(TEXT("[style=Info][b]%s[/b] was disconnected[/style]"), nick.c_str());
+			} else {
+				std::tstring by = getSafeName(idBy);
+				msg = tformat(TEXT("[style=Info][b]%s[/b] was kicked by [b]%s[/b][/style]"), nick.c_str(), by.c_str());
+			}
+			ipu->second->AppendScript(msg);
+		}
+
+		EvReport(tformat(TEXT("[style=Info]private with [b]%s[/b] closed[/style]"), getSafeName(idWho).c_str()), eInformation, eHigher);
 	} else { // channel
 		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
 		if (ipc != mPageChannel.end()) {
@@ -1574,6 +1695,15 @@ void CALLBACK JClient::Recv_Notify_ONLINE(SOCKET sock, WORD trnid, io::mem& is)
 		if (ipc != mPageChannel.end()) {
 			ipc->second->redrawUser(idWho);
 		}
+
+		// Lua response
+		if (m_luaEvents) {
+			lua_getglobal(m_luaEvents, "onOnline");
+			lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+			lua_pushinteger(m_luaEvents, isOnline);
+			ASSERT(lua_gettop(m_luaEvents) == 3);
+			lua_call(m_luaEvents, 2, 0);
+		}
 	}
 
 	// Report about message
@@ -1629,18 +1759,63 @@ void CALLBACK JClient::Recv_Notify_STATUS(SOCKET sock, WORD trnid, io::mem& is)
 		if (type & STATUS_MODE) {
 			iu->second.nStatus = stat;
 			iu->second.accessibility = a;
+
+			// Lua response
+			if (m_luaEvents) {
+				lua_getglobal(m_luaEvents, "onStatusMode");
+				lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+				lua_pushinteger(m_luaEvents, stat);
+				ASSERT(lua_gettop(m_luaEvents) == 3);
+				lua_call(m_luaEvents, 2, 0);
+			}
 		}
 		if (type & STATUS_IMG) {
 			iu->second.nStatusImg = img;
+
+			// Lua response
+			if (m_luaEvents) {
+				lua_getglobal(m_luaEvents, "onStatusImage");
+				lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+				lua_pushinteger(m_luaEvents, img);
+				ASSERT(lua_gettop(m_luaEvents) == 3);
+				lua_call(m_luaEvents, 2, 0);
+			}
 		}
 		if (type & STATUS_MSG) {
 			iu->second.strStatus = msg;
+
+			// Lua response
+			if (m_luaEvents) {
+				lua_getglobal(m_luaEvents, "onStatusMessage");
+				lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+				lua_pushstring(m_luaEvents, tstrToANSI(msg).c_str());
+				ASSERT(lua_gettop(m_luaEvents) == 3);
+				lua_call(m_luaEvents, 2, 0);
+			}
 		}
 		if (type & STATUS_GOD) {
 			iu->second.cheat.isGod = god;
+
+			// Lua response
+			if (m_luaEvents) {
+				lua_getglobal(m_luaEvents, "onStatusGod");
+				lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+				lua_pushboolean(m_luaEvents, god);
+				ASSERT(lua_gettop(m_luaEvents) == 3);
+				lua_call(m_luaEvents, 2, 0);
+			}
 		}
 		if (type & STATUS_DEVIL) {
 			iu->second.cheat.isDevil = devil;
+
+			// Lua response
+			if (m_luaEvents) {
+				lua_getglobal(m_luaEvents, "onStatusDevil");
+				lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+				lua_pushboolean(m_luaEvents, devil);
+				ASSERT(lua_gettop(m_luaEvents) == 3);
+				lua_call(m_luaEvents, 2, 0);
+			}
 		}
 
 		MapPageChannel::iterator ipc = mPageChannel.find(jpOnline ? jpOnline->getID() : 0);
@@ -1744,6 +1919,21 @@ void CALLBACK JClient::Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 				&& Profile::GetInt(RF_CLIENT, RK_FLASHPAGETOPIC, TRUE)
 				&& !m_mUser[m_idOwn].isOnline)
 				FlashWindow(m_hwndPage, TRUE);
+
+			// Lua response
+			if (m_luaEvents) {
+				lua_getglobal(m_luaEvents, "onTopic");
+				lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+				lua_pushstring(m_luaEvents, tstrToANSI(ipc->second->m_channel.name).c_str());
+				lua_pushstring(m_luaEvents, tstrToANSI(topic).c_str());
+				ASSERT(lua_gettop(m_luaEvents) == 4);
+				lua_call(m_luaEvents, 3, 0);
+			} else {
+				jp->AppendScript(tformat(TEXT("[style=Descr][color=%s]%s[/color] changes topic to:\n[u]%s[/u][/style]"),
+					idWho != m_idOwn ? TEXT("red") : TEXT("blue"),
+					getSafeName(idWho).c_str(),
+					topic.c_str()));
+			}
 		}
 	}
 	if (jp) {
@@ -1797,7 +1987,20 @@ void CALLBACK JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem&
 		ASSERT(op == CHANOP_BACKGROUND);
 		SendMessage(ipu->second->hwndEdit, EM_SETBKGNDCOLOR, FALSE, (LPARAM)val);
 		SendMessage(ipu->second->hwndLog, EM_SETBKGNDCOLOR, FALSE, (LPARAM)val);
-		msg = TEXT("changes sheet color");
+
+		// Lua response
+		if (m_luaEvents) {
+			lua_getglobal(m_luaEvents, "onBackground");
+			lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+			lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWhere)).c_str());
+			lua_pushinteger(m_luaEvents, GetRValue(val));
+			lua_pushinteger(m_luaEvents, GetGValue(val));
+			lua_pushinteger(m_luaEvents, GetBValue(val));
+			ASSERT(lua_gettop(m_luaEvents) == 6);
+			lua_call(m_luaEvents, 5, 0);
+		} else {
+			msg = TEXT("changes sheet color");
+		}
 	} else {
 		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
 		if (ipc != mPageChannel.end()) { // channel
@@ -1807,24 +2010,68 @@ void CALLBACK JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem&
 			{
 				case CHANOP_AUTOSTATUS:
 					ipc->second->m_channel.nAutoStatus = (EChanStatus)val;
-					msg = TEXT("changes channel users entry status");
+
+					// Lua response
+					if (m_luaEvents) {
+						lua_getglobal(m_luaEvents, "onChanAutostatus");
+						lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+						lua_pushstring(m_luaEvents, tstrToANSI(ipc->second->m_channel.name).c_str());
+						lua_pushinteger(m_luaEvents, val);
+						ASSERT(lua_gettop(m_luaEvents) == 4);
+						lua_call(m_luaEvents, 3, 0);
+					} else {
+						msg = TEXT("changes channel users entry status");
+					}
 					break;
 				case CHANOP_LIMIT:
 					ipc->second->m_channel.nLimit = (UINT)val;
-					msg = tformat(TEXT("sets channel limit to %u users"), val);
+
+					// Lua response
+					if (m_luaEvents) {
+						lua_getglobal(m_luaEvents, "onChanLimit");
+						lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+						lua_pushstring(m_luaEvents, tstrToANSI(ipc->second->m_channel.name).c_str());
+						lua_pushinteger(m_luaEvents, val);
+						ASSERT(lua_gettop(m_luaEvents) == 4);
+						lua_call(m_luaEvents, 3, 0);
+					} else {
+						msg = tformat(TEXT("sets channel limit to %u users"), val);
+					}
 					break;
 				case CHANOP_HIDDEN:
 					ipc->second->m_channel.isHidden = val != 0;
-					msg = val
-						? TEXT("sets channel as hidden")
-						: TEXT("sets channel as visible");
+
+					// Lua response
+					if (m_luaEvents) {
+						lua_getglobal(m_luaEvents, "onChanHidden");
+						lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+						lua_pushstring(m_luaEvents, tstrToANSI(ipc->second->m_channel.name).c_str());
+						lua_pushboolean(m_luaEvents, val != 0);
+						ASSERT(lua_gettop(m_luaEvents) == 4);
+						lua_call(m_luaEvents, 3, 0);
+					} else {
+						msg = val
+							? TEXT("sets channel as hidden")
+							: TEXT("sets channel as visible");
+					}
 					break;
 				case CHANOP_ANONYMOUS:
 					ipc->second->m_channel.isAnonymous = val != 0;
 					InvalidateRect(ipc->second->hwndList, 0, TRUE);
-					msg = val
-						? TEXT("sets channel as anonymous")
-						: TEXT("sets channel as not anonymous");
+
+					// Lua response
+					if (m_luaEvents) {
+						lua_getglobal(m_luaEvents, "onChanAnonymous");
+						lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+						lua_pushstring(m_luaEvents, tstrToANSI(ipc->second->m_channel.name).c_str());
+						lua_pushboolean(m_luaEvents, val != 0);
+						ASSERT(lua_gettop(m_luaEvents) == 4);
+						lua_call(m_luaEvents, 3, 0);
+					} else {
+						msg = val
+							? TEXT("sets channel as anonymous")
+							: TEXT("sets channel as not anonymous");
+					}
 					break;
 				case CHANOP_BACKGROUND:
 					ipc->second->m_channel.crBackground = (COLORREF)val;
@@ -1833,19 +2080,32 @@ void CALLBACK JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem&
 					SendMessage(ipc->second->hwndLog, EM_SETBKGNDCOLOR, FALSE, (LPARAM)val);
 					ListView_SetBkColor(ipc->second->hwndList, val);
 					InvalidateRect(ipc->second->hwndList, 0, TRUE);
-					msg = TEXT("changes sheet color");
+
+					// Lua response
+					if (m_luaEvents) {
+						lua_getglobal(m_luaEvents, "onBackground");
+						lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+						lua_pushstring(m_luaEvents, tstrToANSI(ipc->second->m_channel.name).c_str());
+						lua_pushinteger(m_luaEvents, GetRValue(val));
+						lua_pushinteger(m_luaEvents, GetGValue(val));
+						lua_pushinteger(m_luaEvents, GetBValue(val));
+						ASSERT(lua_gettop(m_luaEvents) == 6);
+						lua_call(m_luaEvents, 5, 0);
+					} else {
+						msg = TEXT("changes sheet color");
+					}
 					break;
 			}
 		}
 	}
-	if (jp) {
+	if (jp && !msg.empty()) {
 		jp->AppendScript(tformat(TEXT("[style=Descr][color=%s]%s[/color] %s[/style]"),
 			idWho != m_idOwn ? TEXT("red") : TEXT("blue"),
 			jp->getSafeName(idWho).c_str(),
 			msg.c_str()));
-		if (m_mUser[m_idOwn].accessibility.fPlayChatSounds)
-			PlaySound(JClientApp::jpApp->strWavTopic.c_str());
 	}
+	if (m_mUser[m_idOwn].accessibility.fPlayChatSounds)
+		PlaySound(JClientApp::jpApp->strWavTopic.c_str());
 }
 
 void CALLBACK JClient::Recv_Notify_ACCESS(SOCKET sock, WORD trnid, io::mem& is)
@@ -1881,13 +2141,25 @@ void CALLBACK JClient::Recv_Notify_ACCESS(SOCKET sock, WORD trnid, io::mem& is)
 			jp = ipc->second;
 			ipc->second->m_channel.setStatus(idWho, stat);
 			ipc->second->redrawUser(idWho);
+
+			// Lua response
+			if (m_luaEvents) {
+				lua_getglobal(m_luaEvents, "onAccess");
+				lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+				lua_pushstring(m_luaEvents, tstrToANSI(ipc->second->m_channel.name).c_str());
+				lua_pushinteger(m_luaEvents, stat);
+				lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idBy)).c_str());
+				ASSERT(lua_gettop(m_luaEvents) == 5);
+				lua_call(m_luaEvents, 4, 0);
+			} else {
+				jp->AppendScript(tformat(TEXT("[style=Descr][color=%s]%s[/color] changed channel status to [b]%s[/b] by [color=%s]%s[/color][/style]"),
+					idWho != m_idOwn ? TEXT("red") : TEXT("blue"), jp->getSafeName(idWho).c_str(),
+					s_mapChanStatName[stat].c_str(),
+					idBy != m_idOwn ? TEXT("red") : TEXT("blue"), jp->getSafeName(idBy).c_str()));
+			}
 		}
 	}
 	if (jp) {
-		jp->AppendScript(tformat(TEXT("[style=Descr][color=%s]%s[/color] changed channel status to [b]%s[/b] by [color=%s]%s[/color][/style]"),
-			idWho != m_idOwn ? TEXT("red") : TEXT("blue"), jp->getSafeName(idWho).c_str(),
-			s_mapChanStatName[stat].c_str(),
-			idBy != m_idOwn ? TEXT("red") : TEXT("blue"), jp->getSafeName(idBy).c_str()));
 		if (m_mUser[m_idOwn].accessibility.fPlayChatSounds)
 			PlaySound(JClientApp::jpApp->strWavConfirm.c_str());
 	}
@@ -2009,6 +2281,14 @@ void CALLBACK JClient::Recv_Notify_BEEP(SOCKET sock, WORD trnid, io::mem& is)
 
 	PlaySound(JClientApp::jpApp->strWavBeep.c_str());
 
+	// Lua response
+	if (m_luaEvents) {
+		lua_getglobal(m_luaEvents, "onBeep");
+		lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idBy)).c_str());
+		ASSERT(lua_gettop(m_luaEvents) == 2);
+		lua_call(m_luaEvents, 1, 0);
+	}
+
 	// Report about message
 	EvReport(tformat(TEXT("sound signal from [b]%s[/b]"), getSafeName(idBy).c_str()), eInformation, eHigh);
 }
@@ -2052,6 +2332,14 @@ void CALLBACK JClient::Recv_Notify_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& i
 
 			if (m_mUser[m_idOwn].accessibility.fPlayClipboard)
 				PlaySound(JClientApp::jpApp->strWavClipboard.c_str());
+
+			// Lua response
+			if (m_luaEvents) {
+				lua_getglobal(m_luaEvents, "onClipboard");
+				lua_pushstring(m_luaEvents, tstrToANSI(getSafeName(idBy)).c_str());
+				ASSERT(lua_gettop(m_luaEvents) == 2);
+				lua_call(m_luaEvents, 1, 0);
+			}
 
 			// Report about message
 			EvReport(tformat(TEXT("recieve clipboard content from [b]%s[/b]"), getSafeName(idBy).c_str()), eInformation, eHigh);
@@ -2370,7 +2658,7 @@ void CALLBACK JClientApp::Init()
 	m_strWavClipboard = Profile::GetString(RF_SOUNDS, RK_WAVCLIPBOARD, TEXT("Sounds\\clipboard.wav"));
 
 	hiMain16 = LoadIcon(hinstApp, MAKEINTRESOURCE(IDI_SMALL));
-	hiMain32 = LoadIcon(hinstApp, MAKEINTRESOURCE(IDI_MAIN));
+	hiMain32 = LoadIcon(hinstApp, MAKEINTRESOURCE(IDI_CLIENT));
 
 	// Load accel table for main window
 	m_haccelMain = LoadAccelerators(hinstApp, MAKEINTRESOURCE(IDA_MAIN));

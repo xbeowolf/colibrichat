@@ -43,7 +43,7 @@ namespace colibrichat
 	struct User;
 	struct Channel;
 
-	enum EContact {eServer = 0x01U, eList = 0x02U, eUser = 0x04U, eChannel = 0x08U, eBoard = 0x10U};
+	enum EContact {eCheat = 0x01U, eServer = 0x02U, eList = 0x04U, eUser = 0x08U, eChannel = 0x10U, eBoard = 0x20U};
 	enum EChanStatus {eOutsider, eReader, eWriter, eMember, eModerator, eAdmin, eFounder};
 	enum EUserStatus {eReady, eDND, eBusy, eNA, eAway, eInvisible};
 	enum EOnline {eOffline, eOnline, eTyping};
@@ -113,6 +113,9 @@ namespace colibrichat
 		size_t uTopicMaxLength;
 		size_t nMsgSpinMaxCount;
 		size_t uChatLineMaxVolume;
+		struct {
+			bool bTransmitClipboard : 1;
+		} flags;
 	};
 
 	struct Personal

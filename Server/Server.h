@@ -46,10 +46,15 @@
 #define RK_TopicMaxLength      TEXT("TopicMaxLength")
 #define RK_MsgSpinMaxCount     TEXT("MsgSpinMaxCount")
 #define RK_ChatLineMaxVolume   TEXT("ChatLineMaxVolume")
+#define RK_TransmitClipboard   TEXT("TransmitClipboard")
 
 // Listening
-#define RK_PASSWORD            TEXT("Password")
+#define RK_PASSWORDNET         TEXT("PasswordNetEngine")
 #define RK_PORTCOUNT           TEXT("PortCount")
+
+// Cheats
+#define RK_PASSWORDGOD         TEXT("PasswordGod")
+#define RK_PASSWORDDEVIL       TEXT("PasswordDevil")
 
 // Interface
 #define RK_SHOWICON            TEXT("ShowTrayIcon")
@@ -100,6 +105,19 @@ namespace colibrichat
 
 			JPROPERTY_R(HWND, hwndList);
 			RECT rcList;
+		};
+
+		class JPasswords : public JAttachedDialog<JServer>
+		{
+		public:
+
+			CALLBACK JPasswords();
+
+		protected:
+
+			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
+
+			void OnMetrics(const Metrics& metrics);
 		};
 
 	public:
@@ -203,6 +221,7 @@ namespace colibrichat
 		// --- Commands ---
 
 		void CALLBACK Connections();
+		void CALLBACK Passwords();
 		void CALLBACK About();
 
 	public:
@@ -215,10 +234,10 @@ namespace colibrichat
 	protected:
 
 		JPROPERTY_R(u_short, port);
-		JPROPERTY_R(std::tstring, password);
+		JPROPERTY_RREF_CONST(std::tstring, passwordNet);
 
 		// Connections dialog
-		JPtr<JAttachedDialog<JServer>> jpConnections;
+		JPtr<JAttachedDialog<JServer>> jpConnections, jpPasswords;
 		// Tray icon
 		JPROPERTY_R(bool, bShowIcon);
 
@@ -228,6 +247,8 @@ namespace colibrichat
 		JPROPERTY_RREF_CONST(MapUser, mUser);
 		JPROPERTY_RREF_CONST(MapChannel, mChannel);
 
+		JPROPERTY_RREF_CONST(std::tstring, passwordGod);
+		JPROPERTY_RREF_CONST(std::tstring, passwordDevil);
 		JPROPERTY_RREF_CONST(Metrics, metrics);
 	};
 

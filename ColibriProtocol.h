@@ -48,6 +48,10 @@
 #define NAME_NONAME            TEXT("Noname")
 #define CRC_ANONYMOUS          0xbec1fbcd
 #define NAME_ANONYMOUS         TEXT("Anonymous")
+#define CRC_GOD                0x0dfc6129
+#define NAME_GOD               TEXT("God")
+#define CRC_DEVIL              0xf62ea53e
+#define NAME_DEVIL             TEXT("Devil")
 
 //-----------------------------------------------------------------------------
 

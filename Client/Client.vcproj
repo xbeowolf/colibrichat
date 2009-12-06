@@ -74,6 +74,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				AdditionalManifestFiles="$(ProjectDir)ColibriClient.exe.manifest"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -142,7 +143,6 @@
 				AdditionalDependencies="comctl32.lib Ws2_32.lib Winmm.lib"
 				OutputFile="$(OutDir)\ColibriClient.exe"
 				LinkIncremental="1"
-				GenerateManifest="false"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb"
 				SubSystem="2"
@@ -155,6 +155,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				AdditionalManifestFiles="$(ProjectDir)ColibriClient.exe.manifest"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -468,24 +469,20 @@
 			Name="Libraries"
 			Filter="lib"
 			>
-			<File
-				RelativePath="..\lib\lua5.1.lib"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Script"
 			Filter="lua;txt;ini;cfg"
 			>
 			<File
-				RelativePath=".\events.lua"
+				RelativePath=".\events.client.lua"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="copy &quot;$(InputPath)&quot; &quot;$(OutDir)\$(InputFileName)&quot;"
+						CommandLine="copy &quot;$(InputPath)&quot; &quot;$(OutDir)\$(InputFileName)&quot;&#x0D;&#x0A;"
 						Outputs="$(OutDir)\$(InputFileName)"
 					/>
 				</FileConfiguration>
@@ -494,7 +491,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="copy &quot;$(InputPath)&quot; &quot;$(OutDir)\$(InputFileName)&quot;"
+						CommandLine="copy &quot;$(InputPath)&quot; &quot;$(OutDir)\$(InputFileName)&quot;&#x0D;&#x0A;"
 						Outputs="$(OutDir)\$(InputFileName)"
 					/>
 				</FileConfiguration>

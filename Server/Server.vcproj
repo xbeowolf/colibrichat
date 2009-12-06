@@ -74,6 +74,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				AdditionalManifestFiles="$(ProjectDir)ColibriServer.exe.manifest"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -153,6 +154,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				AdditionalManifestFiles="$(ProjectDir)ColibriServer.exe.manifest"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"

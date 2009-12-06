@@ -9,9 +9,6 @@
 
 #include "stdafx.h"
 
-// Windows API
-#include <strsafe.h>
-
 // Common
 #include "stylepr.h"
 #include "dCRC.h"

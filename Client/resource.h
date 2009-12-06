@@ -8,6 +8,7 @@
 #define IDD_MAIN                        100
 #define IDA_MAIN                        100
 #define IDI_MAIN                        100
+#define IDI_CLIENT                      100
 #define IDB_TAB                         101
 #define IDI_SMALL                       101
 #define IDD_SERVER                      101

@@ -15,6 +15,12 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_0EEFC7B54240475390A999A1AE7732B6"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_12A06AF8EA544DCBBD83EF904952A542"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -63,6 +69,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_A353EF7F75824470A81A7E8FF9B0E138"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_A64C7C2393D6470EB044FE4CCD88EAD1"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -76,6 +88,12 @@
         "Entry"
         {
         "MsmKey" = "8:_B4AEDEE2BFFD4AAFB6966CD7C4DB5AD3"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_B636F93178214159878BBF877DFE88EA"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -179,6 +197,26 @@
         }
         "File"
         {
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0EEFC7B54240475390A999A1AE7732B6"
+            {
+            "SourcePath" = "8:..\\doc\\pdf.ico"
+            "TargetName" = "8:pdf.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_A4E6BE004F624883A4C7B71D3F587997"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_12A06AF8EA544DCBBD83EF904952A542"
             {
             "SourcePath" = "8:..\\Client\\Sounds\\channel_join.wav"
@@ -339,6 +377,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A353EF7F75824470A81A7E8FF9B0E138"
+            {
+            "SourcePath" = "8:..\\doc\\Colibri chat.pdf"
+            "TargetName" = "8:Colibri chat.pdf"
+            "Tag" = "8:"
+            "Folder" = "8:_A4E6BE004F624883A4C7B71D3F587997"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A64C7C2393D6470EB044FE4CCD88EAD1"
             {
             "SourcePath" = "8:..\\bin\\release\\ColibriServer.exe"
@@ -399,6 +457,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B636F93178214159878BBF877DFE88EA"
+            {
+            "SourcePath" = "8:..\\Server\\Colibri2.ico"
+            "TargetName" = "8:Colibri2.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_A4E6BE004F624883A4C7B71D3F587997"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B9C5DF471BB24F8CBEED7BD7EEF0CD4E"
             {
             "SourcePath" = "8:..\\Client\\Sounds\\confirm.wav"
@@ -441,8 +519,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D4A9E13FAB024081945ACF43477DB706"
             {
-            "SourcePath" = "8:..\\Client\\events.lua"
-            "TargetName" = "8:events.lua"
+            "SourcePath" = "8:..\\Client\\events.client.lua"
+            "TargetName" = "8:events.client.lua"
             "Tag" = "8:"
             "Folder" = "8:_A4E6BE004F624883A4C7B71D3F587997"
             "Condition" = "8:"
@@ -537,7 +615,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Colibri Chat"
         "ProductCode" = "8:{CB4F402C-DC95-4E54-8F11-A91C0416DCAB}"
-        "PackageCode" = "8:{EF021C2C-8138-49EF-8BE9-66F4144A60B4}"
+        "PackageCode" = "8:{BFA63C1E-AF41-4398-AF5B-656DC23F1596}"
         "UpgradeCode" = "8:{9CE85361-B45F-48AE-B43E-D9C165BF7E24}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
@@ -553,7 +631,7 @@
         "Keywords" = "8:Colibri; Chat"
         "ARPCOMMENTS" = "8:"
         "ARPURLINFOABOUT" = "8:mailto:xbeowolf@gmail.com"
-        "ARPPRODUCTICON" = "8:"
+        "ARPPRODUCTICON" = "8:_B636F93178214159878BBF877DFE88EA"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
@@ -720,6 +798,14 @@
                                                             "ValueTypes" = "3:3"
                                                             "Value" = "3:20"
                                                             }
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_36F28B854DF1416A9285A1F00ECDEBF3"
+                                                            {
+                                                            "Name" = "8:TransmitClipboard"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:3"
+                                                            "Value" = "3:1"
+                                                            }
                                                             "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_3EA00AE5492841508889A55DF7950327"
                                                             {
                                                             "Name" = "8:MsgSpinMaxCount"
@@ -775,7 +861,7 @@
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_786B2451D1BE4F42BB218B528D8E6331"
                                                     {
-                                                    "Name" = "8:Password"
+                                                    "Name" = "8:PasswordNetEngine"
                                                     "Condition" = "8:"
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:1"
@@ -796,6 +882,22 @@
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:3"
                                                     "Value" = "3:1"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_EA553F055F64415281A70FB7686F3AF9"
+                                                    {
+                                                    "Name" = "8:PasswordDevil"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:1"
+                                                    "Value" = "8:devilpassword"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_F5E5CDBF792E44CA914A1EEBC7D4BF3C"
+                                                    {
+                                                    "Name" = "8:PasswordGod"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:1"
+                                                    "Value" = "8:godpassword"
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_FDB7359E0D7B4800B444CD5C5B23A539"
                                                     {
@@ -1089,7 +1191,7 @@
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_E1D1D7B54CAC43708BD6EBF9E735898E"
                                                     {
-                                                    "Name" = "8:Password"
+                                                    "Name" = "8:PasswordNetEngine"
                                                     "Condition" = "8:"
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:1"
@@ -1170,6 +1272,20 @@
             "Folder" = "8:_2AA7B1339B234A6DA3BC07C689A50D6A"
             "WorkingFolder" = "8:_A4E6BE004F624883A4C7B71D3F587997"
             "Icon" = "8:_A64C7C2393D6470EB044FE4CCD88EAD1"
+            "Feature" = "8:"
+            }
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_DCE95FA28BF44638968C66D6ED3D095A"
+            {
+            "Name" = "8:Colibri chat description"
+            "Arguments" = "8:"
+            "Description" = "8:Help on Colibri Chat"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_A353EF7F75824470A81A7E8FF9B0E138"
+            "Folder" = "8:_2AA7B1339B234A6DA3BC07C689A50D6A"
+            "WorkingFolder" = "8:_A4E6BE004F624883A4C7B71D3F587997"
+            "Icon" = "8:_0EEFC7B54240475390A999A1AE7732B6"
             "Feature" = "8:"
             }
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_FD95DB04EEBC4400B1856AA746809DEE"

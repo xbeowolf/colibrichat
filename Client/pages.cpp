@@ -9,9 +9,6 @@
 
 #include "stdafx.h"
 
-// Windows API
-#include <strsafe.h>
-
 // Common
 #include "stylepr.h"
 //#include "dCRC.h"
@@ -195,7 +192,10 @@ void CALLBACK JClient::JPage::activate()
 void CALLBACK JClient::JPage::setAlert(EAlert a)
 {
 	ASSERT(pSource);
-	if ((a > m_alert || a == eGreen) && (pSource->jpOnline != this || !pSource->m_mUser[pSource->m_idOwn].isOnline) && pSource->hwndPage) {
+	if ((a > m_alert || a == eGreen)
+		&& (pSource->jpOnline != this || !pSource->m_mUser[pSource->m_idOwn].isOnline)
+		&& pSource->hwndPage)
+	{
 		m_alert = a;
 
 		TCITEM tci;
@@ -263,9 +263,9 @@ CALLBACK JClient::JPageLog::JPageLog()
 	etimeFormat = etimeHHMMSS;
 }
 
-void CALLBACK JClient::JPageLog::AppendRtf(const std::string& content) const
+void CALLBACK JClient::JPageLog::AppendRtf(std::string& content, bool toascii) const
 {
-	CHARRANGE crMark; // Selection position
+	CHARRANGE crMark, crIns; // Selection position
 	int nTextLen; // Length of text in control
 
 	SendMessage(m_hwndLog, EM_HIDESELECTION, TRUE, 0);
@@ -274,7 +274,16 @@ void CALLBACK JClient::JPageLog::AppendRtf(const std::string& content) const
 	nTextLen = GetWindowTextLength(m_hwndLog);
 
 	SendMessage(m_hwndLog, EM_SETSEL, -1, -1);
+	SendMessage(m_hwndLog, EM_EXGETSEL, 0, (LPARAM)&crIns);
 	SendMessage(m_hwndLog, EM_REPLACESEL, FALSE, (LPARAM)ANSIToTstr(content).c_str());
+
+	if (toascii) {
+		crIns.cpMax = -1;
+		SendMessage(m_hwndLog, EM_EXSETSEL, 0, (LPARAM)&crIns);
+		SendMessage(m_hwndLog, EM_EXGETSEL, 0, (LPARAM)&crIns);
+		content.resize(crIns.cpMax - crIns.cpMin);
+		SendMessageA(m_hwndLog, EM_GETSELTEXT, 0, (LPARAM)content.data());
+	}
 
 	// Restore caret position
 	if (crMark.cpMin == crMark.cpMax && crMark.cpMin == nTextLen) SendMessage(m_hwndLog, EM_SETSEL, -1, -1);
@@ -303,13 +312,13 @@ void CALLBACK JClient::JPageLog::AppendScript(const std::tstring& content, bool 
 		switch (etimeFormat)
 		{
 		case etimeHHMM:
-			StringCchPrintf(time, _countof(time), TEXT("[style=time][%02u:%02u][/style] "), st.wHour, st.wMinute);
+			_stprintf_s(time, _countof(time), TEXT("[style=time][%02u:%02u][/style] "), st.wHour, st.wMinute);
 			break;
 		case etimeHHMMSS:
-			StringCchPrintf(time, _countof(time), TEXT("[style=time][%02u:%02u:%02u][/style] "), st.wHour, st.wMinute, st.wSecond);
+			_stprintf_s(time, _countof(time), TEXT("[style=time][%02u:%02u:%02u][/style] "), st.wHour, st.wMinute, st.wSecond);
 			break;
 		default:
-			StringCchPrintf(time, _countof(time), TEXT(""));
+			_stprintf_s(time, _countof(time), TEXT(""));
 			break;
 		}
 	}
@@ -322,12 +331,22 @@ void CALLBACK JClient::JPageLog::AppendScript(const std::tstring& content, bool 
 	if (GetFocus() != m_hwndLog) SendMessage(m_hwndLog, WM_VSCROLL, SB_BOTTOM, 0);
 }
 
-void CALLBACK JClient::JPageLog::Say(DWORD idUser, const std::string& content)
+void CALLBACK JClient::JPageLog::Say(DWORD idWho, std::string& content)
 {
 	AppendScript(tformat(TEXT("[color=%s]%s[/color]:"),
-		idUser != pSource->m_idOwn ? TEXT("red") : TEXT("blue"),
-		getSafeName(idUser).c_str()));
-	AppendRtf(content);
+		idWho != pSource->m_idOwn ? TEXT("red") : TEXT("blue"),
+		getSafeName(idWho).c_str()));
+	AppendRtf(content, true);
+
+	// Lua response
+	if (pSource->m_luaEvents) {
+		lua_getglobal(pSource->m_luaEvents, "onSay");
+		lua_pushstring(pSource->m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+		lua_pushstring(pSource->m_luaEvents, tstrToANSI(getname()).c_str());
+		lua_pushstring(pSource->m_luaEvents, content.c_str());
+		ASSERT(lua_gettop(pSource->m_luaEvents) == 4);
+		lua_call(pSource->m_luaEvents, 3, 0);
+	}
 }
 
 LRESULT WINAPI JClient::JPageLog::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -564,7 +583,7 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 			SetWindowText(m_hwndPort, tformat(TEXT("%u"), pSource->m_port).c_str());
 			SendMessage(m_hwndPort, EM_LIMITTEXT, 5, 0);
 			// Init Pass control
-			SetWindowText(m_hwndPass, pSource->m_password.c_str());
+			SetWindowText(m_hwndPass, pSource->m_passwordNet.c_str());
 			// Init Nick control
 			SetWindowText(m_hwndNick, pSource->m_mUser[pSource->m_idOwn].name.c_str());
 			// Init status combobox
@@ -718,7 +737,12 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 			{
 			case IDC_CONNECT:
 				{
-					if (pSource->m_clientsock) {
+					// Lua response
+					if (pSource->m_luaEvents) {
+						lua_getglobal(pSource->m_luaEvents, "idcConnect");
+						ASSERT(lua_gettop(pSource->m_luaEvents) == 1);
+						lua_call(pSource->m_luaEvents, 0, 0);
+					} else if (pSource->m_clientsock) {
 						pSource->DeleteLink(pSource->m_clientsock);
 					} else if (pSource->m_nConnectCount) {
 						pSource->m_nConnectCount = 0;
@@ -1090,7 +1114,7 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 								break;
 
 							case 1:
-								StringCchPrintf(buffer, _countof(buffer), TEXT("%u"), iter->second.opened.size());
+								_stprintf_s(buffer, _countof(buffer), TEXT("%u"), iter->second.opened.size());
 								pnmv->item.pszText = buffer;
 								break;
 
@@ -1115,7 +1139,7 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 									SYSTEMTIME st;
 									FileTimeToLocalTime(iter->second.ftCreation, st);
 
-									StringCchPrintf(buffer, _countof(buffer),
+									_stprintf_s(buffer, _countof(buffer),
 										TEXT("%02i:%02i:%02i, %02i.%02i.%04i"),
 										st.wHour, st.wMinute, st.wSecond,
 										st.wDay, st.wMonth, st.wYear);
@@ -1375,7 +1399,7 @@ void JClient::JPageList::OnTopic(DWORD idWho, DWORD idWhere, const std::tstring&
 	}
 }
 
-void JClient::JPageList::OnNick(DWORD idOld, DWORD idNew, const std::tstring& newname)
+void JClient::JPageList::OnNick(DWORD idOld, const std::tstring& oldname, DWORD idNew, const std::tstring& newname)
 {
 	ASSERT(pSource);
 	MapChannel::iterator ic = m_mChannel.find(idOld);
@@ -1491,11 +1515,11 @@ CALLBACK JClient::JPageChat::JPageChat(DWORD id)
 	m_ID = id;
 }
 
-void CALLBACK JClient::JPageChat::Say(DWORD idUser, const std::string& content)
+void CALLBACK JClient::JPageChat::Say(DWORD idWho, std::string& content)
 {
-	__super::Say(idUser, content);
+	__super::Say(idWho, content);
 
-	if (idUser == pSource->m_idOwn) { // Blue spin
+	if (idWho == pSource->m_idOwn) { // Blue spin
 		vecMsgSpinBlue.insert(vecMsgSpinBlue.begin(), content);
 		if (vecMsgSpinBlue.size() > pSource->m_metrics.nMsgSpinMaxCount)
 			vecMsgSpinBlue.erase(vecMsgSpinBlue.begin() + pSource->m_metrics.nMsgSpinMaxCount, vecMsgSpinBlue.end());
@@ -2120,8 +2144,6 @@ void CALLBACK JClient::JPageChannel::setchannel(const Channel& val)
 		ListView_DeleteAllItems(m_hwndList);
 		BuildView();
 	}
-
-	AppendScript(tformat(TEXT("[style=Info]now talking in [b]#%s[/b][/style]"), m_channel.name.c_str()));
 }
 
 void CALLBACK JClient::JPageChannel::rename(DWORD idNew, const std::tstring& newname)
@@ -2202,38 +2224,57 @@ void CALLBACK JClient::JPageChannel::redrawUser(DWORD idUser)
 	if (index != -1) VERIFY(ListView_RedrawItems(m_hwndList, index, index));
 }
 
-void CALLBACK JClient::JPageChannel::Join(DWORD idUser)
+void CALLBACK JClient::JPageChannel::Join(DWORD idWho)
 {
-	m_channel.opened.insert(idUser);
-	if (m_channel.getStatus(idUser) == eOutsider)
-		m_channel.setStatus(idUser, m_channel.nAutoStatus > eOutsider ? m_channel.nAutoStatus : eWriter);
+	m_channel.opened.insert(idWho);
+	if (m_channel.getStatus(idWho) == eOutsider)
+		m_channel.setStatus(idWho, m_channel.nAutoStatus > eOutsider ? m_channel.nAutoStatus : eWriter);
 
-	if (m_hwndPage) AddLine(idUser);
+	if (m_hwndPage) AddLine(idWho);
 
 	// Introduction messages only fo finded user here - user can be unknown or hidden
-	MapUser::const_iterator iu = pSource->m_mUser.find(idUser);
+	MapUser::const_iterator iu = pSource->m_mUser.find(idWho);
 	if (iu != pSource->m_mUser.end() && iu->second.name.length()) {
-		AppendScript(tformat(TEXT("[style=Info]joins: [b]%s[/b][/style]"), getSafeName(idUser).c_str()));
+		// Lua response
+		if (pSource->m_luaEvents) {
+			lua_getglobal(pSource->m_luaEvents, "onJoinChannel");
+			lua_pushstring(pSource->m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+			lua_pushstring(pSource->m_luaEvents, tstrToANSI(m_channel.name).c_str());
+			ASSERT(lua_gettop(pSource->m_luaEvents) == 3);
+			lua_call(pSource->m_luaEvents, 2, 0);
+		} else {
+			AppendScript(tformat(TEXT("[style=Info]joins: [b]%s[/b][/style]"), getSafeName(idWho).c_str()));
+		}
 	}
 }
 
-void CALLBACK JClient::JPageChannel::Part(DWORD idUser, DWORD idBy)
+void CALLBACK JClient::JPageChannel::Part(DWORD idWho, DWORD idBy)
 {
-	m_channel.opened.erase(idUser);
-	if (m_hwndPage) DelLine(idUser);
+	m_channel.opened.erase(idWho);
+	if (m_hwndPage) DelLine(idWho);
 
-	// Parting message
-	std::tstring msg;
-	std::tstring who = getSafeName(idUser);
-	if (idUser == idBy) {
-		msg = tformat(TEXT("[style=Info]parts: [b]%s[/b][/style]"), who.c_str());
-	} else if (idBy == CRC_SERVER) {
-		msg = tformat(TEXT("[style=Info]quits: [b]%s[/b][/style]"), who.c_str());
+	// Lua response
+	if (pSource->m_luaEvents) {
+		lua_getglobal(pSource->m_luaEvents, "onPartChannel");
+		lua_pushstring(pSource->m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
+		lua_pushstring(pSource->m_luaEvents, tstrToANSI(getSafeName(idBy)).c_str());
+		lua_pushstring(pSource->m_luaEvents, tstrToANSI(m_channel.name).c_str());
+		ASSERT(lua_gettop(pSource->m_luaEvents) == 4);
+		lua_call(pSource->m_luaEvents, 3, 0);
 	} else {
+		// Parting message
+		std::tstring msg;
+		std::tstring who = getSafeName(idWho);
 		std::tstring by = getSafeName(idBy);
-		msg = tformat(TEXT("[style=Info][b]%s[/b] was kicked by [b]%s[/b][/style]"), who.c_str(), by.c_str());
+		if (idWho == idBy) {
+			msg = tformat(TEXT("[style=Info]parts: [b]%s[/b][/style]"), who.c_str());
+		} else if (idBy == CRC_SERVER) {
+			msg = tformat(TEXT("[style=Info]quits: [b]%s[/b][/style]"), who.c_str());
+		} else {
+			msg = tformat(TEXT("[style=Info][b]%s[/b] was kicked by [b]%s[/b][/style]"), who.c_str(), by.c_str());
+		}
+		AppendScript(msg);
 	}
-	AppendScript(msg);
 }
 
 int  CALLBACK JClient::JPageChannel::indexIcon(DWORD idUser) const
@@ -2485,7 +2526,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				{
 					MapUser::const_iterator iu = getSelUser();
 					ASSERT(iu != pSource->m_mUser.end());
-					if (iu->second.accessibility.fCanRecvClipboard || pSource->isGod()) {
+					if ((pSource->m_metrics.flags.bTransmitClipboard && iu->second.accessibility.fCanRecvClipboard) || pSource->isGod()) {
 						ASSERT(pSource->m_clientsock);
 						pSource->Send_Cmd_CLIPBOARD(pSource->m_clientsock, iu->first);
 					} else DisplayMessage(iu->first, MAKEINTRESOURCE(IDS_MSG_CLIPBOARD), (HICON)1);
@@ -2849,17 +2890,17 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 				VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_PRIVATETALK, FALSE));
 				EnableMenuItem((HMENU)wParam, IDC_PRIVATETALK,
-					MF_BYCOMMAND | (valid && iu->second.accessibility.fCanOpenPrivate || pSource->isGod() ? MF_ENABLED : MF_GRAYED));
+					MF_BYCOMMAND | (valid && (iu->second.accessibility.fCanOpenPrivate || pSource->isGod()) ? MF_ENABLED : MF_GRAYED));
 				EnableMenuItem((HMENU)wParam, IDC_PRIVATEMESSAGE,
-					MF_BYCOMMAND | (valid && iu->second.accessibility.fCanMessage || pSource->isGod() ? MF_ENABLED : MF_GRAYED));
+					MF_BYCOMMAND | (valid && (iu->second.accessibility.fCanMessage || pSource->isGod()) ? MF_ENABLED : MF_GRAYED));
 				EnableMenuItem((HMENU)wParam, IDS_SOUNDSIGNAL,
-					MF_BYCOMMAND | (valid && iu->second.accessibility.fCanSignal || pSource->isGod() ? MF_ENABLED : MF_GRAYED));
+					MF_BYCOMMAND | (valid && (iu->second.accessibility.fCanSignal || pSource->isGod()) ? MF_ENABLED : MF_GRAYED));
 				EnableMenuItem((HMENU)wParam, IDC_ALERT,
-					MF_BYCOMMAND | (valid && iu->second.accessibility.fCanAlert || pSource->isGod() ? MF_ENABLED : MF_GRAYED));
+					MF_BYCOMMAND | (valid && (iu->second.accessibility.fCanAlert || pSource->isGod()) ? MF_ENABLED : MF_GRAYED));
 				EnableMenuItem((HMENU)wParam, IDC_CLIPBOARD,
-					MF_BYCOMMAND | (valid && iu->second.accessibility.fCanRecvClipboard || pSource->isGod() ? MF_ENABLED : MF_GRAYED));
+					MF_BYCOMMAND | (valid && ((iu->second.accessibility.fCanRecvClipboard && pSource->m_metrics.flags.bTransmitClipboard) || pSource->isGod()) ? MF_ENABLED : MF_GRAYED));
 				EnableMenuItem((HMENU)wParam, IDC_SPLASHRTF,
-					MF_BYCOMMAND | (valid && iu->second.accessibility.fCanSplash || pSource->isGod() ? MF_ENABLED : MF_GRAYED));
+					MF_BYCOMMAND | (valid && (iu->second.accessibility.fCanSplash || pSource->isGod()) ? MF_ENABLED : MF_GRAYED));
 
 				EnableMenuItem((HMENU)wParam, IDC_RENAME,
 					MF_BYCOMMAND | (valid && pSource->isGod() ? MF_ENABLED : MF_GRAYED));
@@ -2990,7 +3031,7 @@ void JClient::JPageChannel::OnLinkClose(SOCKET sock, UINT err)
 	m_channel.opened.clear(); // no users on disconnected channel
 }
 
-void JClient::JPageChannel::OnNick(DWORD idOld, DWORD idNew, const std::tstring& newname)
+void JClient::JPageChannel::OnNick(DWORD idOld, const std::tstring& oldname, DWORD idNew, const std::tstring& newname)
 {
 	ASSERT(pSource);
 }
@@ -3003,10 +3044,6 @@ void JClient::JPageChannel::OnTopic(DWORD idWho, DWORD idWhere, const std::tstri
 		m_channel.idTopicWriter = idWho;
 		if (m_hwndPage) {
 			setAlert(eRed);
-			AppendScript(tformat(TEXT("[style=Descr][color=%s]%s[/color] changes topic to:\n%s[/style]"),
-				idWho != pSource->m_idOwn ? TEXT("red") : TEXT("blue"),
-				getSafeName(idWho).c_str(),
-				topic.c_str()));
 		}
 	}
 }

@@ -28,13 +28,6 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// RT_MANIFEST
-//
-
-IDR_MANIFEST            RT_MANIFEST             "ColibriServer.exe.manifest"
-
-/////////////////////////////////////////////////////////////////////////////
-//
 // Icon
 //
 
@@ -49,8 +42,8 @@ IDI_SMALL               ICON                    "chat.ico"
 //
 
 1 VERSIONINFO
- FILEVERSION 1,1,1,1
- PRODUCTVERSION 1,1,1,1
+ FILEVERSION 1,1,1,2
+ PRODUCTVERSION 1,1,1,2
  FILEFLAGSMASK 0x1fL
 #ifdef _DEBUG
  FILEFLAGS 0x9L
@@ -68,14 +61,14 @@ BEGIN
             VALUE "Comments", "Shareware; Colibri Chat created 19.04.2009 17:17:32\r\n\r\nContact information:\r\nmailto:xbeowolf@gmail.com\r\nicq:320-329-575\r\nphone:+380684862837"
             VALUE "CompanyName", "Podobashev D. O. / BEOWOLF"
             VALUE "FileDescription", "Colibri Chat Server Application"
-            VALUE "FileVersion", "1, 1, 1, 1"
+            VALUE "FileVersion", "1, 1, 1, 2"
             VALUE "InternalName", "ColibriServer"
             VALUE "LegalCopyright", "© BEOWOLF / Podobashev Dmitry, 2009"
             VALUE "LegalTrademarks", "MetaShape"
             VALUE "OriginalFilename", "ColibriServer.exe"
             VALUE "PrivateBuild", "Build 11"
             VALUE "ProductName", "Colibri Chat"
-            VALUE "ProductVersion", "1, 1, 1, 1"
+            VALUE "ProductVersion", "1, 1, 1, 2"
         END
     END
     BLOCK "VarFileInfo"
@@ -135,6 +128,33 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_CONNECTIONS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 83
+    END
+
+    IDD_PASSWORDS, DIALOG
+    BEGIN
+        LEFTMARGIN, 4
+        RIGHTMARGIN, 172
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 162
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // Dialog
 //
 
@@ -145,6 +165,31 @@ CAPTION "Connections"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     CONTROL         "",IDC_LIST,"SysListView32",LVS_REPORT | LVS_SHOWSELALWAYS | LVS_SHAREIMAGELISTS | LVS_EDITLABELS | LVS_ALIGNLEFT | WS_BORDER | WS_GROUP | WS_TABSTOP,4,4,178,82,0,HIDC_LIST
+END
+
+IDD_PASSWORDS DIALOGEX 0, 0, 176, 166
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | DS_FIXEDSYS | DS_CENTERMOUSE | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_CONTEXTHELP
+CAPTION "Server passwords"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    GROUPBOX        "Connection password",IDC_STATIC,4,4,168,44,0,0,HIDC_STATIC
+    LTEXT           "Enter password",IDC_STATIC,8,17,60,8,0,0,HIDC_STATIC
+    EDITTEXT        IDC_PASSWORDNET1,68,14,100,14,ES_PASSWORD | ES_AUTOHSCROLL,0,HIDC_PASSWORDNET1
+    LTEXT           "Confirm password",IDC_STATIC,8,33,60,8,0,0,HIDC_STATIC
+    EDITTEXT        IDC_PASSWORDNET2,68,30,100,14,ES_PASSWORD | ES_AUTOHSCROLL,0,HIDC_PASSWORDNET2
+    GROUPBOX        "God cheat password",IDC_STATIC,4,52,168,44,0,0,HIDC_STATIC
+    LTEXT           "Enter password",IDC_STATIC,8,65,60,8,0,0,HIDC_STATIC
+    EDITTEXT        IDC_PASSWORDGOD1,68,62,100,14,ES_PASSWORD | ES_AUTOHSCROLL,0,HIDC_PASSWORDGOD1
+    LTEXT           "Confirm password",IDC_STATIC,8,81,60,8,0,0,HIDC_STATIC
+    EDITTEXT        IDC_PASSWORDGOD2,68,78,100,14,ES_PASSWORD | ES_AUTOHSCROLL,0,HIDC_PASSWORDGOD2
+    GROUPBOX        "Devil cheat password",IDC_STATIC,4,100,168,44,0,0,HIDC_STATIC
+    LTEXT           "Enter password",IDC_STATIC,8,113,60,8,0,0,HIDC_STATIC
+    EDITTEXT        IDC_PASSWORDDEVIL1,68,110,100,14,ES_PASSWORD | ES_AUTOHSCROLL,0,HIDC_PASSWORDDEVIL1
+    LTEXT           "Confirm password",IDC_STATIC,8,129,60,8,0,0,HIDC_STATIC
+    EDITTEXT        IDC_PASSWORDDEVIL2,68,126,100,14,ES_PASSWORD | ES_AUTOHSCROLL,0,HIDC_PASSWORDDEVIL2
+    DEFPUSHBUTTON   "&OK",IDOK,72,148,50,14,0,0,HIDOK
+    PUSHBUTTON      "&Cancel",IDCANCEL,122,148,50,14,0,0,HIDCANCEL
 END
 
 
@@ -158,6 +203,7 @@ BEGIN
     POPUP "&Overlap"
     BEGIN
         MENUITEM "&Connections",                IDC_SHELL_CONNECTIONS
+        MENUITEM "&Passwords...",               IDC_SHELL_PASSWORDS
         MENUITEM "&About...",                   IDC_SHELL_ABOUT
         MENUITEM SEPARATOR
         MENUITEM "&Exit",                       IDC_SHELL_EXIT
@@ -178,25 +224,6 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
-BEGIN
-    IDD_CONNECTIONS, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 179
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 83
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
 // String Table
 //
 
@@ -204,7 +231,14 @@ STRINGTABLE
 BEGIN
     IDS_SHELL_TIP           "Colibri Chat Server"
     IDS_ABOUT_TITLE         "About Colibri Chat"
-    IDS_ABOUT_INFO          "Colibri Chat Server, product version 1.1.1.1\r\n\r\n© BEOWOLF / Podobashev Dmitry, 2009"
+    IDS_ABOUT_INFO          "Colibri Chat Server, product version 1.1.1.2\r\n\r\n© BEOWOLF / Podobashev Dmitry, 2009"
+END
+
+STRINGTABLE 
+BEGIN
+    IDS_PASS_NET            "First password for network connection does not coincide with second"
+    IDS_PASS_GOD            "First password for god cheat does not coincide with second"
+    IDS_PASS_DEVIL          "First password for devil cheat does not coincide with second"
 END
 
 #endif    // English (U.S.) resources
