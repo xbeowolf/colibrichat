@@ -39,7 +39,7 @@
 #define APPDATE                TEXT(__DATE__)
 #define APPDATEW               WTEXT(__DATE__)
 #define APPDATEA               ATEXT(__DATE__)
-#define APPVER                 TEXT("1.1")
+#define APPVER                 TEXT("1.2")
 
 //
 // Register
