@@ -119,6 +119,9 @@ void CALLBACK JServer::LoadState()
 
 	m_bShowIcon = Profile::GetInt(RF_SERVER, RK_SHOWICON, TRUE) != 0;
 
+	m_nCompression = Profile::GetInt(RF_SERVER, RK_COMPRESSION, -1);
+	m_bUseEncoding = Profile::GetInt(RF_SERVER, RK_USEENCODING, true) != 0;
+
 	m_metrics.uNameMaxLength = (size_t)Profile::GetInt(RF_METRICS, RK_NameMaxLength, 20);
 	m_metrics.uPassMaxLength = (size_t)Profile::GetInt(RF_METRICS, RK_PassMaxLength, 32);
 	m_metrics.uStatusMsgMaxLength = (size_t)Profile::GetInt(RF_METRICS, RK_StatusMsgMaxLength, 32);

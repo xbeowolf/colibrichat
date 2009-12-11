@@ -615,7 +615,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Colibri Chat"
         "ProductCode" = "8:{CB4F402C-DC95-4E54-8F11-A91C0416DCAB}"
-        "PackageCode" = "8:{A5C8F203-43F2-450F-9996-04771F9B788A}"
+        "PackageCode" = "8:{690378B5-9D30-4F01-9177-F3329D0DEB49}"
         "UpgradeCode" = "8:{9CE85361-B45F-48AE-B43E-D9C165BF7E24}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
@@ -835,6 +835,14 @@
                                                 }
                                                 "Values"
                                                 {
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_163FB703ED8D451D89CDBFA0AAFF28E6"
+                                                    {
+                                                    "Name" = "8:UseEncoding"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:1"
+                                                    }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_2925F71457B04CB598CD22E5B474F306"
                                                     {
                                                     "Name" = "8:Port00"
@@ -874,6 +882,14 @@
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:3"
                                                     "Value" = "3:1"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_B214241F4A2849758C289575C17CEE33"
+                                                    {
+                                                    "Name" = "8:CompressionLevel"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:-1"
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_DAE4D473C2C2492F981D1D98024646C0"
                                                     {
@@ -1101,6 +1117,14 @@
                                                     "ValueTypes" = "3:3"
                                                     "Value" = "3:0"
                                                     }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_39B39B5FE59B43C9A163247106EFBD36"
+                                                    {
+                                                    "Name" = "8:UseEncoding"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:1"
+                                                    }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_5256B7EBA5D64D9081B51C56883C259B"
                                                     {
                                                     "Name" = "8:TimerConnect"
@@ -1196,6 +1220,14 @@
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:1"
                                                     "Value" = "8:beowolf"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_F16E0724384D46B4864E811BBC1733A7"
+                                                    {
+                                                    "Name" = "8:CompressionLevel"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:3"
+                                                    "Value" = "3:-1"
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_F42EA0F0E14C4E40BA3986963A9F7DFB"
                                                     {

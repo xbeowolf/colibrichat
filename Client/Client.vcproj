@@ -219,6 +219,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\Common\blowfish.c"
+					>
+				</File>
+				<File
 					RelativePath="..\..\Common\dCRC.cpp"
 					>
 				</File>
@@ -298,6 +302,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\Common\blowfish.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\Common\bnp.h"
 					>
 				</File>
@@ -339,6 +347,10 @@
 				</File>
 				<File
 					RelativePath="..\..\Common\stdafx.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Common\stringutil.h"
 					>
 				</File>
 				<File

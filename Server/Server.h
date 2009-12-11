@@ -39,6 +39,10 @@
 #define RF_SERVER              TEXT("Server\\")
 #define RF_METRICS             RF_SERVER TEXT("Metrics\\")
 
+// NetEngine
+#define RK_COMPRESSION         TEXT("CompressionLevel")
+#define RK_USEENCODING         TEXT("UseEncoding")
+
 // Metrics
 #define RK_NameMaxLength       TEXT("NameMaxLength")
 #define RK_PassMaxLength       TEXT("PassMaxLength")

@@ -200,6 +200,9 @@ void CALLBACK JClient::LoadState()
 	user.nStatusImg = Profile::GetInt(RF_CLIENT, RK_STATUSIMG, 0);
 	user.strStatus = Profile::GetString(RF_CLIENT, RK_STATUSMSG, TEXT("ready to talk"));
 
+	m_nCompression = Profile::GetInt(RF_CLIENT, RK_COMPRESSION, -1);
+	m_bUseEncoding = Profile::GetInt(RF_CLIENT, RK_USEENCODING, true) != 0;
+
 	m_hostname = tstrToANSI(Profile::GetString(RF_CLIENT, RK_HOST, TEXT("127.0.0.1")));
 	m_port = (u_short)Profile::GetInt(RF_CLIENT, RK_PORT, CCP_PORT);
 	m_passwordNet = Profile::GetString(RF_CLIENT, RK_PASSWORDNET, TEXT("beowolf"));

@@ -50,6 +50,10 @@
 #define RF_AUTOOPEN            RF_CLIENT TEXT("Autoopen\\")
 #define RF_SOUNDS              RF_CLIENT TEXT("Sounds\\")
 
+// NetEngine
+#define RK_COMPRESSION         TEXT("CompressionLevel")
+#define RK_USEENCODING         TEXT("UseEncoding")
+
 // Server
 #define RK_NICK                TEXT("Nickname")
 #define RK_HOST                TEXT("Host")
