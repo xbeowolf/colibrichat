@@ -148,7 +148,7 @@ namespace colibrichat
 
 		LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
-		bool CALLBACK CheckAccess(const TCHAR* password, SetAccess& access) const;
+		bool CALLBACK CheckAccess(const std::tstring& password, SetAccess& access) const;
 
 		// --- CRC work ---
 
@@ -167,6 +167,7 @@ namespace colibrichat
 
 	protected:
 
+		int  CALLBACK BroadcastTrn(const SetId& set, bool nested, JTransaction* jpTrn, size_t ssi = 0) throw();
 		int  CALLBACK BroadcastTrn(const SetId& set, bool nested, WORD message, const std::string& str, size_t ssi = 0) throw();
 
 		// Beowolf Network Protocol Messages reciving
@@ -187,32 +188,28 @@ namespace colibrichat
 		void CALLBACK Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is);
 
 		// Beowolf Network Protocol Messages sending
-		void CALLBACK Send_Notify_METRICS(SOCKET sock, const Metrics& metrics);
-		void CALLBACK Broadcast_Notify_NICK(const SetId& set, DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname);
-		void CALLBACK Send_Reply_LIST(SOCKET sock, WORD trnid);
-		void CALLBACK Send_Reply_JOIN_Result(SOCKET sock, WORD trnid, DWORD result, EContact type, DWORD id);
-		void CALLBACK Send_Reply_JOIN_User(SOCKET sock, WORD trnid, DWORD id, const User& user);
-		void CALLBACK Send_Reply_JOIN_Channel(SOCKET sock, WORD trnid, DWORD id, const Channel& chan);
-		void CALLBACK Send_Notify_JOIN(SOCKET sock, DWORD idWho, DWORD idWhere, const User& user);
-		void CALLBACK Broadcast_Notify_JOIN(const SetId& set, DWORD idWho, DWORD idWhere, const User& user);
-		void CALLBACK Send_Notify_PART(SOCKET sock, DWORD idWho, DWORD idWhere, DWORD idBy);
-		void CALLBACK Broadcast_Notify_PART(const SetId& set, DWORD idWho, DWORD idWhere, DWORD idBy);
-		void CALLBACK Send_Reply_USERINFO(SOCKET sock, WORD trnid, const SetId& set);
-		void CALLBACK Broadcast_Notify_ONLINE(const SetId& set, DWORD idWho, EOnline online, DWORD id);
-		void CALLBACK Broadcast_Notify_STATUS(const SetId& set, DWORD idWho, WORD type, EUserStatus stat, const Alert& a, int img, std::tstring msg);
-		void CALLBACK Broadcast_Notify_STATUS_God(const SetId& set, DWORD idWho, bool god);
-		void CALLBACK Broadcast_Notify_STATUS_Devil(const SetId& set, DWORD idWho, bool devil);
-		void CALLBACK Send_Notify_SAY(SOCKET sock, DWORD idWho, DWORD idWhere, UINT type, const std::string& content);
-		void CALLBACK Broadcast_Notify_SAY(const SetId& set, DWORD idWho, DWORD idWhere, UINT type, const std::string& content);
-		void CALLBACK Broadcast_Notify_TOPIC(const SetId& set, DWORD idWho, DWORD idWhere, const std::tstring& topic);
-		void CALLBACK Send_Notify_CHANOPTIONS(SOCKET sock, DWORD idWho, DWORD idWhere, int op, DWORD val);
-		void CALLBACK Broadcast_Notify_CHANOPTIONS(const SetId& set, DWORD idWho, DWORD idWhere, int op, DWORD val);
-		void CALLBACK Broadcast_Notify_ACCESS(const SetId& set, DWORD idWho, DWORD idWhere, EChanStatus stat, DWORD idBy);
-		void CALLBACK Send_Notify_BEEP(SOCKET sock, DWORD idBy);
-		void CALLBACK Send_Notify_CLIPBOARD(SOCKET sock, DWORD idBy, const char* ptr, size_t size);
-		void CALLBACK Send_Notify_MESSAGE(SOCKET sock, DWORD idBy, const FILETIME& ft, const char* ptr, size_t size);
-		void CALLBACK Send_Reply_MESSAGE(SOCKET sock, WORD trnid, DWORD idWho, UINT type);
-		void CALLBACK Send_Notify_SPLASHRTF(SOCKET sock, DWORD idBy, const char* ptr, size_t size);
+		JPtr<JTransaction> CALLBACK Make_Notify_METRICS(const Metrics& metrics) const;
+		JPtr<JTransaction> CALLBACK Make_Notify_NICK(DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname) const;
+		JPtr<JTransaction> CALLBACK Make_Reply_LIST(WORD trnid, bool god) const;
+		JPtr<JTransaction> CALLBACK Make_Reply_JOIN_Result(WORD trnid, DWORD result, EContact type, DWORD id) const;
+		JPtr<JTransaction> CALLBACK Make_Reply_JOIN_User(WORD trnid, DWORD id, const User& user) const;
+		JPtr<JTransaction> CALLBACK Make_Reply_JOIN_Channel(WORD trnid, DWORD id, const Channel& chan) const;
+		JPtr<JTransaction> CALLBACK Make_Notify_JOIN(DWORD idWho, DWORD idWhere, const User& user) const;
+		JPtr<JTransaction> CALLBACK Make_Notify_PART(DWORD idWho, DWORD idWhere, DWORD idBy) const;
+		JPtr<JTransaction> CALLBACK Make_Reply_USERINFO(WORD trnid, const SetId& set) const;
+		JPtr<JTransaction> CALLBACK Make_Notify_ONLINE(DWORD idWho, EOnline online, DWORD id) const;
+		JPtr<JTransaction> CALLBACK Make_Notify_STATUS(DWORD idWho, WORD type, EUserStatus stat, const Alert& a, int img, std::tstring msg) const;
+		JPtr<JTransaction> CALLBACK Make_Notify_STATUS_God(DWORD idWho, bool god) const;
+		JPtr<JTransaction> CALLBACK Make_Notify_STATUS_Devil(DWORD idWho, bool devil) const;
+		JPtr<JTransaction> CALLBACK Make_Notify_SAY(DWORD idWho, DWORD idWhere, UINT type, const std::string& content) const;
+		JPtr<JTransaction> CALLBACK Make_Notify_TOPIC(DWORD idWho, DWORD idWhere, const std::tstring& topic) const;
+		JPtr<JTransaction> CALLBACK Make_Notify_CHANOPTIONS(DWORD idWho, DWORD idWhere, int op, DWORD val) const;
+		JPtr<JTransaction> CALLBACK Make_Notify_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat, DWORD idBy) const;
+		JPtr<JTransaction> CALLBACK Make_Notify_BEEP(DWORD idBy) const;
+		JPtr<JTransaction> CALLBACK Make_Notify_CLIPBOARD(DWORD idBy, const char* ptr, size_t size) const;
+		JPtr<JTransaction> CALLBACK Make_Notify_MESSAGE(DWORD idBy, const FILETIME& ft, const char* ptr, size_t size) const;
+		JPtr<JTransaction> CALLBACK Make_Reply_MESSAGE(WORD trnid, DWORD idWho, UINT type) const;
+		JPtr<JTransaction> CALLBACK Make_Notify_SPLASHRTF(DWORD idBy, const char* ptr, size_t size) const;
 
 		void OnHook(JEventable* src);
 		void OnUnhook(JEventable* src);

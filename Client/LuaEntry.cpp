@@ -351,7 +351,7 @@ int JClient::lua_Say(lua_State *luaVM)
 	else if (lua_isnumber(luaVM, 1)) id = (DWORD)lua_tointeger(luaVM, 1);
 	else id = CRC_SERVER;
 	if (m_clientsock) {
-		Send_Cmd_SAY(m_clientsock, id, SF_TEXT, lua_tostring(luaVM, 2));
+		PushTrn(m_clientsock, Make_Cmd_SAY(id, SF_TEXT, lua_tostring(luaVM, 2)));
 	}
 	return 0;
 }
@@ -364,7 +364,7 @@ int JClient::lua_Message(lua_State *luaVM)
 	else if (lua_isnumber(luaVM, 1)) id = (DWORD)lua_tointeger(luaVM, 1);
 	else id = CRC_SERVER;
 	if (m_clientsock) {
-		Send_Quest_MESSAGE(m_clientsock, id, lua_tostring(luaVM, 2), false, GetSysColor(COLOR_WINDOW));
+		PushTrn(m_clientsock, Make_Quest_MESSAGE(id, lua_tostring(luaVM, 2), false, GetSysColor(COLOR_WINDOW)));
 	}
 	return 0;
 }
@@ -377,7 +377,7 @@ int JClient::lua_Alert(lua_State *luaVM)
 	else if (lua_isnumber(luaVM, 1)) id = (DWORD)lua_tointeger(luaVM, 1);
 	else id = CRC_SERVER;
 	if (m_clientsock) {
-		Send_Quest_MESSAGE(m_clientsock, id, lua_tostring(luaVM, 2), true, GetSysColor(COLOR_WINDOW));
+		PushTrn(m_clientsock, Make_Quest_MESSAGE(id, lua_tostring(luaVM, 2), true, GetSysColor(COLOR_WINDOW)));
 	}
 	return 0;
 }
@@ -390,7 +390,7 @@ int JClient::lua_Beep(lua_State *luaVM)
 	else if (lua_isnumber(luaVM, 1)) id = (DWORD)lua_tointeger(luaVM, 1);
 	else id = CRC_SERVER;
 	if (m_clientsock) {
-		Send_Cmd_BEEP(m_clientsock, id);
+		PushTrn(m_clientsock, Make_Cmd_BEEP(id));
 	}
 	return 0;
 }

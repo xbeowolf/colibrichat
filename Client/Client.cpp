@@ -417,7 +417,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	case WM_ACTIVATEAPP2:
 		{
 			if (jpOnline) jpOnline->activate();
-			if (m_clientsock) Send_Cmd_ONLINE(m_clientsock, wParam != 0 ? eOnline : eOffline, jpOnline ? jpOnline->getID() : 0);
+			if (m_clientsock) PushTrn(m_clientsock, Make_Cmd_ONLINE(wParam != 0 ? eOnline : eOffline, jpOnline ? jpOnline->getID() : 0));
 
 			// Lua response
 			if (m_luaEvents) {
@@ -494,7 +494,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 							GetDlgItemText(jpPageServer->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
 							nick = nickbuf.c_str();
 							if (JClient::CheckNick(nick, msg)) { // check content
-								if (m_clientsock) Send_Cmd_NICK(m_clientsock, m_idOwn, nick);
+								if (m_clientsock) PushTrn(m_clientsock, Make_Cmd_NICK(m_idOwn, nick));
 								else if (!m_nConnectCount) SendMessage(jpPageServer->hwndPage, WM_COMMAND, IDC_CONNECT, 0);
 							} else {
 								DisplayMessage(jpPageServer->hwndNick, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
@@ -506,7 +506,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 						{
 							std::tstring msg(m_metrics.uStatusMsgMaxLength, 0);
 							GetDlgItemText(jpPageServer->hwndPage, IDC_STATUSMSG, &msg[0], (int)msg.size()+1);
-							Send_Cmd_STATUS_Msg(m_clientsock, msg);
+							PushTrn(m_clientsock, Make_Cmd_STATUS_Msg(msg));
 							break;
 						}
 
@@ -718,7 +718,7 @@ void CALLBACK JClient::openAutoopen()
 			type = (EContact)Profile::GetInt(RF_AUTOOPEN, tformat(TEXT("type%02i"), i).c_str(), (UINT)eChannel);
 			name = Profile::GetString(RF_AUTOOPEN, tformat(TEXT("name%02i"), i).c_str(), TEXT("main"));
 			pass = Profile::GetString(RF_AUTOOPEN, tformat(TEXT("pass%02i"), i).c_str(), TEXT(""));
-			Send_Quest_JOIN(m_clientsock, name, pass, type);
+			PushTrn(m_clientsock, Make_Quest_JOIN(name, pass, type));
 		}
 	}
 }
@@ -1137,12 +1137,13 @@ void JClient::OnLinkConnect(SOCKET sock)
 		si.sin_addr.S_un.S_un_b.s_b4,
 		ntohs(si.sin_port)), true);
 
+	PushTrn(m_clientsock,
 #ifdef UNICODE
-	Send_Quest_IdentifyW
+		Make_Quest_IdentifyW
 #else
-	Send_Quest_IdentifyA
+		Make_Quest_IdentifyA
 #endif
-		(m_clientsock, m_passwordNet.c_str());
+		(m_passwordNet.c_str()));
 
 	// Lua response
 	if (m_luaEvents) {
@@ -1217,13 +1218,13 @@ void JClient::OnLinkStart(SOCKET sock)
 	std::tstring nickbuf(m_metrics.uNameMaxLength, 0), nick;
 	GetDlgItemText(jpPageServer->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
 	nick = nickbuf.c_str();
-	Send_Cmd_NICK(sock, m_idOwn, nick);
+	PushTrn(sock, Make_Cmd_NICK(m_idOwn, nick));
 
 	EUserStatus stat = (EUserStatus)SendDlgItemMessage(jpPageServer->hwndPage, IDC_STATUS, CB_GETCURSEL, 0, 0);
 	int img = (int)SendDlgItemMessage(jpPageServer->hwndPage, IDC_STATUSIMG, CB_GETCURSEL, 0, 0);
 	std::tstring msg(m_metrics.uStatusMsgMaxLength, 0);
 	GetDlgItemText(jpPageServer->hwndPage, IDC_STATUSMSG, &msg[0], (int)msg.size()+1);
-	Send_Cmd_STATUS(sock, stat, m_mAlert[stat], img, msg);
+	PushTrn(sock, Make_Cmd_STATUS(stat, m_mAlert[stat], img, msg));
 
 	// Lua response
 	if (m_luaEvents) {
@@ -1443,7 +1444,7 @@ void CALLBACK JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 
 					ContactSel(pos);
 
-					Send_Quest_USERINFO(sock, wanted);
+					PushTrn(sock, Make_Quest_USERINFO(wanted));
 
 					// Lua response
 					if (m_luaEvents) {
@@ -1558,7 +1559,7 @@ void CALLBACK JClient::Recv_Notify_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 				ipc->second->m_channel.name.c_str()),
 				eInformation, eUnder);
 		} else {
-			Send_Cmd_PART(sock, m_idOwn, idWhere);
+			PushTrn(sock, Make_Cmd_PART(m_idOwn, idWhere));
 		}
 	}
 }
@@ -2432,72 +2433,72 @@ void CALLBACK JClient::Recv_Notify_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& i
 // Beowolf Network Protocol Messages sending
 //
 
-void CALLBACK JClient::Send_Cmd_NICK(SOCKET sock, DWORD idWho, const std::tstring& nick)
+JPtr<JTransaction> CALLBACK JClient::Make_Cmd_NICK(DWORD idWho, const std::tstring& nick) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, nick);
-	PushTrn(sock, COMMAND(CCPM_NICK), 0, os.str());
+	return MakeTrn(COMMAND(CCPM_NICK), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Quest_JOIN(SOCKET sock, const std::tstring& name, const std::tstring& pass, int type)
+JPtr<JTransaction> CALLBACK JClient::Make_Quest_JOIN(const std::tstring& name, const std::tstring& pass, int type) const
 {
 	std::ostringstream os;
 	io::pack(os, name);
 	io::pack(os, pass);
 	io::pack(os, type);
-	PushTrn(sock, QUEST(CCPM_JOIN), 0, os.str());
+	return MakeTrn(QUEST(CCPM_JOIN), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_PART(SOCKET sock, DWORD idWho, DWORD idWhere)
+JPtr<JTransaction> CALLBACK JClient::Make_Cmd_PART(DWORD idWho, DWORD idWhere) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, idWhere);
-	PushTrn(sock, COMMAND(CCPM_PART), 0, os.str());
+	return MakeTrn(COMMAND(CCPM_PART), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Quest_USERINFO(SOCKET sock, const SetId& set)
+JPtr<JTransaction> CALLBACK JClient::Make_Quest_USERINFO(const SetId& set) const
 {
 	std::ostringstream os;
 	io::pack(os, set);
-	PushTrn(sock, QUEST(CCPM_USERINFO), 0, os.str());
+	return MakeTrn(QUEST(CCPM_USERINFO), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_ONLINE(SOCKET sock, EOnline online, DWORD id)
+JPtr<JTransaction> CALLBACK JClient::Make_Cmd_ONLINE(EOnline online, DWORD id) const
 {
 	std::ostringstream os;
 	io::pack(os, online);
 	io::pack(os, id);
-	PushTrn(sock, COMMAND(CCPM_ONLINE), 0, os.str());
+	return MakeTrn(COMMAND(CCPM_ONLINE), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_STATUS_Mode(SOCKET sock, EUserStatus stat, const Alert& a)
+JPtr<JTransaction> CALLBACK JClient::Make_Cmd_STATUS_Mode(EUserStatus stat, const Alert& a) const
 {
 	std::ostringstream os;
 	io::pack(os, (WORD)STATUS_MODE);
 	io::pack(os, stat);
 	io::pack(os, a);
-	PushTrn(sock, COMMAND(CCPM_STATUS), 0, os.str());
+	return MakeTrn(COMMAND(CCPM_STATUS), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_STATUS_Img(SOCKET sock, int img)
+JPtr<JTransaction> CALLBACK JClient::Make_Cmd_STATUS_Img(int img) const
 {
 	std::ostringstream os;
 	io::pack(os, (WORD)STATUS_IMG);
 	io::pack(os, img);
-	PushTrn(sock, COMMAND(CCPM_STATUS), 0, os.str());
+	return MakeTrn(COMMAND(CCPM_STATUS), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_STATUS_Msg(SOCKET sock, const std::tstring& msg)
+JPtr<JTransaction> CALLBACK JClient::Make_Cmd_STATUS_Msg(const std::tstring& msg) const
 {
 	std::ostringstream os;
 	io::pack(os, (WORD)STATUS_MSG);
 	io::pack(os, msg);
-	PushTrn(sock, COMMAND(CCPM_STATUS), 0, os.str());
+	return MakeTrn(COMMAND(CCPM_STATUS), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_STATUS(SOCKET sock, EUserStatus stat, const Alert& a, int img, const std::tstring& msg)
+JPtr<JTransaction> CALLBACK JClient::Make_Cmd_STATUS(EUserStatus stat, const Alert& a, int img, const std::tstring& msg) const
 {
 	std::ostringstream os;
 	io::pack(os, (WORD)(STATUS_MODE | STATUS_IMG | STATUS_MSG));
@@ -2505,45 +2506,45 @@ void CALLBACK JClient::Send_Cmd_STATUS(SOCKET sock, EUserStatus stat, const Aler
 	io::pack(os, a);
 	io::pack(os, img);
 	io::pack(os, msg);
-	PushTrn(sock, COMMAND(CCPM_STATUS), 0, os.str());
+	return MakeTrn(COMMAND(CCPM_STATUS), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_SAY(SOCKET sock, DWORD idWhere, UINT type, const std::string& content)
+JPtr<JTransaction> CALLBACK JClient::Make_Cmd_SAY(DWORD idWhere, UINT type, const std::string& content) const
 {
 	std::ostringstream os;
 	io::pack(os, idWhere);
 	io::pack(os, type);
 	io::pack(os, content);
-	PushTrn(sock, COMMAND(CCPM_SAY), 0, os.str());
+	return MakeTrn(COMMAND(CCPM_SAY), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_TOPIC(SOCKET sock, DWORD idWhere, const std::tstring& topic)
+JPtr<JTransaction> CALLBACK JClient::Make_Cmd_TOPIC(DWORD idWhere, const std::tstring& topic) const
 {
 	std::ostringstream os;
 	io::pack(os, idWhere);
 	io::pack(os, topic);
-	PushTrn(sock, COMMAND(CCPM_TOPIC), 0, os.str());
+	return MakeTrn(COMMAND(CCPM_TOPIC), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_CHANOPTIONS(SOCKET sock, DWORD idWhere, int op, DWORD val)
+JPtr<JTransaction> CALLBACK JClient::Make_Cmd_CHANOPTIONS(DWORD idWhere, int op, DWORD val) const
 {
 	std::ostringstream os;
 	io::pack(os, idWhere);
 	io::pack(os, op);
 	io::pack(os, val);
-	PushTrn(sock, COMMAND(CCPM_CHANOPTIONS), 0, os.str());
+	return MakeTrn(COMMAND(CCPM_CHANOPTIONS), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_ACCESS(SOCKET sock, DWORD idWho, DWORD idWhere, EChanStatus stat)
+JPtr<JTransaction> CALLBACK JClient::Make_Cmd_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, idWhere);
 	io::pack(os, stat);
-	PushTrn(sock, COMMAND(CCPM_ACCESS), 0, os.str());
+	return MakeTrn(COMMAND(CCPM_ACCESS), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Quest_MESSAGE(SOCKET sock, DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet)
+JPtr<JTransaction> CALLBACK JClient::Make_Quest_MESSAGE(DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -2552,21 +2553,21 @@ void CALLBACK JClient::Send_Quest_MESSAGE(SOCKET sock, DWORD idWho, const std::s
 	io::pack(os, false);
 	io::pack(os, fAlert);
 	io::pack(os, crSheet);
-	PushTrn(sock, QUEST(CCPM_MESSAGE), 0, os.str());
+	return MakeTrn(QUEST(CCPM_MESSAGE), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_BEEP(SOCKET sock, DWORD idWho)
+JPtr<JTransaction> CALLBACK JClient::Make_Cmd_BEEP(DWORD idWho) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
-	PushTrn(sock, COMMAND(CCPM_BEEP), 0, os.str());
+	return MakeTrn(COMMAND(CCPM_BEEP), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_CLIPBOARD(SOCKET sock, DWORD idWho)
+JPtr<JTransaction> CALLBACK JClient::Make_Cmd_CLIPBOARD(DWORD idWho) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
-	if (!OpenClipboard(m_hwndPage)) return;
+	if (!OpenClipboard(m_hwndPage)) return 0;
 	UINT format = 0;
 	TCHAR buffer[64];
 	int len;
@@ -2589,10 +2590,10 @@ void CALLBACK JClient::Send_Cmd_CLIPBOARD(SOCKET sock, DWORD idWho)
 	}
 	io::pack(os, (UINT)0); // write end marker
 	VERIFY(CloseClipboard());
-	PushTrn(sock, COMMAND(CCPM_CLIPBOARD), 0, os.str());
+	return MakeTrn(COMMAND(CCPM_CLIPBOARD), 0, os.str());
 }
 
-void CALLBACK JClient::Send_Cmd_SPLASHRTF(SOCKET sock, DWORD idWho, const std::string& text, const RECT& rcPos, bool bCloseOnDisconnect, DWORD dwCanclose, DWORD dwAutoclose, bool fTransparent, COLORREF crSheet)
+JPtr<JTransaction> CALLBACK JClient::Make_Cmd_SPLASHRTF(DWORD idWho, const std::string& text, const RECT& rcPos, bool bCloseOnDisconnect, DWORD dwCanclose, DWORD dwAutoclose, bool fTransparent, COLORREF crSheet) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -2604,7 +2605,7 @@ void CALLBACK JClient::Send_Cmd_SPLASHRTF(SOCKET sock, DWORD idWho, const std::s
 	io::pack(os, dwAutoclose);
 	io::pack(os, fTransparent);
 	io::pack(os, crSheet);
-	PushTrn(sock, COMMAND(CCPM_SPLASHRTF), 0, os.str());
+	return MakeTrn(COMMAND(CCPM_SPLASHRTF), 0, os.str());
 }
 
 //-----------------------------------------------------------------------------

@@ -340,7 +340,7 @@ namespace colibrichat
 			void CALLBACK Recv_Reply_LIST(SOCKET sock, WORD trnid, io::mem& is);
 
 			// Beowolf Network Protocol Messages sending
-			void CALLBACK Send_Quest_LIST(SOCKET sock);
+			JPtr<JTransaction> CALLBACK Make_Quest_LIST() const;
 
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
@@ -742,25 +742,25 @@ namespace colibrichat
 		void CALLBACK Recv_Notify_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is);
 
 		// Beowolf Network Protocol Messages sending
-		void CALLBACK Send_Cmd_NICK(SOCKET sock, DWORD idWho, const std::tstring& nick);
-		void CALLBACK Send_Quest_JOIN(SOCKET sock, const std::tstring& name, const std::tstring& pass = TEXT(""), int type = eCheat | eUser | eChannel | eBoard);
-		void CALLBACK Send_Cmd_PART(SOCKET sock, DWORD idWho, DWORD idWhere);
-		void CALLBACK Send_Quest_USERINFO(SOCKET sock, const SetId& set);
-		void CALLBACK Send_Cmd_ONLINE(SOCKET sock, EOnline online, DWORD id);
-		void CALLBACK Send_Cmd_STATUS_Mode(SOCKET sock, EUserStatus stat, const Alert& a);
-		void CALLBACK Send_Cmd_STATUS_Img(SOCKET sock, int img);
-		void CALLBACK Send_Cmd_STATUS_Msg(SOCKET sock, const std::tstring& msg);
-		void CALLBACK Send_Cmd_STATUS(SOCKET sock, EUserStatus stat, const Alert& a, int img, const std::tstring& msg);
-		void CALLBACK Send_Cmd_SAY(SOCKET sock, DWORD idWhere, UINT type, const std::string& content);
-		void CALLBACK Send_Cmd_TOPIC(SOCKET sock, DWORD idWhere, const std::tstring& topic);
-		void CALLBACK Send_Cmd_CHANOPTIONS(SOCKET sock, DWORD idWhere, int op, DWORD val);
-		void CALLBACK Send_Cmd_ACCESS(SOCKET sock, DWORD idWho, DWORD idWhere, EChanStatus stat);
-		void CALLBACK Send_Quest_MESSAGE(SOCKET sock, DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet);
-		void CALLBACK Send_Cmd_BEEP(SOCKET sock, DWORD idWho);
-		void CALLBACK Send_Cmd_CLIPBOARD(SOCKET sock, DWORD idWho);
-		void CALLBACK Send_Cmd_SPLASHRTF(SOCKET sock, DWORD idWho, const std::string& text,
+		JPtr<JTransaction> CALLBACK Make_Cmd_NICK(DWORD idWho, const std::tstring& nick) const;
+		JPtr<JTransaction> CALLBACK Make_Quest_JOIN(const std::tstring& name, const std::tstring& pass = TEXT(""), int type = eCheat | eUser | eChannel | eBoard) const;
+		JPtr<JTransaction> CALLBACK Make_Cmd_PART(DWORD idWho, DWORD idWhere) const;
+		JPtr<JTransaction> CALLBACK Make_Quest_USERINFO(const SetId& set) const;
+		JPtr<JTransaction> CALLBACK Make_Cmd_ONLINE(EOnline online, DWORD id) const;
+		JPtr<JTransaction> CALLBACK Make_Cmd_STATUS_Mode(EUserStatus stat, const Alert& a) const;
+		JPtr<JTransaction> CALLBACK Make_Cmd_STATUS_Img(int img) const;
+		JPtr<JTransaction> CALLBACK Make_Cmd_STATUS_Msg(const std::tstring& msg) const;
+		JPtr<JTransaction> CALLBACK Make_Cmd_STATUS(EUserStatus stat, const Alert& a, int img, const std::tstring& msg) const;
+		JPtr<JTransaction> CALLBACK Make_Cmd_SAY(DWORD idWhere, UINT type, const std::string& content) const;
+		JPtr<JTransaction> CALLBACK Make_Cmd_TOPIC(DWORD idWhere, const std::tstring& topic) const;
+		JPtr<JTransaction> CALLBACK Make_Cmd_CHANOPTIONS(DWORD idWhere, int op, DWORD val) const;
+		JPtr<JTransaction> CALLBACK Make_Cmd_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat) const;
+		JPtr<JTransaction> CALLBACK Make_Quest_MESSAGE(DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet) const;
+		JPtr<JTransaction> CALLBACK Make_Cmd_BEEP(DWORD idWho) const;
+		JPtr<JTransaction> CALLBACK Make_Cmd_CLIPBOARD(DWORD idWho) const;
+		JPtr<JTransaction> CALLBACK Make_Cmd_SPLASHRTF(DWORD idWho, const std::string& text,
 			const RECT& rcPos, bool bCloseOnDisconnect = true, DWORD dwCanclose = 2500, DWORD dwAutoclose = 30000,
-			bool fTransparent = true, COLORREF crSheet = RGB(255, 255, 255));
+			bool fTransparent = true, COLORREF crSheet = RGB(255, 255, 255)) const;
 
 		void OnHook(JEventable* src);
 		void OnUnhook(JEventable* src);

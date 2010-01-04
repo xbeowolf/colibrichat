@@ -275,9 +275,9 @@ LRESULT WINAPI JServer::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	return retval;
 }
 
-bool CALLBACK JServer::CheckAccess(const TCHAR* password, SetAccess& access) const
+bool CALLBACK JServer::CheckAccess(const std::tstring& password, SetAccess& access) const
 {
-	if (!password) {
+	if (password.empty() && !m_passwordNet.empty()) {
 		__super::CheckAccess(password, access);
 	} else if (m_passwordNet == password || m_passwordNet.empty()) {
 		access.insert(BNPM_MESSAGE);
@@ -380,7 +380,7 @@ std::tstring CALLBACK JServer::getNearestName(const std::tstring& nick) const
 void CALLBACK JServer::RenameContact(DWORD idByOrSock, DWORD idOld, std::tstring newname)
 {
 	DWORD idNew = dCRC(newname.c_str());
-	if (idNew == idOld) return;
+	if (idNew == idOld && idOld != CRC_NONAME) return;
 
 	DWORD result;
 	if (hasCRC(idNew)) {
@@ -453,7 +453,7 @@ void CALLBACK JServer::RenameContact(DWORD idByOrSock, DWORD idOld, std::tstring
 			ASSERT(false); // no valid way to here
 		}
 	}
-	Broadcast_Notify_NICK(opened, result, idOld, idNew, newname);
+	BroadcastTrn(opened, true, Make_Notify_NICK(result, idOld, idNew, newname));
 }
 
 bool CALLBACK JServer::isGod(DWORD idUser) const
@@ -500,11 +500,11 @@ void JServer::OnLinkClose(SOCKET sock, UINT err)
 			unlinkCRC(idSrc, v);
 			MapUser::const_iterator iu = m_mUser.find(v);
 			if (iu != m_mUser.end()) { // private talk
-				Send_Notify_PART(m_mIdSocket[v], idSrc, idSrc, CRC_SERVER);
+				PushTrn(m_mIdSocket[v], Make_Notify_PART(idSrc, idSrc, CRC_SERVER));
 			} else {
 				MapChannel::const_iterator ic = m_mChannel.find(v);
 				if (ic != m_mChannel.end()) { // channel
-					Broadcast_Notify_PART(ic->second.opened, idSrc, v, CRC_SERVER);
+					BroadcastTrn(ic->second.opened, false, Make_Notify_PART(idSrc, v, CRC_SERVER));
 				}
 			}
 		}
@@ -547,7 +547,7 @@ void JServer::OnLinkEstablished(SOCKET sock)
 
 void JServer::OnLinkStart(SOCKET sock)
 {
-	Send_Notify_METRICS(sock, m_metrics);
+	PushTrn(sock, Make_Notify_METRICS(m_metrics));
 }
 
 void JServer::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is)
@@ -584,10 +584,8 @@ void JServer::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::me
 	__super::OnTransactionProcess(sock, message, trnid, is);
 }
 
-int  CALLBACK JServer::BroadcastTrn(const SetId& set, bool nested, WORD message, const std::string& str, size_t ssi) throw()
+int  CALLBACK JServer::BroadcastTrn(const SetId& set, bool nested, JTransaction* jpTrn, size_t ssi) throw()
 {
-	ASSERT(NATIVEACTION(message) != BNPM_REPLY); // can not broadcast reply
-
 	// Count users to prevent duplicate sents
 	SetSocket broadcast;
 	MapIdSocket::const_iterator iis;
@@ -611,10 +609,12 @@ int  CALLBACK JServer::BroadcastTrn(const SetId& set, bool nested, WORD message,
 	}
 
 	// Broadcast to unical users
-	for each (SetSocket::value_type const& v in broadcast) {
-		PushTrn(v, message, 0, str, ssi);
-	}
-	return (int)broadcast.size();
+	return __super::BroadcastTrn(broadcast, jpTrn, ssi);
+}
+
+int  CALLBACK JServer::BroadcastTrn(const SetId& set, bool nested, WORD message, const std::string& str, size_t ssi) throw()
+{
+	return BroadcastTrn(set, nested, MakeTrn(message, 0, str), ssi);
 }
 
 //
@@ -677,7 +677,13 @@ void CALLBACK JServer::Recv_Cmd_NICK(SOCKET sock, WORD trnid, io::mem& is)
 
 void CALLBACK JServer::Recv_Quest_LIST(SOCKET sock, WORD trnid, io::mem& is)
 {
-	Send_Reply_LIST(sock, trnid);
+#ifdef CHEATS
+	DWORD idBy = m_mSocketId[sock];
+	bool god = isGod(idBy);
+#else
+	bool god = false;
+#endif
+	PushTrn(sock, Make_Reply_LIST(trnid, god));
 
 	// Report about message
 	EvReport(tformat(TEXT("channels list")), eInformation, eNormal);
@@ -719,11 +725,11 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 				iu->second.cheat.isGod = !iu->second.cheat.isGod;
 				SetId set = iu->second.opened;
 				set.insert(iu->first);
-				Broadcast_Notify_STATUS_God(set, iu->first, iu->second.cheat.isGod);
-				Send_Reply_JOIN_Result(sock, trnid, CHAN_OK, eCheat, idDst);
+				BroadcastTrn(set, true, Make_Notify_STATUS_God(iu->first, iu->second.cheat.isGod));
+				PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_OK, eCheat, idDst));
 			}
 		} else {
-			Send_Reply_JOIN_Result(sock, trnid, CHAN_BADPASS, eCheat, idDst);
+			PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_BADPASS, eCheat, idDst));
 		}
 	} else if (name == NAME_DEVIL && type & eCheat) {
 		if (pass == passwordDevil) {
@@ -732,21 +738,21 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 				iu->second.cheat.isDevil = !iu->second.cheat.isDevil;
 				SetId set = iu->second.opened;
 				set.insert(iu->first);
-				Broadcast_Notify_STATUS_Devil(set, iu->first, iu->second.cheat.isDevil);
-				Send_Reply_JOIN_Result(sock, trnid, CHAN_OK, eCheat, idDst);
+				BroadcastTrn(set, true, Make_Notify_STATUS_Devil(iu->first, iu->second.cheat.isDevil));
+				PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_OK, eCheat, idDst));
 			}
 		} else {
-			Send_Reply_JOIN_Result(sock, trnid, CHAN_BADPASS, eCheat, idDst);
+			PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_BADPASS, eCheat, idDst));
 		}
 	} else {
 		MapUser::const_iterator iu = m_mUser.find(idDst);
 		if (iu != m_mUser.end() && type & eUser) { // private talk
 			if (iu->second.opened.find(idDst) == iu->second.opened.end()) {
-				Send_Reply_JOIN_User(sock, trnid, idDst, iu->second);
-				Send_Notify_JOIN(m_mIdSocket[idDst], idSrc, idDst, m_mUser[idSrc]);
+				PushTrn(sock, Make_Reply_JOIN_User(trnid, idDst, iu->second));
+				PushTrn(m_mIdSocket[idDst], Make_Notify_JOIN(idSrc, idDst, m_mUser[idSrc]));
 				linkCRC(idDst, idSrc);
 			} else {
-				Send_Reply_JOIN_Result(sock, trnid, CHAN_ALREADY, eUser, idDst);
+				PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_ALREADY, eUser, idDst));
 			}
 		} else {
 			MapChannel::iterator ic = m_mChannel.find(idDst);
@@ -772,20 +778,20 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 										? ic->second.nAutoStatus
 										: eWriter);
 								}
-								Broadcast_Notify_JOIN(ic->second.opened, idSrc, idDst, m_mUser[idSrc]);
+								BroadcastTrn(ic->second.opened, false, Make_Notify_JOIN(idSrc, idDst, m_mUser[idSrc]));
 								linkCRC(idDst, idSrc);
-								Send_Reply_JOIN_Channel(sock, trnid, idDst, ic->second);
+								PushTrn(sock, Make_Reply_JOIN_Channel(trnid, idDst, ic->second));
 							} else {
-								Send_Reply_JOIN_Result(sock, trnid, CHAN_BADPASS, eChannel, idDst);
+								PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_BADPASS, eChannel, idDst));
 							}
 						} else {
-							Send_Reply_JOIN_Result(sock, trnid, CHAN_DENY, eChannel, idDst);
+							PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_DENY, eChannel, idDst));
 						}
 					} else {
-						Send_Reply_JOIN_Result(sock, trnid, CHAN_LIMIT, eChannel, idDst);
+						PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_LIMIT, eChannel, idDst));
 					}
 				} else {
-					Send_Reply_JOIN_Result(sock, trnid, CHAN_ALREADY, eChannel, idDst);
+					PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_ALREADY, eChannel, idDst));
 				}
 			} else { // create new channel if nothing was found
 				if (type & eChannel) {
@@ -807,10 +813,10 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 					chan.setStatus(idSrc, eFounder);
 					m_mChannel[idDst] = chan;
 					linkCRC(idDst, idSrc);
-					Send_Reply_JOIN_Channel(sock, trnid, idDst, m_mChannel[idDst]);
+					PushTrn(sock, Make_Reply_JOIN_Channel(trnid, idDst, m_mChannel[idDst]));
 				} else if (type & eBoard) {
-					Send_Reply_JOIN_Result(sock, trnid, CHAN_ABSENT, eBoard, idDst);
-				} else Send_Reply_JOIN_Result(sock, trnid, CHAN_ABSENT, (EContact)type, idDst);
+					PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_ABSENT, eBoard, idDst));
+				} else PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_ABSENT, (EContact)type, idDst));
 			}
 		}
 	}
@@ -852,8 +858,8 @@ void CALLBACK JServer::Recv_Cmd_PART(SOCKET sock, WORD trnid, io::mem& is)
 		// Report about message
 		EvReport(tformat(TEXT("parts %s from %s"), iuWho->second.name.c_str(), iu->second.name.c_str()), eInformation, eNormal);
 
-		Send_Notify_PART(m_mIdSocket[idWhere], idWho, idWho, idBy); // recieves to close private with idWho
-		Send_Notify_PART(sock, idBy, idWhere, idBy);
+		PushTrn(m_mIdSocket[idWhere], Make_Notify_PART(idWho, idWho, idBy)); // recieves to close private with idWho
+		PushTrn(sock, Make_Notify_PART(idBy, idWhere, idBy));
 		unlinkCRC(idWho, idWhere);
 	} else {
 		MapChannel::const_iterator ic = m_mChannel.find(idWhere);
@@ -870,7 +876,7 @@ void CALLBACK JServer::Recv_Cmd_PART(SOCKET sock, WORD trnid, io::mem& is)
 
 				ic = m_mChannel.find(idWhere);
 				if (ic != m_mChannel.end()) { // check that channel still exist
-					Broadcast_Notify_PART(ic->second.opened, idWho, idWhere, idBy);
+					BroadcastTrn(ic->second.opened, false, Make_Notify_PART(idWho, idWhere, idBy));
 				}
 				unlinkCRC(idWho, idWhere);
 			}
@@ -897,7 +903,7 @@ void CALLBACK JServer::Recv_Quest_USERINFO(SOCKET sock, WORD trnid, io::mem& is)
 		}
 	}
 
-	Send_Reply_USERINFO(sock, trnid, wanted);
+	PushTrn(sock, Make_Reply_USERINFO(trnid, wanted));
 
 	// Report about message
 	EvReport(tformat(TEXT("info for %u users"), wanted.size()), eInformation, eNormal);
@@ -932,7 +938,7 @@ void CALLBACK JServer::Recv_Cmd_ONLINE(SOCKET sock, WORD trnid, io::mem& is)
 
 		SetId set = iu->second.opened;
 		set.insert(idSrc);
-		Broadcast_Notify_ONLINE(set, idSrc, isOnline, idOnline);
+		BroadcastTrn(set, true, Make_Notify_ONLINE(idSrc, isOnline, idOnline));
 	}
 
 	// Report about message
@@ -992,7 +998,7 @@ void CALLBACK JServer::Recv_Cmd_STATUS(SOCKET sock, WORD trnid, io::mem& is)
 
 		SetId set = iu->second.opened;
 		set.insert(idSrc);
-		Broadcast_Notify_STATUS(set, idSrc, type, stat, a, img, msg);
+		BroadcastTrn(set, true, Make_Notify_STATUS(idSrc, type, stat, a, img, msg));
 	}
 
 	// Report about message
@@ -1026,17 +1032,17 @@ void CALLBACK JServer::Recv_Cmd_SAY(SOCKET sock, WORD trnid, io::mem& is)
 	DWORD idSrc = m_mSocketId[sock];
 	MapUser::const_iterator iu = m_mUser.find(idWhere);
 	if (iu != m_mUser.end()) { // private talk
-		Send_Notify_SAY(m_mIdSocket[idWhere], idSrc, idSrc, type, content);
-		Send_Notify_SAY(sock, idSrc, idWhere, type, content);
+		PushTrn(m_mIdSocket[idWhere], Make_Notify_SAY(idSrc, idSrc, type, content));
+		PushTrn(sock, Make_Notify_SAY(idSrc, idWhere, type, content));
 	} else {
 		MapChannel::const_iterator ic = m_mChannel.find(idWhere);
 		if (ic != m_mChannel.end()) { // channel
 #ifdef CHEATS
 			if (ic->second.getStatus(idSrc) > eReader || isCheats(idSrc))
-				Broadcast_Notify_SAY(ic->second.opened, !ic->second.isAnonymous || isGod(idSrc) ? idSrc : CRC_ANONYMOUS, idWhere, type, content);
+				BroadcastTrn(ic->second.opened, false, Make_Notify_SAY(!ic->second.isAnonymous || isGod(idSrc) ? idSrc : CRC_ANONYMOUS, idWhere, type, content));
 #else
 			if (ic->second.getStatus(idSrc) > eReader)
-				Broadcast_Notify_SAY(ic->second.opened, !ic->second.isAnonymous ? idSrc : CRC_ANONYMOUS, idWhere, type, content);
+				BroadcastTrn(ic->second.opened, false, Make_Notify_SAY(!ic->second.isAnonymous ? idSrc : CRC_ANONYMOUS, idWhere, type, content));
 #endif
 		}
 	}
@@ -1080,7 +1086,7 @@ void CALLBACK JServer::Recv_Cmd_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 
 				SetId set = ic->second.opened;
 				set.insert(idSrc);
-				Broadcast_Notify_TOPIC(set, idSrc, idWhere, topic);
+				BroadcastTrn(set, false, Make_Notify_TOPIC(idSrc, idWhere, topic));
 			}
 		}
 	}
@@ -1123,7 +1129,7 @@ void CALLBACK JServer::Recv_Cmd_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem& is
 	MapUser::const_iterator iu = m_mUser.find(idWhere);
 	if (iu != m_mUser.end()) { // private talk
 		ASSERT(op == CHANOP_BACKGROUND);
-		Send_Notify_CHANOPTIONS(m_mIdSocket[idWhere], idSrc, idSrc, op, val);
+		PushTrn(m_mIdSocket[idWhere], Make_Notify_CHANOPTIONS(idSrc, idSrc, op, val));
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWhere);
 		if (ic != m_mChannel.end()) { // channel
@@ -1153,7 +1159,7 @@ void CALLBACK JServer::Recv_Cmd_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem& is
 
 				SetId set = ic->second.opened;
 				set.insert(idSrc);
-				Broadcast_Notify_CHANOPTIONS(set, idSrc, idWhere, op, val);
+				BroadcastTrn(set, false, Make_Notify_CHANOPTIONS(idSrc, idWhere, op, val));
 			}
 		}
 	}
@@ -1202,7 +1208,7 @@ void CALLBACK JServer::Recv_Cmd_ACCESS(SOCKET sock, WORD trnid, io::mem& is)
 
 				SetId set = ic->second.opened;
 				set.insert(idSrc);
-				Broadcast_Notify_ACCESS(set, idWho, idWhere, stat, idSrc);
+				BroadcastTrn(set, false, Make_Notify_ACCESS(idWho, idWhere, stat, idSrc));
 			}
 		}
 	}
@@ -1237,7 +1243,7 @@ void CALLBACK JServer::Recv_Cmd_BEEP(SOCKET sock, WORD trnid, io::mem& is)
 #else
 		if (iu->second.accessibility.fCanSignal)
 #endif
-			Send_Notify_BEEP(m_mIdSocket[idWho], idBy);
+			PushTrn(m_mIdSocket[idWho], Make_Notify_BEEP(idBy));
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWho);
 		if (ic != m_mChannel.end()) { // channel
@@ -1279,7 +1285,7 @@ void CALLBACK JServer::Recv_Cmd_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& is)
 #else
 		if (m_metrics.flags.bTransmitClipboard && iu->second.accessibility.fCanRecvClipboard)
 #endif
-			Send_Notify_CLIPBOARD(m_mIdSocket[idWho], idBy, (const char*)ptr, size);
+			PushTrn(m_mIdSocket[idWho], Make_Notify_CLIPBOARD(idBy, (const char*)ptr, size));
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWho);
 		if (ic != m_mChannel.end()) { // channel
@@ -1325,15 +1331,15 @@ void CALLBACK JServer::Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 		if (iu->second.accessibility.fCanMessage)
 #endif
 		{
-			Send_Notify_MESSAGE(m_mIdSocket[idWho], idBy, ft, (const char*)ptr, size);
-			Send_Reply_MESSAGE(sock, trnid, idWho, MESSAGE_SENT);
+			PushTrn(m_mIdSocket[idWho], Make_Notify_MESSAGE(idBy, ft, (const char*)ptr, size));
+			PushTrn(sock, Make_Reply_MESSAGE(trnid, idWho, MESSAGE_SENT));
 		}
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWho);
 		if (ic != m_mChannel.end()) { // channel
-			Send_Reply_MESSAGE(sock, trnid, idWho, MESSAGE_IGNORE);
+			PushTrn(sock, Make_Reply_MESSAGE(trnid, idWho, MESSAGE_IGNORE));
 		} else {
-			Send_Reply_MESSAGE(sock, trnid, idWho, MESSAGE_IGNORE);
+			PushTrn(sock, Make_Reply_MESSAGE(trnid, idWho, MESSAGE_IGNORE));
 		}
 	}
 }
@@ -1372,7 +1378,7 @@ void CALLBACK JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is)
 #else
 		if (iu->second.accessibility.fCanSplash)
 #endif
-			Send_Notify_SPLASHRTF(m_mIdSocket[idWho], idBy, (const char*)ptr, size);
+			PushTrn(m_mIdSocket[idWho], Make_Notify_SPLASHRTF(idBy, (const char*)ptr, size));
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWho);
 		if (ic != m_mChannel.end()) { // channel
@@ -1384,33 +1390,27 @@ void CALLBACK JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is)
 // Beowolf Network Protocol Messages sending
 //
 
-void CALLBACK JServer::Send_Notify_METRICS(SOCKET sock, const Metrics& metrics)
+JPtr<JTransaction> CALLBACK JServer::Make_Notify_METRICS(const Metrics& metrics) const
 {
 	std::ostringstream os;
 	io::pack(os, metrics);
-	PushTrn(sock, NOTIFY(CCPM_METRICS), 0, os.str());
+	return MakeTrn(NOTIFY(CCPM_METRICS), 0, os.str());
 }
 
-void CALLBACK JServer::Broadcast_Notify_NICK(const SetId& set, DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname)
+JPtr<JTransaction> CALLBACK JServer::Make_Notify_NICK(DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname) const
 {
 	std::ostringstream os;
 	io::pack(os, result);
 	io::pack(os, idOld);
 	io::pack(os, idNew);
 	io::pack(os, newname);
-	BroadcastTrn(set, true, NOTIFY(CCPM_NICK), os.str());
+	return MakeTrn(NOTIFY(CCPM_NICK), 0, os.str());
 }
 
-void CALLBACK JServer::Send_Reply_LIST(SOCKET sock, WORD trnid)
+JPtr<JTransaction> CALLBACK JServer::Make_Reply_LIST(WORD trnid, bool god) const
 {
 	std::ostringstream os;
 	// Count all visible channels
-#ifdef CHEATS
-	DWORD idBy = m_mSocketId[sock];
-	bool god = isGod(idBy);
-#else
-	bool god = false;
-#endif
 	size_t size = 0;
 	for each (MapChannel::value_type const& v in m_mChannel)
 	{
@@ -1425,75 +1425,57 @@ void CALLBACK JServer::Send_Reply_LIST(SOCKET sock, WORD trnid)
 			io::pack(os, v.second);
 		}
 	}
-	PushTrn(sock, REPLY(CCPM_LIST), trnid, os.str());
+	return MakeTrn(REPLY(CCPM_LIST), trnid, os.str());
 }
 
-void CALLBACK JServer::Send_Reply_JOIN_Result(SOCKET sock, WORD trnid, DWORD result, EContact type, DWORD id)
+JPtr<JTransaction> CALLBACK JServer::Make_Reply_JOIN_Result(WORD trnid, DWORD result, EContact type, DWORD id) const
 {
 	std::ostringstream os;
 	io::pack(os, result);
 	io::pack(os, type);
 	io::pack(os, id);
-	PushTrn(sock, REPLY(CCPM_JOIN), trnid, os.str());
+	return MakeTrn(REPLY(CCPM_JOIN), trnid, os.str());
 }
 
-void CALLBACK JServer::Send_Reply_JOIN_User(SOCKET sock, WORD trnid, DWORD id, const User& user)
+JPtr<JTransaction> CALLBACK JServer::Make_Reply_JOIN_User(WORD trnid, DWORD id, const User& user) const
 {
 	std::ostringstream os;
 	io::pack(os, (DWORD)CHAN_OK);
 	io::pack(os, eUser);
 	io::pack(os, id);
 	io::pack(os, user);
-	PushTrn(sock, REPLY(CCPM_JOIN), trnid, os.str());
+	return MakeTrn(REPLY(CCPM_JOIN), trnid, os.str());
 }
 
-void CALLBACK JServer::Send_Reply_JOIN_Channel(SOCKET sock, WORD trnid, DWORD id, const Channel& chan)
+JPtr<JTransaction> CALLBACK JServer::Make_Reply_JOIN_Channel(WORD trnid, DWORD id, const Channel& chan) const
 {
 	std::ostringstream os;
 	io::pack(os, (DWORD)CHAN_OK);
 	io::pack(os, eChannel);
 	io::pack(os, id);
 	io::pack(os, chan);
-	PushTrn(sock, REPLY(CCPM_JOIN), trnid, os.str());
+	return MakeTrn(REPLY(CCPM_JOIN), trnid, os.str());
 }
 
-void CALLBACK JServer::Send_Notify_JOIN(SOCKET sock, DWORD idWho, DWORD idWhere, const User& user)
+JPtr<JTransaction> CALLBACK JServer::Make_Notify_JOIN(DWORD idWho, DWORD idWhere, const User& user) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, idWhere);
 	io::pack(os, user);
-	PushTrn(sock, NOTIFY(CCPM_JOIN), 0, os.str());
+	return MakeTrn(NOTIFY(CCPM_JOIN), 0, os.str());
 }
 
-void CALLBACK JServer::Broadcast_Notify_JOIN(const SetId& set, DWORD idWho, DWORD idWhere, const User& user)
-{
-	std::ostringstream os;
-	io::pack(os, idWho);
-	io::pack(os, idWhere);
-	io::pack(os, user);
-	BroadcastTrn(set, false, NOTIFY(CCPM_JOIN), os.str());
-}
-
-void CALLBACK JServer::Send_Notify_PART(SOCKET sock, DWORD idWho, DWORD idWhere, DWORD idBy)
+JPtr<JTransaction> CALLBACK JServer::Make_Notify_PART(DWORD idWho, DWORD idWhere, DWORD idBy) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, idWhere);
 	io::pack(os, idBy);
-	PushTrn(sock, NOTIFY(CCPM_PART), 0, os.str());
+	return MakeTrn(NOTIFY(CCPM_PART), 0, os.str());
 }
 
-void CALLBACK JServer::Broadcast_Notify_PART(const SetId& set, DWORD idWho, DWORD idWhere, DWORD idBy)
-{
-	std::ostringstream os;
-	io::pack(os, idWho);
-	io::pack(os, idWhere);
-	io::pack(os, idBy);
-	BroadcastTrn(set, false, NOTIFY(CCPM_PART), os.str());
-}
-
-void CALLBACK JServer::Send_Reply_USERINFO(SOCKET sock, WORD trnid, const SetId& set)
+JPtr<JTransaction> CALLBACK JServer::Make_Reply_USERINFO(WORD trnid, const SetId& set) const
 {
 	// Validate given identifiers
 	size_t count = 0;
@@ -1509,19 +1491,19 @@ void CALLBACK JServer::Send_Reply_USERINFO(SOCKET sock, WORD trnid, const SetId&
 			io::pack(os, iu->second);
 		}
 	}
-	PushTrn(sock, REPLY(CCPM_USERINFO), trnid, os.str());
+	return MakeTrn(REPLY(CCPM_USERINFO), trnid, os.str());
 }
 
-void CALLBACK JServer::Broadcast_Notify_ONLINE(const SetId& set, DWORD idWho, EOnline online, DWORD id)
+JPtr<JTransaction> CALLBACK JServer::Make_Notify_ONLINE(DWORD idWho, EOnline online, DWORD id) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, online);
 	io::pack(os, id);
-	BroadcastTrn(set, true, NOTIFY(CCPM_ONLINE), os.str());
+	return MakeTrn(NOTIFY(CCPM_ONLINE), 0, os.str());
 }
 
-void CALLBACK JServer::Broadcast_Notify_STATUS(const SetId& set, DWORD idWho, WORD type, EUserStatus stat, const Alert& a, int img, std::tstring msg)
+JPtr<JTransaction> CALLBACK JServer::Make_Notify_STATUS(DWORD idWho, WORD type, EUserStatus stat, const Alert& a, int img, std::tstring msg) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1536,124 +1518,104 @@ void CALLBACK JServer::Broadcast_Notify_STATUS(const SetId& set, DWORD idWho, WO
 	if (type & STATUS_MSG) {
 		io::pack(os, msg);
 	}
-	BroadcastTrn(set, true, NOTIFY(CCPM_STATUS), os.str());
+	return MakeTrn(NOTIFY(CCPM_STATUS), 0, os.str());
 }
 
-void CALLBACK JServer::Broadcast_Notify_STATUS_God(const SetId& set, DWORD idWho, bool god)
+JPtr<JTransaction> CALLBACK JServer::Make_Notify_STATUS_God(DWORD idWho, bool god) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, (WORD)STATUS_GOD);
 	io::pack(os, god);
-	BroadcastTrn(set, true, NOTIFY(CCPM_STATUS), os.str());
+	return MakeTrn(NOTIFY(CCPM_STATUS), 0, os.str());
 }
 
-void CALLBACK JServer::Broadcast_Notify_STATUS_Devil(const SetId& set, DWORD idWho, bool devil)
+JPtr<JTransaction> CALLBACK JServer::Make_Notify_STATUS_Devil(DWORD idWho, bool devil) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, (WORD)STATUS_DEVIL);
 	io::pack(os, devil);
-	BroadcastTrn(set, true, NOTIFY(CCPM_STATUS), os.str());
+	return MakeTrn(NOTIFY(CCPM_STATUS), 0, os.str());
 }
 
-void CALLBACK JServer::Send_Notify_SAY(SOCKET sock, DWORD idWho, DWORD idWhere, UINT type, const std::string& content)
+JPtr<JTransaction> CALLBACK JServer::Make_Notify_SAY(DWORD idWho, DWORD idWhere, UINT type, const std::string& content) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, idWhere);
 	io::pack(os, type);
 	io::pack(os, content);
-	PushTrn(sock, NOTIFY(CCPM_SAY), 0, os.str());
+	return MakeTrn(NOTIFY(CCPM_SAY), 0, os.str());
 }
 
-void CALLBACK JServer::Broadcast_Notify_SAY(const SetId& set, DWORD idWho, DWORD idWhere, UINT type, const std::string& content)
-{
-	std::ostringstream os;
-	io::pack(os, idWho);
-	io::pack(os, idWhere);
-	io::pack(os, type);
-	io::pack(os, content);
-	BroadcastTrn(set, false, NOTIFY(CCPM_SAY), os.str());
-}
-
-void CALLBACK JServer::Broadcast_Notify_TOPIC(const SetId& set, DWORD idWho, DWORD idWhere, const std::tstring& topic)
+JPtr<JTransaction> CALLBACK JServer::Make_Notify_TOPIC(DWORD idWho, DWORD idWhere, const std::tstring& topic) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, idWhere);
 	io::pack(os, topic);
-	BroadcastTrn(set, false, NOTIFY(CCPM_TOPIC), os.str());
+	return MakeTrn(NOTIFY(CCPM_TOPIC), 0, os.str());
 }
 
-void CALLBACK JServer::Send_Notify_CHANOPTIONS(SOCKET sock, DWORD idWho, DWORD idWhere, int op, DWORD val)
+JPtr<JTransaction> CALLBACK JServer::Make_Notify_CHANOPTIONS(DWORD idWho, DWORD idWhere, int op, DWORD val) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, idWhere);
 	io::pack(os, op);
 	io::pack(os, val);
-	PushTrn(sock, NOTIFY(CCPM_CHANOPTIONS), 0, os.str());
+	return MakeTrn(NOTIFY(CCPM_CHANOPTIONS), 0, os.str());
 }
 
-void CALLBACK JServer::Broadcast_Notify_CHANOPTIONS(const SetId& set, DWORD idWho, DWORD idWhere, int op, DWORD val)
-{
-	std::ostringstream os;
-	io::pack(os, idWho);
-	io::pack(os, idWhere);
-	io::pack(os, op);
-	io::pack(os, val);
-	BroadcastTrn(set, false, NOTIFY(CCPM_CHANOPTIONS), os.str());
-}
-
-void CALLBACK JServer::Broadcast_Notify_ACCESS(const SetId& set, DWORD idWho, DWORD idWhere, EChanStatus stat, DWORD idBy)
+JPtr<JTransaction> CALLBACK JServer::Make_Notify_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat, DWORD idBy) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, idWhere);
 	io::pack(os, stat);
 	io::pack(os, idBy);
-	BroadcastTrn(set, false, NOTIFY(CCPM_ACCESS), os.str());
+	return MakeTrn(NOTIFY(CCPM_ACCESS), 0, os.str());
 }
 
-void CALLBACK JServer::Send_Notify_BEEP(SOCKET sock, DWORD idBy)
+JPtr<JTransaction> CALLBACK JServer::Make_Notify_BEEP(DWORD idBy) const
 {
 	std::ostringstream os;
 	io::pack(os, idBy);
-	PushTrn(sock, NOTIFY(CCPM_BEEP), 0, os.str());
+	return MakeTrn(NOTIFY(CCPM_BEEP), 0, os.str());
 }
 
-void CALLBACK JServer::Send_Notify_CLIPBOARD(SOCKET sock, DWORD idBy, const char* ptr, size_t size)
+JPtr<JTransaction> CALLBACK JServer::Make_Notify_CLIPBOARD(DWORD idBy, const char* ptr, size_t size) const
 {
 	std::ostringstream os;
 	io::pack(os, idBy);
 	os.write(ptr, (std::streamsize)size);
-	PushTrn(sock, NOTIFY(CCPM_CLIPBOARD), 0, os.str());
+	return MakeTrn(NOTIFY(CCPM_CLIPBOARD), 0, os.str());
 }
 
-void CALLBACK JServer::Send_Notify_MESSAGE(SOCKET sock, DWORD idBy, const FILETIME& ft, const char* ptr, size_t size)
+JPtr<JTransaction> CALLBACK JServer::Make_Notify_MESSAGE(DWORD idBy, const FILETIME& ft, const char* ptr, size_t size) const
 {
 	std::ostringstream os;
 	io::pack(os, idBy);
 	io::pack(os, ft);
 	os.write(ptr, (std::streamsize)size);
-	PushTrn(sock, NOTIFY(CCPM_MESSAGE), 0, os.str());
+	return MakeTrn(NOTIFY(CCPM_MESSAGE), 0, os.str());
 }
 
-void CALLBACK JServer::Send_Reply_MESSAGE(SOCKET sock, WORD trnid, DWORD idWho, UINT type)
+JPtr<JTransaction> CALLBACK JServer::Make_Reply_MESSAGE(WORD trnid, DWORD idWho, UINT type) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, type);
-	PushTrn(sock, REPLY(CCPM_MESSAGE), trnid, os.str());
+	return MakeTrn(REPLY(CCPM_MESSAGE), trnid, os.str());
 }
 
-void CALLBACK JServer::Send_Notify_SPLASHRTF(SOCKET sock, DWORD idBy, const char* ptr, size_t size)
+JPtr<JTransaction> CALLBACK JServer::Make_Notify_SPLASHRTF(DWORD idBy, const char* ptr, size_t size) const
 {
 	std::ostringstream os;
 	io::pack(os, idBy);
 	os.write(ptr, (std::streamsize)size);
-	PushTrn(sock, NOTIFY(CCPM_SPLASHRTF), 0, os.str());
+	return MakeTrn(NOTIFY(CCPM_SPLASHRTF), 0, os.str());
 }
 
 void CALLBACK JServer::Connections()

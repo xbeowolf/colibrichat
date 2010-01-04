@@ -162,7 +162,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 						iu->second.cheat.isGod = !iu->second.cheat.isGod;
 						SetId set = iu->second.opened;
 						set.insert(iu->first);
-						pSource->Broadcast_Notify_STATUS_God(set, iu->first, iu->second.cheat.isGod);
+						pSource->BroadcastTrn(set, true, pSource->Make_Notify_STATUS_God(iu->first, iu->second.cheat.isGod));
 					}
 					break;
 				}
@@ -175,7 +175,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 						iu->second.cheat.isDevil = !iu->second.cheat.isDevil;
 						SetId set = iu->second.opened;
 						set.insert(iu->first);
-						pSource->Broadcast_Notify_STATUS_Devil(set, iu->first, iu->second.cheat.isDevil);
+						pSource->BroadcastTrn(set, true, pSource->Make_Notify_STATUS_Devil(iu->first, iu->second.cheat.isDevil));
 					}
 					break;
 				}

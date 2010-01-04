@@ -86,7 +86,7 @@ LRESULT WINAPI JClient::JTopic::DlgProc(HWND hWnd, UINT message, WPARAM wParam, 
 				{
 					std::tstring buffer(pSource->m_metrics.uTopicMaxLength, 0);
 					GetDlgItemText(hWnd, IDC_TOPICTEXT, &buffer[0], (int)buffer.size()+1);
-					pSource->Send_Cmd_TOPIC(pSource->m_clientsock, m_idChannel, buffer);
+					pSource->PushTrn(pSource->m_clientsock, pSource->Make_Cmd_TOPIC(m_idChannel, buffer));
 					DestroyWindow(hWnd);
 					break;
 				}
@@ -366,9 +366,9 @@ LRESULT WINAPI JClient::JSplashRtfEditor::DlgProc(HWND hWnd, UINT message, WPARA
 
 					SetWindowText(m_hwndEdit, TEXT(""));
 
-					pSource->Send_Cmd_SPLASHRTF(pSource->m_clientsock, idWho,
+					pSource->PushTrn(pSource->m_clientsock, pSource->Make_Cmd_SPLASHRTF(idWho,
 						content.c_str(), rect,
-						true, dwCanclose, dwAutoclose, m_fTransparent, crSheet);
+						true, dwCanclose, dwAutoclose, m_fTransparent, crSheet));
 					break;
 				}
 
@@ -910,8 +910,8 @@ LRESULT WINAPI JClient::JMessageEditor::DlgProc(HWND hWnd, UINT message, WPARAM 
 					GetDlgItemText(hWnd, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
 					nick = nickbuf.c_str();
 					if (JClient::CheckNick(nick, msg)) { // check content
-						pSource->Send_Quest_MESSAGE(pSource->m_clientsock, dCRC(nick.c_str()),
-							content.c_str(), fAlert, crSheet);
+						pSource->PushTrn(pSource->m_clientsock, pSource->Make_Quest_MESSAGE(dCRC(nick.c_str()),
+							content.c_str(), fAlert, crSheet));
 						DestroyWindow(hWnd);
 					} else {
 						pSource->DisplayMessage(pSource->jpPageServer->hwndNick, msg, strWho.c_str(), 2);
@@ -1175,7 +1175,7 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 					if (iu == pSource->m_mUser.end()) break;
 					if (iu->second.accessibility.fCanOpenPrivate) {
 						ASSERT(pSource->m_clientsock);
-						pSource->Send_Quest_JOIN(pSource->m_clientsock, iu->second.name);
+						pSource->PushTrn(pSource->m_clientsock, pSource->Make_Quest_JOIN(iu->second.name));
 						DestroyWindow(hWnd);
 					} else pSource->DisplayMessage(m_hwndPage, MAKEINTRESOURCE(IDS_MSG_PRIVATETALK), pSource->getSafeName(m_idWho).c_str(), 1);
 					break;
