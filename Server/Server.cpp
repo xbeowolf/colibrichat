@@ -10,7 +10,7 @@
 #include "stdafx.h"
 
 // Common
-#include "dCRC.h"
+#include "CRC.h"
 #include "Profile.h"
 
 // Project
@@ -369,7 +369,7 @@ std::tstring CALLBACK JServer::getNearestName(const std::tstring& nick) const
 	std::tstring buffer = nick;
 	TCHAR digits[16];
 	DWORD i = 0;
-	while (hasCRC(dCRC(buffer.c_str()))) {
+	while (hasCRC(tCRCJJ(buffer.c_str()))) {
 		_stprintf_s(digits, _countof(digits), TEXT("%u"), i);
 		buffer = nick.substr(0, m_metrics.uNameMaxLength - lstrlen(digits)) + digits;
 		i++;
@@ -379,7 +379,7 @@ std::tstring CALLBACK JServer::getNearestName(const std::tstring& nick) const
 
 void CALLBACK JServer::RenameContact(DWORD idByOrSock, DWORD idOld, std::tstring newname)
 {
-	DWORD idNew = dCRC(newname.c_str());
+	DWORD idNew = tCRCJJ(newname.c_str());
 	if (idNew == idOld && idOld != CRC_NONAME) return;
 
 	DWORD result;
@@ -394,7 +394,7 @@ void CALLBACK JServer::RenameContact(DWORD idByOrSock, DWORD idOld, std::tstring
 			result = NICK_TAKEN;
 		}
 		newname = getNearestName(newname);
-		idNew = dCRC(newname.c_str());
+		idNew = tCRCJJ(newname.c_str());
 	} else {
 		result = NICK_OK;
 	}
@@ -478,12 +478,46 @@ void JServer::OnHook(JEventable* src)
 {
 	using namespace fastdelegate;
 
+	// Transactions parsers
+	m_mTrnCommand[CCPM_NICK] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_NICK);
+	m_mTrnQuest[CCPM_LIST] = fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_LIST);
+	m_mTrnQuest[CCPM_JOIN] = fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_JOIN);
+	m_mTrnCommand[CCPM_PART] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_PART);
+	m_mTrnQuest[CCPM_USERINFO] = fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_USERINFO);
+	m_mTrnCommand[CCPM_ONLINE] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_ONLINE);
+	m_mTrnCommand[CCPM_STATUS] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_STATUS);
+	m_mTrnCommand[CCPM_SAY] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_SAY);
+	m_mTrnCommand[CCPM_TOPIC] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_TOPIC);
+	m_mTrnCommand[CCPM_CHANOPTIONS] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_CHANOPTIONS);
+	m_mTrnCommand[CCPM_ACCESS] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_ACCESS);
+	m_mTrnCommand[CCPM_BEEP] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_BEEP);
+	m_mTrnCommand[CCPM_CLIPBOARD] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_CLIPBOARD);
+	m_mTrnQuest[CCPM_MESSAGE] = fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_MESSAGE);
+	m_mTrnCommand[CCPM_SPLASHRTF] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_SPLASHRTF);
+
 	__super::OnHook(src);
 }
 
 void JServer::OnUnhook(JEventable* src)
 {
 	using namespace fastdelegate;
+
+	// Transactions parsers
+	m_mTrnCommand.erase(CCPM_NICK);
+	m_mTrnQuest.erase(CCPM_LIST);
+	m_mTrnQuest.erase(CCPM_JOIN);
+	m_mTrnCommand.erase(CCPM_PART);
+	m_mTrnQuest.erase(CCPM_USERINFO);
+	m_mTrnCommand.erase(CCPM_ONLINE);
+	m_mTrnCommand.erase(CCPM_STATUS);
+	m_mTrnCommand.erase(CCPM_SAY);
+	m_mTrnCommand.erase(CCPM_TOPIC);
+	m_mTrnCommand.erase(CCPM_CHANOPTIONS);
+	m_mTrnCommand.erase(CCPM_ACCESS);
+	m_mTrnCommand.erase(CCPM_BEEP);
+	m_mTrnCommand.erase(CCPM_CLIPBOARD);
+	m_mTrnQuest.erase(CCPM_MESSAGE);
+	m_mTrnCommand.erase(CCPM_SPLASHRTF);
 
 	__super::OnUnhook(src);
 }
@@ -550,40 +584,6 @@ void JServer::OnLinkStart(SOCKET sock)
 	PushTrn(sock, Make_Notify_METRICS(m_metrics));
 }
 
-void JServer::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is)
-{
-	typedef void (CALLBACK JServer::*TrnParser)(SOCKET, WORD, io::mem&);
-	struct {
-		WORD message;
-		TrnParser parser;
-	} responseTable[] =
-	{
-		{COMMAND(CCPM_NICK), &JServer::Recv_Cmd_NICK},
-		{QUEST(CCPM_LIST), &JServer::Recv_Quest_LIST},
-		{QUEST(CCPM_JOIN), &JServer::Recv_Quest_JOIN},
-		{COMMAND(CCPM_PART), &JServer::Recv_Cmd_PART},
-		{QUEST(CCPM_USERINFO), &JServer::Recv_Quest_USERINFO},
-		{COMMAND(CCPM_ONLINE), &JServer::Recv_Cmd_ONLINE},
-		{COMMAND(CCPM_STATUS), &JServer::Recv_Cmd_STATUS},
-		{COMMAND(CCPM_SAY), &JServer::Recv_Cmd_SAY},
-		{COMMAND(CCPM_TOPIC), &JServer::Recv_Cmd_TOPIC},
-		{COMMAND(CCPM_CHANOPTIONS), &JServer::Recv_Cmd_CHANOPTIONS},
-		{COMMAND(CCPM_ACCESS), &JServer::Recv_Cmd_ACCESS},
-		{COMMAND(CCPM_BEEP), &JServer::Recv_Cmd_BEEP},
-		{COMMAND(CCPM_CLIPBOARD), &JServer::Recv_Cmd_CLIPBOARD},
-		{QUEST(CCPM_MESSAGE), &JServer::Recv_Quest_MESSAGE},
-		{COMMAND(CCPM_SPLASHRTF), &JServer::Recv_Cmd_SPLASHRTF},
-	};
-	for (int i = 0; i < _countof(responseTable); i++) {
-		if (responseTable[i].message == message) {
-			(this->*responseTable[i].parser)(sock, trnid, is);
-			return;
-		}
-	}
-
-	__super::OnTransactionProcess(sock, message, trnid, is);
-}
-
 int  CALLBACK JServer::BroadcastTrn(const SetId& set, bool nested, JTransaction* jpTrn, size_t ssi) throw()
 {
 	// Count users to prevent duplicate sents
@@ -621,7 +621,7 @@ int  CALLBACK JServer::BroadcastTrn(const SetId& set, bool nested, WORD message,
 // Beowolf Network Protocol Messages reciving
 //
 
-void CALLBACK JServer::Recv_Cmd_NICK(SOCKET sock, WORD trnid, io::mem& is)
+void JServer::Recv_Cmd_NICK(SOCKET sock, io::mem& is)
 {
 	DWORD idOld;
 	std::tstring name;
@@ -675,7 +675,7 @@ void CALLBACK JServer::Recv_Cmd_NICK(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JServer::Recv_Quest_LIST(SOCKET sock, WORD trnid, io::mem& is)
+void JServer::Recv_Quest_LIST(SOCKET sock, WORD trnid, io::mem& is, std::ostream& os)
 {
 #ifdef CHEATS
 	DWORD idBy = m_mSocketId[sock];
@@ -683,13 +683,13 @@ void CALLBACK JServer::Recv_Quest_LIST(SOCKET sock, WORD trnid, io::mem& is)
 #else
 	bool god = false;
 #endif
-	PushTrn(sock, Make_Reply_LIST(trnid, god));
+	Form_Reply_LIST(os, god);
 
 	// Report about message
 	EvReport(tformat(TEXT("channels list")), eInformation, eNormal);
 }
 
-void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
+void JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is, std::ostream& os)
 {
 	std::tstring name, pass;
 	int type;
@@ -716,7 +716,7 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 		}
 	}
 
-	DWORD idDst = dCRC(name.c_str());
+	DWORD idDst = tCRCJJ(name.c_str());
 	DWORD idSrc = m_mSocketId[sock];
 	if (name == NAME_GOD && type & eCheat) {
 		if (pass == m_passwordGod) {
@@ -726,10 +726,10 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 				SetId set = iu->second.opened;
 				set.insert(iu->first);
 				BroadcastTrn(set, true, Make_Notify_STATUS_God(iu->first, iu->second.cheat.isGod));
-				PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_OK, eCheat, idDst));
+				Form_Reply_JOIN_Result(os, CHAN_OK, eCheat, idDst);
 			}
 		} else {
-			PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_BADPASS, eCheat, idDst));
+			Form_Reply_JOIN_Result(os, CHAN_BADPASS, eCheat, idDst);
 		}
 	} else if (name == NAME_DEVIL && type & eCheat) {
 		if (pass == passwordDevil) {
@@ -739,20 +739,20 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 				SetId set = iu->second.opened;
 				set.insert(iu->first);
 				BroadcastTrn(set, true, Make_Notify_STATUS_Devil(iu->first, iu->second.cheat.isDevil));
-				PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_OK, eCheat, idDst));
+				Form_Reply_JOIN_Result(os, CHAN_OK, eCheat, idDst);
 			}
 		} else {
-			PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_BADPASS, eCheat, idDst));
+			Form_Reply_JOIN_Result(os, CHAN_BADPASS, eCheat, idDst);
 		}
 	} else {
 		MapUser::const_iterator iu = m_mUser.find(idDst);
 		if (iu != m_mUser.end() && type & eUser) { // private talk
 			if (iu->second.opened.find(idDst) == iu->second.opened.end()) {
-				PushTrn(sock, Make_Reply_JOIN_User(trnid, idDst, iu->second));
+				Form_Reply_JOIN_User(os, idDst, iu->second);
 				PushTrn(m_mIdSocket[idDst], Make_Notify_JOIN(idSrc, idDst, m_mUser[idSrc]));
 				linkCRC(idDst, idSrc);
 			} else {
-				PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_ALREADY, eUser, idDst));
+				Form_Reply_JOIN_Result(os, CHAN_ALREADY, eUser, idDst);
 			}
 		} else {
 			MapChannel::iterator ic = m_mChannel.find(idDst);
@@ -780,18 +780,18 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 								}
 								BroadcastTrn(ic->second.opened, false, Make_Notify_JOIN(idSrc, idDst, m_mUser[idSrc]));
 								linkCRC(idDst, idSrc);
-								PushTrn(sock, Make_Reply_JOIN_Channel(trnid, idDst, ic->second));
+								Form_Reply_JOIN_Channel(os, idDst, ic->second);
 							} else {
-								PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_BADPASS, eChannel, idDst));
+								Form_Reply_JOIN_Result(os, CHAN_BADPASS, eChannel, idDst);
 							}
 						} else {
-							PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_DENY, eChannel, idDst));
+							Form_Reply_JOIN_Result(os, CHAN_DENY, eChannel, idDst);
 						}
 					} else {
-						PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_LIMIT, eChannel, idDst));
+						Form_Reply_JOIN_Result(os, CHAN_LIMIT, eChannel, idDst);
 					}
 				} else {
-					PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_ALREADY, eChannel, idDst));
+					Form_Reply_JOIN_Result(os, CHAN_ALREADY, eChannel, idDst);
 				}
 			} else { // create new channel if nothing was found
 				if (type & eChannel) {
@@ -813,10 +813,10 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 					chan.setStatus(idSrc, eFounder);
 					m_mChannel[idDst] = chan;
 					linkCRC(idDst, idSrc);
-					PushTrn(sock, Make_Reply_JOIN_Channel(trnid, idDst, m_mChannel[idDst]));
+					Form_Reply_JOIN_Channel(os, idDst, m_mChannel[idDst]);
 				} else if (type & eBoard) {
-					PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_ABSENT, eBoard, idDst));
-				} else PushTrn(sock, Make_Reply_JOIN_Result(trnid, CHAN_ABSENT, (EContact)type, idDst));
+					Form_Reply_JOIN_Result(os, CHAN_ABSENT, eBoard, idDst);
+				} else Form_Reply_JOIN_Result(os, CHAN_ABSENT, (EContact)type, idDst);
 			}
 		}
 	}
@@ -825,7 +825,7 @@ void CALLBACK JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 	EvReport(tformat(TEXT("joins %s to %s"), m_mUser[idSrc].name.c_str(), name.c_str()), eInformation, eNormal);
 }
 
-void CALLBACK JServer::Recv_Cmd_PART(SOCKET sock, WORD trnid, io::mem& is)
+void JServer::Recv_Cmd_PART(SOCKET sock, io::mem& is)
 {
 	DWORD idWho, idWhere;
 
@@ -884,7 +884,7 @@ void CALLBACK JServer::Recv_Cmd_PART(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JServer::Recv_Quest_USERINFO(SOCKET sock, WORD trnid, io::mem& is)
+void JServer::Recv_Quest_USERINFO(SOCKET sock, WORD trnid, io::mem& is, std::ostream& os)
 {
 	SetId wanted;
 
@@ -903,13 +903,13 @@ void CALLBACK JServer::Recv_Quest_USERINFO(SOCKET sock, WORD trnid, io::mem& is)
 		}
 	}
 
-	PushTrn(sock, Make_Reply_USERINFO(trnid, wanted));
+	Form_Reply_USERINFO(os, wanted);
 
 	// Report about message
 	EvReport(tformat(TEXT("info for %u users"), wanted.size()), eInformation, eNormal);
 }
 
-void CALLBACK JServer::Recv_Cmd_ONLINE(SOCKET sock, WORD trnid, io::mem& is)
+void JServer::Recv_Cmd_ONLINE(SOCKET sock, io::mem& is)
 {
 	EOnline isOnline;
 	DWORD idOnline;
@@ -945,7 +945,7 @@ void CALLBACK JServer::Recv_Cmd_ONLINE(SOCKET sock, WORD trnid, io::mem& is)
 	EvReport(tformat(TEXT("user is %s"), isOnline ? TEXT("online") : TEXT("offline")), eInformation, eLowest);
 }
 
-void CALLBACK JServer::Recv_Cmd_STATUS(SOCKET sock, WORD trnid, io::mem& is)
+void JServer::Recv_Cmd_STATUS(SOCKET sock, io::mem& is)
 {
 	WORD type;
 	EUserStatus stat;
@@ -1005,7 +1005,7 @@ void CALLBACK JServer::Recv_Cmd_STATUS(SOCKET sock, WORD trnid, io::mem& is)
 	EvReport(tformat(TEXT("user changes status")), eInformation, eLowest);
 }
 
-void CALLBACK JServer::Recv_Cmd_SAY(SOCKET sock, WORD trnid, io::mem& is)
+void JServer::Recv_Cmd_SAY(SOCKET sock, io::mem& is)
 {
 	DWORD idWhere;
 	UINT type;
@@ -1048,7 +1048,7 @@ void CALLBACK JServer::Recv_Cmd_SAY(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JServer::Recv_Cmd_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
+void JServer::Recv_Cmd_TOPIC(SOCKET sock, io::mem& is)
 {
 	DWORD idWhere;
 	std::tstring topic;
@@ -1092,7 +1092,7 @@ void CALLBACK JServer::Recv_Cmd_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JServer::Recv_Cmd_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem& is)
+void JServer::Recv_Cmd_CHANOPTIONS(SOCKET sock, io::mem& is)
 {
 	DWORD idWhere;
 	int op;
@@ -1165,7 +1165,7 @@ void CALLBACK JServer::Recv_Cmd_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem& is
 	}
 }
 
-void CALLBACK JServer::Recv_Cmd_ACCESS(SOCKET sock, WORD trnid, io::mem& is)
+void JServer::Recv_Cmd_ACCESS(SOCKET sock, io::mem& is)
 {
 	DWORD idWho, idWhere;
 	EChanStatus stat;
@@ -1214,7 +1214,7 @@ void CALLBACK JServer::Recv_Cmd_ACCESS(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JServer::Recv_Cmd_BEEP(SOCKET sock, WORD trnid, io::mem& is)
+void JServer::Recv_Cmd_BEEP(SOCKET sock, io::mem& is)
 {
 	DWORD idWho;
 
@@ -1251,7 +1251,7 @@ void CALLBACK JServer::Recv_Cmd_BEEP(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JServer::Recv_Cmd_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& is)
+void JServer::Recv_Cmd_CLIPBOARD(SOCKET sock, io::mem& is)
 {
 	DWORD idWho;
 	const void* ptr;
@@ -1293,7 +1293,7 @@ void CALLBACK JServer::Recv_Cmd_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JServer::Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
+void JServer::Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is, std::ostream& os)
 {
 	DWORD idWho;
 	const void* ptr;
@@ -1332,19 +1332,19 @@ void CALLBACK JServer::Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 #endif
 		{
 			PushTrn(m_mIdSocket[idWho], Make_Notify_MESSAGE(idBy, ft, (const char*)ptr, size));
-			PushTrn(sock, Make_Reply_MESSAGE(trnid, idWho, MESSAGE_SENT));
+			Form_Reply_MESSAGE(os, idWho, MESSAGE_SENT);
 		}
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWho);
 		if (ic != m_mChannel.end()) { // channel
-			PushTrn(sock, Make_Reply_MESSAGE(trnid, idWho, MESSAGE_IGNORE));
+			Form_Reply_MESSAGE(os, idWho, MESSAGE_IGNORE);
 		} else {
-			PushTrn(sock, Make_Reply_MESSAGE(trnid, idWho, MESSAGE_IGNORE));
+			Form_Reply_MESSAGE(os, idWho, MESSAGE_IGNORE);
 		}
 	}
 }
 
-void CALLBACK JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is)
+void JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, io::mem& is)
 {
 	DWORD idWho;
 	const void* ptr;
@@ -1390,14 +1390,14 @@ void CALLBACK JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is)
 // Beowolf Network Protocol Messages sending
 //
 
-JPtr<JTransaction> CALLBACK JServer::Make_Notify_METRICS(const Metrics& metrics) const
+JPtr<JTransaction> JServer::Make_Notify_METRICS(const Metrics& metrics) const
 {
 	std::ostringstream os;
 	io::pack(os, metrics);
 	return MakeTrn(NOTIFY(CCPM_METRICS), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Notify_NICK(DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname) const
+JPtr<JTransaction> JServer::Make_Notify_NICK(DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname) const
 {
 	std::ostringstream os;
 	io::pack(os, result);
@@ -1407,9 +1407,8 @@ JPtr<JTransaction> CALLBACK JServer::Make_Notify_NICK(DWORD result, DWORD idOld,
 	return MakeTrn(NOTIFY(CCPM_NICK), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Reply_LIST(WORD trnid, bool god) const
+void JServer::Form_Reply_LIST(std::ostream& os, bool god) const
 {
-	std::ostringstream os;
 	// Count all visible channels
 	size_t size = 0;
 	for each (MapChannel::value_type const& v in m_mChannel)
@@ -1425,39 +1424,32 @@ JPtr<JTransaction> CALLBACK JServer::Make_Reply_LIST(WORD trnid, bool god) const
 			io::pack(os, v.second);
 		}
 	}
-	return MakeTrn(REPLY(CCPM_LIST), trnid, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Reply_JOIN_Result(WORD trnid, DWORD result, EContact type, DWORD id) const
+void JServer::Form_Reply_JOIN_Result(std::ostream& os, DWORD result, EContact type, DWORD id) const
 {
-	std::ostringstream os;
 	io::pack(os, result);
 	io::pack(os, type);
 	io::pack(os, id);
-	return MakeTrn(REPLY(CCPM_JOIN), trnid, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Reply_JOIN_User(WORD trnid, DWORD id, const User& user) const
+void JServer::Form_Reply_JOIN_User(std::ostream& os, DWORD id, const User& user) const
 {
-	std::ostringstream os;
 	io::pack(os, (DWORD)CHAN_OK);
 	io::pack(os, eUser);
 	io::pack(os, id);
 	io::pack(os, user);
-	return MakeTrn(REPLY(CCPM_JOIN), trnid, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Reply_JOIN_Channel(WORD trnid, DWORD id, const Channel& chan) const
+void JServer::Form_Reply_JOIN_Channel(std::ostream& os, DWORD id, const Channel& chan) const
 {
-	std::ostringstream os;
 	io::pack(os, (DWORD)CHAN_OK);
 	io::pack(os, eChannel);
 	io::pack(os, id);
 	io::pack(os, chan);
-	return MakeTrn(REPLY(CCPM_JOIN), trnid, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Notify_JOIN(DWORD idWho, DWORD idWhere, const User& user) const
+JPtr<JTransaction> JServer::Make_Notify_JOIN(DWORD idWho, DWORD idWhere, const User& user) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1466,7 +1458,7 @@ JPtr<JTransaction> CALLBACK JServer::Make_Notify_JOIN(DWORD idWho, DWORD idWhere
 	return MakeTrn(NOTIFY(CCPM_JOIN), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Notify_PART(DWORD idWho, DWORD idWhere, DWORD idBy) const
+JPtr<JTransaction> JServer::Make_Notify_PART(DWORD idWho, DWORD idWhere, DWORD idBy) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1475,14 +1467,13 @@ JPtr<JTransaction> CALLBACK JServer::Make_Notify_PART(DWORD idWho, DWORD idWhere
 	return MakeTrn(NOTIFY(CCPM_PART), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Reply_USERINFO(WORD trnid, const SetId& set) const
+void JServer::Form_Reply_USERINFO(std::ostream& os, const SetId& set) const
 {
 	// Validate given identifiers
 	size_t count = 0;
 	for each (SetId::value_type const& v in set)
 		count++;
 
-	std::ostringstream os;
 	io::pack(os, count);
 	for each (SetId::value_type const& v in set) {
 		MapUser::const_iterator iu = m_mUser.find(v);
@@ -1491,10 +1482,9 @@ JPtr<JTransaction> CALLBACK JServer::Make_Reply_USERINFO(WORD trnid, const SetId
 			io::pack(os, iu->second);
 		}
 	}
-	return MakeTrn(REPLY(CCPM_USERINFO), trnid, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Notify_ONLINE(DWORD idWho, EOnline online, DWORD id) const
+JPtr<JTransaction> JServer::Make_Notify_ONLINE(DWORD idWho, EOnline online, DWORD id) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1503,7 +1493,7 @@ JPtr<JTransaction> CALLBACK JServer::Make_Notify_ONLINE(DWORD idWho, EOnline onl
 	return MakeTrn(NOTIFY(CCPM_ONLINE), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Notify_STATUS(DWORD idWho, WORD type, EUserStatus stat, const Alert& a, int img, std::tstring msg) const
+JPtr<JTransaction> JServer::Make_Notify_STATUS(DWORD idWho, WORD type, EUserStatus stat, const Alert& a, int img, std::tstring msg) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1521,7 +1511,7 @@ JPtr<JTransaction> CALLBACK JServer::Make_Notify_STATUS(DWORD idWho, WORD type, 
 	return MakeTrn(NOTIFY(CCPM_STATUS), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Notify_STATUS_God(DWORD idWho, bool god) const
+JPtr<JTransaction> JServer::Make_Notify_STATUS_God(DWORD idWho, bool god) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1530,7 +1520,7 @@ JPtr<JTransaction> CALLBACK JServer::Make_Notify_STATUS_God(DWORD idWho, bool go
 	return MakeTrn(NOTIFY(CCPM_STATUS), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Notify_STATUS_Devil(DWORD idWho, bool devil) const
+JPtr<JTransaction> JServer::Make_Notify_STATUS_Devil(DWORD idWho, bool devil) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1539,7 +1529,7 @@ JPtr<JTransaction> CALLBACK JServer::Make_Notify_STATUS_Devil(DWORD idWho, bool 
 	return MakeTrn(NOTIFY(CCPM_STATUS), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Notify_SAY(DWORD idWho, DWORD idWhere, UINT type, const std::string& content) const
+JPtr<JTransaction> JServer::Make_Notify_SAY(DWORD idWho, DWORD idWhere, UINT type, const std::string& content) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1549,7 +1539,7 @@ JPtr<JTransaction> CALLBACK JServer::Make_Notify_SAY(DWORD idWho, DWORD idWhere,
 	return MakeTrn(NOTIFY(CCPM_SAY), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Notify_TOPIC(DWORD idWho, DWORD idWhere, const std::tstring& topic) const
+JPtr<JTransaction> JServer::Make_Notify_TOPIC(DWORD idWho, DWORD idWhere, const std::tstring& topic) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1558,7 +1548,7 @@ JPtr<JTransaction> CALLBACK JServer::Make_Notify_TOPIC(DWORD idWho, DWORD idWher
 	return MakeTrn(NOTIFY(CCPM_TOPIC), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Notify_CHANOPTIONS(DWORD idWho, DWORD idWhere, int op, DWORD val) const
+JPtr<JTransaction> JServer::Make_Notify_CHANOPTIONS(DWORD idWho, DWORD idWhere, int op, DWORD val) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1568,7 +1558,7 @@ JPtr<JTransaction> CALLBACK JServer::Make_Notify_CHANOPTIONS(DWORD idWho, DWORD 
 	return MakeTrn(NOTIFY(CCPM_CHANOPTIONS), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Notify_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat, DWORD idBy) const
+JPtr<JTransaction> JServer::Make_Notify_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat, DWORD idBy) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1578,14 +1568,14 @@ JPtr<JTransaction> CALLBACK JServer::Make_Notify_ACCESS(DWORD idWho, DWORD idWhe
 	return MakeTrn(NOTIFY(CCPM_ACCESS), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Notify_BEEP(DWORD idBy) const
+JPtr<JTransaction> JServer::Make_Notify_BEEP(DWORD idBy) const
 {
 	std::ostringstream os;
 	io::pack(os, idBy);
 	return MakeTrn(NOTIFY(CCPM_BEEP), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Notify_CLIPBOARD(DWORD idBy, const char* ptr, size_t size) const
+JPtr<JTransaction> JServer::Make_Notify_CLIPBOARD(DWORD idBy, const char* ptr, size_t size) const
 {
 	std::ostringstream os;
 	io::pack(os, idBy);
@@ -1593,7 +1583,7 @@ JPtr<JTransaction> CALLBACK JServer::Make_Notify_CLIPBOARD(DWORD idBy, const cha
 	return MakeTrn(NOTIFY(CCPM_CLIPBOARD), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Notify_MESSAGE(DWORD idBy, const FILETIME& ft, const char* ptr, size_t size) const
+JPtr<JTransaction> JServer::Make_Notify_MESSAGE(DWORD idBy, const FILETIME& ft, const char* ptr, size_t size) const
 {
 	std::ostringstream os;
 	io::pack(os, idBy);
@@ -1602,15 +1592,13 @@ JPtr<JTransaction> CALLBACK JServer::Make_Notify_MESSAGE(DWORD idBy, const FILET
 	return MakeTrn(NOTIFY(CCPM_MESSAGE), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Reply_MESSAGE(WORD trnid, DWORD idWho, UINT type) const
+void JServer::Form_Reply_MESSAGE(std::ostream& os, DWORD idWho, UINT type) const
 {
-	std::ostringstream os;
 	io::pack(os, idWho);
 	io::pack(os, type);
-	return MakeTrn(REPLY(CCPM_MESSAGE), trnid, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JServer::Make_Notify_SPLASHRTF(DWORD idBy, const char* ptr, size_t size) const
+JPtr<JTransaction> JServer::Make_Notify_SPLASHRTF(DWORD idBy, const char* ptr, size_t size) const
 {
 	std::ostringstream os;
 	io::pack(os, idBy);

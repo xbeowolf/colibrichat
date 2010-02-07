@@ -10,7 +10,7 @@
 #include "stdafx.h"
 
 // Common
-#include "dCRC.h"
+#include "CRC.h"
 #include "Profile.h"
 
 // Project
@@ -306,7 +306,7 @@ int JClient::lua_DestroyWindow(lua_State *luaVM)
 int JClient::lua_PageEnable(lua_State *luaVM)
 {
 	DWORD id;
-	if (lua_isstring(luaVM, 1)) id = dCRC(ANSIToTstr(lua_tostring(luaVM, 1)).c_str());
+	if (lua_isstring(luaVM, 1)) id = tCRCJJ(ANSIToTstr(lua_tostring(luaVM, 1)).c_str());
 	else if (lua_isnumber(luaVM, 1)) id = (DWORD)lua_tointeger(luaVM, 1);
 	else id = CRC_SERVER;
 	JPtr<JPage> jp = getPage(id);
@@ -319,7 +319,7 @@ int JClient::lua_PageEnable(lua_State *luaVM)
 int JClient::lua_PageDisable(lua_State *luaVM)
 {
 	DWORD id;
-	if (lua_isstring(luaVM, 1)) id = dCRC(ANSIToTstr(lua_tostring(luaVM, 1)).c_str());
+	if (lua_isstring(luaVM, 1)) id = tCRCJJ(ANSIToTstr(lua_tostring(luaVM, 1)).c_str());
 	else if (lua_isnumber(luaVM, 1)) id = (DWORD)lua_tointeger(luaVM, 1);
 	else id = CRC_SERVER;
 	JPtr<JPage> jp = getPage(id);
@@ -333,7 +333,7 @@ int JClient::lua_PageAppendScript(lua_State *luaVM)
 {
 	ASSERT(lua_gettop(luaVM) >= 2);
 	DWORD id;
-	if (lua_isstring(luaVM, 1)) id = dCRC(ANSIToTstr(lua_tostring(luaVM, 1)).c_str());
+	if (lua_isstring(luaVM, 1)) id = tCRCJJ(ANSIToTstr(lua_tostring(luaVM, 1)).c_str());
 	else if (lua_isnumber(luaVM, 1)) id = (DWORD)lua_tointeger(luaVM, 1);
 	else id = CRC_SERVER;
 	JPtr<JPageLog> jp = getPageLog(id);
@@ -347,7 +347,7 @@ int JClient::lua_Say(lua_State *luaVM)
 {
 	ASSERT(lua_gettop(luaVM) >= 2);
 	DWORD id;
-	if (lua_isstring(luaVM, 1)) id = dCRC(ANSIToTstr(lua_tostring(luaVM, 1)).c_str());
+	if (lua_isstring(luaVM, 1)) id = tCRCJJ(ANSIToTstr(lua_tostring(luaVM, 1)).c_str());
 	else if (lua_isnumber(luaVM, 1)) id = (DWORD)lua_tointeger(luaVM, 1);
 	else id = CRC_SERVER;
 	if (m_clientsock) {
@@ -360,7 +360,7 @@ int JClient::lua_Message(lua_State *luaVM)
 {
 	ASSERT(lua_gettop(luaVM) >= 2);
 	DWORD id;
-	if (lua_isstring(luaVM, 1)) id = dCRC(ANSIToTstr(lua_tostring(luaVM, 1)).c_str());
+	if (lua_isstring(luaVM, 1)) id = tCRCJJ(ANSIToTstr(lua_tostring(luaVM, 1)).c_str());
 	else if (lua_isnumber(luaVM, 1)) id = (DWORD)lua_tointeger(luaVM, 1);
 	else id = CRC_SERVER;
 	if (m_clientsock) {
@@ -373,7 +373,7 @@ int JClient::lua_Alert(lua_State *luaVM)
 {
 	ASSERT(lua_gettop(luaVM) >= 2);
 	DWORD id;
-	if (lua_isstring(luaVM, 1)) id = dCRC(ANSIToTstr(lua_tostring(luaVM, 1)).c_str());
+	if (lua_isstring(luaVM, 1)) id = tCRCJJ(ANSIToTstr(lua_tostring(luaVM, 1)).c_str());
 	else if (lua_isnumber(luaVM, 1)) id = (DWORD)lua_tointeger(luaVM, 1);
 	else id = CRC_SERVER;
 	if (m_clientsock) {
@@ -386,7 +386,7 @@ int JClient::lua_Beep(lua_State *luaVM)
 {
 	ASSERT(lua_gettop(luaVM) >= 1);
 	DWORD id;
-	if (lua_isstring(luaVM, 1)) id = dCRC(ANSIToTstr(lua_tostring(luaVM, 1)).c_str());
+	if (lua_isstring(luaVM, 1)) id = tCRCJJ(ANSIToTstr(lua_tostring(luaVM, 1)).c_str());
 	else if (lua_isnumber(luaVM, 1)) id = (DWORD)lua_tointeger(luaVM, 1);
 	else id = CRC_SERVER;
 	if (m_clientsock) {

@@ -10,7 +10,7 @@
 #include "stdafx.h"
 
 // Common
-#include "dCRC.h"
+#include "CRC.h"
 #include "Profile.h"
 
 // Project

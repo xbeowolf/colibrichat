@@ -212,7 +212,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Common\dCRC.cpp"
+					RelativePath="..\..\Common\CRC.cpp"
 					>
 				</File>
 				<File
@@ -275,7 +275,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Common\dCRC.h"
+					RelativePath="..\..\Common\CRC.h"
 					>
 				</File>
 				<File

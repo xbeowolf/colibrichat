@@ -11,7 +11,7 @@
 
 // Common
 #include "stylepr.h"
-#include "dCRC.h"
+#include "CRC.h"
 #include "Profile.h"
 
 // Project
@@ -910,7 +910,7 @@ LRESULT WINAPI JClient::JMessageEditor::DlgProc(HWND hWnd, UINT message, WPARAM 
 					GetDlgItemText(hWnd, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
 					nick = nickbuf.c_str();
 					if (JClient::CheckNick(nick, msg)) { // check content
-						pSource->PushTrn(pSource->m_clientsock, pSource->Make_Quest_MESSAGE(dCRC(nick.c_str()),
+						pSource->PushTrn(pSource->m_clientsock, pSource->Make_Quest_MESSAGE(tCRCJJ(nick.c_str()),
 							content.c_str(), fAlert, crSheet));
 						DestroyWindow(hWnd);
 					} else {

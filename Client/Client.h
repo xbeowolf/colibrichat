@@ -337,16 +337,15 @@ namespace colibrichat
 		protected:
 
 			// Beowolf Network Protocol Messages reciving
-			void CALLBACK Recv_Reply_LIST(SOCKET sock, WORD trnid, io::mem& is);
+			void Recv_Reply_LIST(SOCKET sock, WORD trnid, io::mem& is);
 
 			// Beowolf Network Protocol Messages sending
-			JPtr<JTransaction> CALLBACK Make_Quest_LIST() const;
+			JPtr<JTransaction> Make_Quest_LIST() const;
 
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
 			void OnLinkStart(SOCKET sock);
-			void OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is);
 			void OnMetrics(const Metrics& metrics);
 			void OnTopic(DWORD idWho, DWORD idWhere, const std::tstring& topic);
 			void OnNick(DWORD idOld, const std::tstring& oldname, DWORD idNew, const std::tstring& newname);
@@ -723,42 +722,42 @@ namespace colibrichat
 	protected:
 
 		// Beowolf Network Protocol Messages reciving
-		void CALLBACK Recv_Notify_METRICS(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Notify_NICK(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Notify_JOIN(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Notify_PART(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Reply_USERINFO(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Notify_ONLINE(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Notify_STATUS(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Notify_SAY(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Notify_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Notify_ACCESS(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Notify_MESSAGE(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Notify_BEEP(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Notify_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& is);
-		void CALLBACK Recv_Notify_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is);
+		void Recv_Notify_METRICS(SOCKET sock, io::mem& is);
+		void Recv_Notify_NICK(SOCKET sock, io::mem& is);
+		void Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is);
+		void Recv_Notify_JOIN(SOCKET sock, io::mem& is);
+		void Recv_Notify_PART(SOCKET sock, io::mem& is);
+		void Recv_Reply_USERINFO(SOCKET sock, WORD trnid, io::mem& is);
+		void Recv_Notify_ONLINE(SOCKET sock, io::mem& is);
+		void Recv_Notify_STATUS(SOCKET sock, io::mem& is);
+		void Recv_Notify_SAY(SOCKET sock, io::mem& is);
+		void Recv_Notify_TOPIC(SOCKET sock, io::mem& is);
+		void Recv_Notify_CHANOPTIONS(SOCKET sock, io::mem& is);
+		void Recv_Notify_ACCESS(SOCKET sock, io::mem& is);
+		void Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is);
+		void Recv_Notify_MESSAGE(SOCKET sock, io::mem& is);
+		void Recv_Notify_BEEP(SOCKET sock, io::mem& is);
+		void Recv_Notify_CLIPBOARD(SOCKET sock, io::mem& is);
+		void Recv_Notify_SPLASHRTF(SOCKET sock, io::mem& is);
 
 		// Beowolf Network Protocol Messages sending
-		JPtr<JTransaction> CALLBACK Make_Cmd_NICK(DWORD idWho, const std::tstring& nick) const;
-		JPtr<JTransaction> CALLBACK Make_Quest_JOIN(const std::tstring& name, const std::tstring& pass = TEXT(""), int type = eCheat | eUser | eChannel | eBoard) const;
-		JPtr<JTransaction> CALLBACK Make_Cmd_PART(DWORD idWho, DWORD idWhere) const;
-		JPtr<JTransaction> CALLBACK Make_Quest_USERINFO(const SetId& set) const;
-		JPtr<JTransaction> CALLBACK Make_Cmd_ONLINE(EOnline online, DWORD id) const;
-		JPtr<JTransaction> CALLBACK Make_Cmd_STATUS_Mode(EUserStatus stat, const Alert& a) const;
-		JPtr<JTransaction> CALLBACK Make_Cmd_STATUS_Img(int img) const;
-		JPtr<JTransaction> CALLBACK Make_Cmd_STATUS_Msg(const std::tstring& msg) const;
-		JPtr<JTransaction> CALLBACK Make_Cmd_STATUS(EUserStatus stat, const Alert& a, int img, const std::tstring& msg) const;
-		JPtr<JTransaction> CALLBACK Make_Cmd_SAY(DWORD idWhere, UINT type, const std::string& content) const;
-		JPtr<JTransaction> CALLBACK Make_Cmd_TOPIC(DWORD idWhere, const std::tstring& topic) const;
-		JPtr<JTransaction> CALLBACK Make_Cmd_CHANOPTIONS(DWORD idWhere, int op, DWORD val) const;
-		JPtr<JTransaction> CALLBACK Make_Cmd_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat) const;
-		JPtr<JTransaction> CALLBACK Make_Quest_MESSAGE(DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet) const;
-		JPtr<JTransaction> CALLBACK Make_Cmd_BEEP(DWORD idWho) const;
-		JPtr<JTransaction> CALLBACK Make_Cmd_CLIPBOARD(DWORD idWho) const;
-		JPtr<JTransaction> CALLBACK Make_Cmd_SPLASHRTF(DWORD idWho, const std::string& text,
+		JPtr<JTransaction> Make_Cmd_NICK(DWORD idWho, const std::tstring& nick) const;
+		JPtr<JTransaction> Make_Quest_JOIN(const std::tstring& name, const std::tstring& pass = TEXT(""), int type = eCheat | eUser | eChannel | eBoard) const;
+		JPtr<JTransaction> Make_Cmd_PART(DWORD idWho, DWORD idWhere) const;
+		JPtr<JTransaction> Make_Quest_USERINFO(const SetId& set) const;
+		JPtr<JTransaction> Make_Cmd_ONLINE(EOnline online, DWORD id) const;
+		JPtr<JTransaction> Make_Cmd_STATUS_Mode(EUserStatus stat, const Alert& a) const;
+		JPtr<JTransaction> Make_Cmd_STATUS_Img(int img) const;
+		JPtr<JTransaction> Make_Cmd_STATUS_Msg(const std::tstring& msg) const;
+		JPtr<JTransaction> Make_Cmd_STATUS(EUserStatus stat, const Alert& a, int img, const std::tstring& msg) const;
+		JPtr<JTransaction> Make_Cmd_SAY(DWORD idWhere, UINT type, const std::string& content) const;
+		JPtr<JTransaction> Make_Cmd_TOPIC(DWORD idWhere, const std::tstring& topic) const;
+		JPtr<JTransaction> Make_Cmd_CHANOPTIONS(DWORD idWhere, int op, DWORD val) const;
+		JPtr<JTransaction> Make_Cmd_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat) const;
+		JPtr<JTransaction> Make_Quest_MESSAGE(DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet) const;
+		JPtr<JTransaction> Make_Cmd_BEEP(DWORD idWho) const;
+		JPtr<JTransaction> Make_Cmd_CLIPBOARD(DWORD idWho) const;
+		JPtr<JTransaction> Make_Cmd_SPLASHRTF(DWORD idWho, const std::string& text,
 			const RECT& rcPos, bool bCloseOnDisconnect = true, DWORD dwCanclose = 2500, DWORD dwAutoclose = 30000,
 			bool fTransparent = true, COLORREF crSheet = RGB(255, 255, 255)) const;
 
@@ -769,7 +768,6 @@ namespace colibrichat
 		void OnLinkClose(SOCKET sock, UINT err);
 		void OnLinkFail(SOCKET sock, UINT err);
 		void OnLinkStart(SOCKET sock);
-		void OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is);
 		void OnNick(DWORD idOld, const std::tstring& oldname, DWORD idNew, const std::tstring& newname);
 
 		// Lua gluer

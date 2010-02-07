@@ -11,7 +11,7 @@
 
 // Common
 #include "stylepr.h"
-//#include "dCRC.h"
+//#include "CRC.h"
 #include "Profile.h"
 
 // Project
@@ -1326,10 +1326,12 @@ void JClient::JPageList::OnHook(JEventable* src)
 	__super::OnHook(src);
 
 	pSource->EvLinkStart += MakeDelegate(this, &JClient::JPageList::OnLinkStart);
-	pSource->EvTransactionProcess += MakeDelegate(this, &JClient::JPageList::OnTransactionProcess);
 	pSource->EvMetrics += MakeDelegate(this, &JClient::JPageList::OnMetrics);
 	pSource->EvTopic += MakeDelegate(this, &JClient::JPageList::OnTopic);
 	pSource->EvNick += MakeDelegate(this, &JClient::JPageList::OnNick);
+
+	// Transactions parsers
+	pSource->m_mTrnReply[CCPM_LIST] = fastdelegate::MakeDelegate(this, &JClient::JPageList::Recv_Reply_LIST);
 }
 
 void JClient::JPageList::OnUnhook(JEventable* src)
@@ -1337,8 +1339,10 @@ void JClient::JPageList::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
+	// Transactions parsers
+	pSource->m_mTrnReply.erase(CCPM_LIST);
+
 	pSource->EvLinkStart -= MakeDelegate(this, &JClient::JPageList::OnLinkStart);
-	pSource->EvTransactionProcess -= MakeDelegate(this, &JClient::JPageList::OnTransactionProcess);
 	pSource->EvMetrics -= MakeDelegate(this, &JClient::JPageList::OnMetrics);
 	pSource->EvTopic -= MakeDelegate(this, &JClient::JPageList::OnTopic);
 	pSource->EvNick -= MakeDelegate(this, &JClient::JPageList::OnNick);
@@ -1351,26 +1355,6 @@ void JClient::JPageList::OnLinkStart(SOCKET sock)
 	ASSERT(pSource);
 
 	pSource->PushTrn(sock, Make_Quest_LIST());
-}
-
-void JClient::JPageList::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is)
-{
-	typedef void (CALLBACK JClient::JPageList::*TrnParser)(SOCKET, WORD, io::mem&);
-	struct {
-		WORD message;
-		TrnParser parser;
-	} responseTable[] =
-	{
-		{REPLY(CCPM_LIST), &JClient::JPageList::Recv_Reply_LIST},
-	};
-	for (int i = 0; i < _countof(responseTable); i++)
-	{
-		if (responseTable[i].message == message)
-		{
-			(this->*responseTable[i].parser)(sock, trnid, is);
-			return;
-		}
-	}
 }
 
 void JClient::JPageList::OnMetrics(const Metrics& metrics)
@@ -1426,7 +1410,7 @@ void JClient::JPageList::OnNick(DWORD idOld, const std::tstring& oldname, DWORD 
 	}
 }
 
-void CALLBACK JClient::JPageList::Recv_Reply_LIST(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::JPageList::Recv_Reply_LIST(SOCKET sock, WORD trnid, io::mem& is)
 {
 	size_t size;
 
@@ -1463,7 +1447,7 @@ void CALLBACK JClient::JPageList::Recv_Reply_LIST(SOCKET sock, WORD trnid, io::m
 	pSource->EvReport(tformat(TEXT("listed [b]%u[/b] channels"), m_mChannel.size()), eInformation, eNormal);
 }
 
-JPtr<JTransaction> CALLBACK JClient::JPageList::Make_Quest_LIST() const
+JPtr<JTransaction> JClient::JPageList::Make_Quest_LIST() const
 {
 	std::ostringstream os;
 	return pSource->MakeTrn(QUEST(CCPM_LIST), 0, os.str());

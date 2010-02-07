@@ -11,7 +11,7 @@
 
 // Common
 #include "stylepr.h"
-//#include "dCRC.h"
+//#include "CRC.h"
 #include "Profile.h"
 
 // Project
@@ -1111,11 +1111,50 @@ void JClient::OnHook(JEventable* src)
 	__super::OnHook(src);
 
 	EvNick += MakeDelegate(this, &JClient::OnNick);
+
+	// Transactions parsers
+	m_mTrnNotify[CCPM_METRICS] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_METRICS);
+	m_mTrnNotify[CCPM_NICK] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_NICK);
+	m_mTrnReply[CCPM_JOIN] = fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_JOIN);
+	m_mTrnNotify[CCPM_JOIN] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_JOIN);
+	m_mTrnNotify[CCPM_PART] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_PART);
+	m_mTrnReply[CCPM_USERINFO] = fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_USERINFO);
+	m_mTrnNotify[CCPM_ONLINE] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_ONLINE);
+	m_mTrnNotify[CCPM_STATUS] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_STATUS);
+	m_mTrnNotify[CCPM_SAY] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_SAY);
+	m_mTrnNotify[CCPM_TOPIC] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_TOPIC);
+	m_mTrnNotify[CCPM_CHANOPTIONS] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_CHANOPTIONS);
+	m_mTrnNotify[CCPM_ACCESS] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_ACCESS);
+	m_mTrnReply[CCPM_MESSAGE] = fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_MESSAGE);
+	m_mTrnNotify[CCPM_MESSAGE] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_MESSAGE);
+	m_mTrnNotify[CCPM_BEEP] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_BEEP);
+	m_mTrnNotify[CCPM_CLIPBOARD] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_CLIPBOARD);
+	m_mTrnNotify[CCPM_SPLASHRTF] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_SPLASHRTF);
 }
 
 void JClient::OnUnhook(JEventable* src)
 {
 	using namespace fastdelegate;
+
+	// Transactions parsers
+	m_mTrnNotify.erase(CCPM_METRICS);
+	m_mTrnReply.erase(CCPM_NICK);
+	m_mTrnNotify.erase(CCPM_NICK);
+	m_mTrnReply.erase(CCPM_JOIN);
+	m_mTrnNotify.erase(CCPM_JOIN);
+	m_mTrnNotify.erase(CCPM_PART);
+	m_mTrnReply.erase(CCPM_USERINFO);
+	m_mTrnNotify.erase(CCPM_ONLINE);
+	m_mTrnNotify.erase(CCPM_STATUS);
+	m_mTrnNotify.erase(CCPM_SAY);
+	m_mTrnNotify.erase(CCPM_TOPIC);
+	m_mTrnNotify.erase(CCPM_CHANOPTIONS);
+	m_mTrnNotify.erase(CCPM_ACCESS);
+	m_mTrnReply.erase(CCPM_MESSAGE);
+	m_mTrnNotify.erase(CCPM_MESSAGE);
+	m_mTrnNotify.erase(CCPM_BEEP);
+	m_mTrnNotify.erase(CCPM_CLIPBOARD);
+	m_mTrnNotify.erase(CCPM_SPLASHRTF);
 
 	EvNick -= MakeDelegate(this, &JClient::OnNick);
 
@@ -1234,43 +1273,6 @@ void JClient::OnLinkStart(SOCKET sock)
 	}
 }
 
-void JClient::OnTransactionProcess(SOCKET sock, WORD message, WORD trnid, io::mem is)
-{
-	typedef void (CALLBACK JClient::*TrnParser)(SOCKET, WORD, io::mem&);
-	struct {
-		WORD message;
-		TrnParser parser;
-	} responseTable[] =
-	{
-		{NOTIFY(CCPM_METRICS), &JClient::Recv_Notify_METRICS},
-		{REPLY(CCPM_NICK), &JClient::Recv_Notify_NICK},
-		{NOTIFY(CCPM_NICK), &JClient::Recv_Notify_NICK},
-		{REPLY(CCPM_JOIN), &JClient::Recv_Reply_JOIN},
-		{NOTIFY(CCPM_JOIN), &JClient::Recv_Notify_JOIN},
-		{NOTIFY(CCPM_PART), &JClient::Recv_Notify_PART},
-		{REPLY(CCPM_USERINFO), &JClient::Recv_Reply_USERINFO},
-		{NOTIFY(CCPM_ONLINE), &JClient::Recv_Notify_ONLINE},
-		{NOTIFY(CCPM_STATUS), &JClient::Recv_Notify_STATUS},
-		{NOTIFY(CCPM_SAY), &JClient::Recv_Notify_SAY},
-		{NOTIFY(CCPM_TOPIC), &JClient::Recv_Notify_TOPIC},
-		{NOTIFY(CCPM_CHANOPTIONS), &JClient::Recv_Notify_CHANOPTIONS},
-		{NOTIFY(CCPM_ACCESS), &JClient::Recv_Notify_ACCESS},
-		{REPLY(CCPM_MESSAGE), &JClient::Recv_Reply_MESSAGE},
-		{NOTIFY(CCPM_MESSAGE), &JClient::Recv_Notify_MESSAGE},
-		{NOTIFY(CCPM_BEEP), &JClient::Recv_Notify_BEEP},
-		{NOTIFY(CCPM_CLIPBOARD), &JClient::Recv_Notify_CLIPBOARD},
-		{NOTIFY(CCPM_SPLASHRTF), &JClient::Recv_Notify_SPLASHRTF},
-	};
-	for (int i = 0; i < _countof(responseTable); i++) {
-		if (responseTable[i].message == message) {
-			(this->*responseTable[i].parser)(sock, trnid, is);
-			return;
-		}
-	}
-
-	__super::OnTransactionProcess(sock, message, trnid, is);
-}
-
 void JClient::OnNick(DWORD idOld, const std::tstring& oldname, DWORD idNew, const std::tstring& newname)
 {
 	ContactRename(idOld, oldname, idNew, newname);
@@ -1280,7 +1282,7 @@ void JClient::OnNick(DWORD idOld, const std::tstring& oldname, DWORD idNew, cons
 // Beowolf Network Protocol Messages reciving
 //
 
-void CALLBACK JClient::Recv_Notify_METRICS(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Notify_METRICS(SOCKET sock, io::mem& is)
 {
 	try
 	{
@@ -1301,7 +1303,7 @@ void CALLBACK JClient::Recv_Notify_METRICS(SOCKET sock, WORD trnid, io::mem& is)
 	EvReport(TEXT("metrics from server"), eInformation, eLow);
 }
 
-void CALLBACK JClient::Recv_Notify_NICK(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Notify_NICK(SOCKET sock, io::mem& is)
 {
 	DWORD result;
 	DWORD idOld, idNew;
@@ -1376,7 +1378,7 @@ void CALLBACK JClient::Recv_Notify_NICK(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 {
 	DWORD result;
 	EContact type;
@@ -1498,7 +1500,7 @@ void CALLBACK JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JClient::Recv_Notify_JOIN(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Notify_JOIN(SOCKET sock, io::mem& is)
 {
 	DWORD idWho, idWhere;
 	User user;
@@ -1564,7 +1566,7 @@ void CALLBACK JClient::Recv_Notify_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JClient::Recv_Notify_PART(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Notify_PART(SOCKET sock, io::mem& is)
 {
 	DWORD idWho, idWhere, idBy;
 
@@ -1632,7 +1634,7 @@ void CALLBACK JClient::Recv_Notify_PART(SOCKET sock, WORD trnid, io::mem& is)
 	UnlinkUser(idWho, idWhere);
 }
 
-void CALLBACK JClient::Recv_Reply_USERINFO(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Reply_USERINFO(SOCKET sock, WORD trnid, io::mem& is)
 {
 	User user;
 	size_t count;
@@ -1667,7 +1669,7 @@ void CALLBACK JClient::Recv_Reply_USERINFO(SOCKET sock, WORD trnid, io::mem& is)
 	EvReport(tformat(TEXT("recieve users info")), eInformation, eLow);
 }
 
-void CALLBACK JClient::Recv_Notify_ONLINE(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Notify_ONLINE(SOCKET sock, io::mem& is)
 {
 	DWORD idWho;
 	EOnline isOnline;
@@ -1714,7 +1716,7 @@ void CALLBACK JClient::Recv_Notify_ONLINE(SOCKET sock, WORD trnid, io::mem& is)
 	EvReport(tformat(TEXT("user %s is %s"), iu != m_mUser.end() ? iu->second.name.c_str() : TEXT("unknown"), isOnline ? TEXT("online") : TEXT("offline")), eInformation, eLowest);
 }
 
-void CALLBACK JClient::Recv_Notify_STATUS(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Notify_STATUS(SOCKET sock, io::mem& is)
 {
 	DWORD idWho;
 	WORD type;
@@ -1829,7 +1831,7 @@ void CALLBACK JClient::Recv_Notify_STATUS(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JClient::Recv_Notify_SAY(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Notify_SAY(SOCKET sock, io::mem& is)
 {
 	DWORD idWho, idWhere;
 	UINT type;
@@ -1887,7 +1889,7 @@ void CALLBACK JClient::Recv_Notify_SAY(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JClient::Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Notify_TOPIC(SOCKET sock, io::mem& is)
 {
 	DWORD idWho, idWhere;
 	std::tstring topic;
@@ -1947,7 +1949,7 @@ void CALLBACK JClient::Recv_Notify_TOPIC(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, io::mem& is)
 {
 	DWORD idWho, idWhere;
 	int op;
@@ -2112,7 +2114,7 @@ void CALLBACK JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, WORD trnid, io::mem&
 		PlaySound(JClientApp::jpApp->strWavTopic.c_str());
 }
 
-void CALLBACK JClient::Recv_Notify_ACCESS(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Notify_ACCESS(SOCKET sock, io::mem& is)
 {
 	DWORD idWho, idWhere, idBy;
 	EChanStatus stat;
@@ -2169,7 +2171,7 @@ void CALLBACK JClient::Recv_Notify_ACCESS(SOCKET sock, WORD trnid, io::mem& is)
 	}
 }
 
-void CALLBACK JClient::Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 {
 	DWORD idWho;
 	UINT type;
@@ -2208,7 +2210,7 @@ void CALLBACK JClient::Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 	EvReport(tformat(msg.c_str(), getSafeName(idWho).c_str()), eInformation, eNormal);
 }
 
-void CALLBACK JClient::Recv_Notify_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Notify_MESSAGE(SOCKET sock, io::mem& is)
 {
 	DWORD idBy;
 	FILETIME ft;
@@ -2264,7 +2266,7 @@ void CALLBACK JClient::Recv_Notify_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 	EvReport(tformat(TEXT("%s from [b]%s[/b]"), fAlert ? TEXT("alert") : TEXT("message"), getSafeName(idBy).c_str()), eInformation, eNormal);
 }
 
-void CALLBACK JClient::Recv_Notify_BEEP(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Notify_BEEP(SOCKET sock, io::mem& is)
 {
 	DWORD idBy;
 
@@ -2297,7 +2299,7 @@ void CALLBACK JClient::Recv_Notify_BEEP(SOCKET sock, WORD trnid, io::mem& is)
 	EvReport(tformat(TEXT("sound signal from [b]%s[/b]"), getSafeName(idBy).c_str()), eInformation, eHigh);
 }
 
-void CALLBACK JClient::Recv_Notify_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Notify_CLIPBOARD(SOCKET sock, io::mem& is)
 {
 	DWORD idBy;
 
@@ -2364,7 +2366,7 @@ void CALLBACK JClient::Recv_Notify_CLIPBOARD(SOCKET sock, WORD trnid, io::mem& i
 	}
 }
 
-void CALLBACK JClient::Recv_Notify_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& is)
+void JClient::Recv_Notify_SPLASHRTF(SOCKET sock, io::mem& is)
 {
 	DWORD idBy;
 	DWORD dwRtfSize;
@@ -2416,7 +2418,7 @@ void CALLBACK JClient::Recv_Notify_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& i
 	if (m_hwndPage)
 	{
 		JSplash* jp = new JSplashRtf(this, (const char*)ptr, dwRtfSize);
-		jp->trnid = trnid;
+		jp->trnid = 0;
 		*(&jp->rcPos) = rcPos;
 		jp->bCloseOnDisconnect = bCloseOnDisconnect;
 		jp->dwCanclose = dwCanclose;
@@ -2433,7 +2435,7 @@ void CALLBACK JClient::Recv_Notify_SPLASHRTF(SOCKET sock, WORD trnid, io::mem& i
 // Beowolf Network Protocol Messages sending
 //
 
-JPtr<JTransaction> CALLBACK JClient::Make_Cmd_NICK(DWORD idWho, const std::tstring& nick) const
+JPtr<JTransaction> JClient::Make_Cmd_NICK(DWORD idWho, const std::tstring& nick) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -2441,7 +2443,7 @@ JPtr<JTransaction> CALLBACK JClient::Make_Cmd_NICK(DWORD idWho, const std::tstri
 	return MakeTrn(COMMAND(CCPM_NICK), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JClient::Make_Quest_JOIN(const std::tstring& name, const std::tstring& pass, int type) const
+JPtr<JTransaction> JClient::Make_Quest_JOIN(const std::tstring& name, const std::tstring& pass, int type) const
 {
 	std::ostringstream os;
 	io::pack(os, name);
@@ -2450,7 +2452,7 @@ JPtr<JTransaction> CALLBACK JClient::Make_Quest_JOIN(const std::tstring& name, c
 	return MakeTrn(QUEST(CCPM_JOIN), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JClient::Make_Cmd_PART(DWORD idWho, DWORD idWhere) const
+JPtr<JTransaction> JClient::Make_Cmd_PART(DWORD idWho, DWORD idWhere) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -2458,14 +2460,14 @@ JPtr<JTransaction> CALLBACK JClient::Make_Cmd_PART(DWORD idWho, DWORD idWhere) c
 	return MakeTrn(COMMAND(CCPM_PART), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JClient::Make_Quest_USERINFO(const SetId& set) const
+JPtr<JTransaction> JClient::Make_Quest_USERINFO(const SetId& set) const
 {
 	std::ostringstream os;
 	io::pack(os, set);
 	return MakeTrn(QUEST(CCPM_USERINFO), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JClient::Make_Cmd_ONLINE(EOnline online, DWORD id) const
+JPtr<JTransaction> JClient::Make_Cmd_ONLINE(EOnline online, DWORD id) const
 {
 	std::ostringstream os;
 	io::pack(os, online);
@@ -2473,7 +2475,7 @@ JPtr<JTransaction> CALLBACK JClient::Make_Cmd_ONLINE(EOnline online, DWORD id) c
 	return MakeTrn(COMMAND(CCPM_ONLINE), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JClient::Make_Cmd_STATUS_Mode(EUserStatus stat, const Alert& a) const
+JPtr<JTransaction> JClient::Make_Cmd_STATUS_Mode(EUserStatus stat, const Alert& a) const
 {
 	std::ostringstream os;
 	io::pack(os, (WORD)STATUS_MODE);
@@ -2482,7 +2484,7 @@ JPtr<JTransaction> CALLBACK JClient::Make_Cmd_STATUS_Mode(EUserStatus stat, cons
 	return MakeTrn(COMMAND(CCPM_STATUS), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JClient::Make_Cmd_STATUS_Img(int img) const
+JPtr<JTransaction> JClient::Make_Cmd_STATUS_Img(int img) const
 {
 	std::ostringstream os;
 	io::pack(os, (WORD)STATUS_IMG);
@@ -2490,7 +2492,7 @@ JPtr<JTransaction> CALLBACK JClient::Make_Cmd_STATUS_Img(int img) const
 	return MakeTrn(COMMAND(CCPM_STATUS), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JClient::Make_Cmd_STATUS_Msg(const std::tstring& msg) const
+JPtr<JTransaction> JClient::Make_Cmd_STATUS_Msg(const std::tstring& msg) const
 {
 	std::ostringstream os;
 	io::pack(os, (WORD)STATUS_MSG);
@@ -2498,7 +2500,7 @@ JPtr<JTransaction> CALLBACK JClient::Make_Cmd_STATUS_Msg(const std::tstring& msg
 	return MakeTrn(COMMAND(CCPM_STATUS), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JClient::Make_Cmd_STATUS(EUserStatus stat, const Alert& a, int img, const std::tstring& msg) const
+JPtr<JTransaction> JClient::Make_Cmd_STATUS(EUserStatus stat, const Alert& a, int img, const std::tstring& msg) const
 {
 	std::ostringstream os;
 	io::pack(os, (WORD)(STATUS_MODE | STATUS_IMG | STATUS_MSG));
@@ -2509,7 +2511,7 @@ JPtr<JTransaction> CALLBACK JClient::Make_Cmd_STATUS(EUserStatus stat, const Ale
 	return MakeTrn(COMMAND(CCPM_STATUS), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JClient::Make_Cmd_SAY(DWORD idWhere, UINT type, const std::string& content) const
+JPtr<JTransaction> JClient::Make_Cmd_SAY(DWORD idWhere, UINT type, const std::string& content) const
 {
 	std::ostringstream os;
 	io::pack(os, idWhere);
@@ -2518,7 +2520,7 @@ JPtr<JTransaction> CALLBACK JClient::Make_Cmd_SAY(DWORD idWhere, UINT type, cons
 	return MakeTrn(COMMAND(CCPM_SAY), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JClient::Make_Cmd_TOPIC(DWORD idWhere, const std::tstring& topic) const
+JPtr<JTransaction> JClient::Make_Cmd_TOPIC(DWORD idWhere, const std::tstring& topic) const
 {
 	std::ostringstream os;
 	io::pack(os, idWhere);
@@ -2526,7 +2528,7 @@ JPtr<JTransaction> CALLBACK JClient::Make_Cmd_TOPIC(DWORD idWhere, const std::ts
 	return MakeTrn(COMMAND(CCPM_TOPIC), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JClient::Make_Cmd_CHANOPTIONS(DWORD idWhere, int op, DWORD val) const
+JPtr<JTransaction> JClient::Make_Cmd_CHANOPTIONS(DWORD idWhere, int op, DWORD val) const
 {
 	std::ostringstream os;
 	io::pack(os, idWhere);
@@ -2535,7 +2537,7 @@ JPtr<JTransaction> CALLBACK JClient::Make_Cmd_CHANOPTIONS(DWORD idWhere, int op,
 	return MakeTrn(COMMAND(CCPM_CHANOPTIONS), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JClient::Make_Cmd_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat) const
+JPtr<JTransaction> JClient::Make_Cmd_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -2544,7 +2546,7 @@ JPtr<JTransaction> CALLBACK JClient::Make_Cmd_ACCESS(DWORD idWho, DWORD idWhere,
 	return MakeTrn(COMMAND(CCPM_ACCESS), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JClient::Make_Quest_MESSAGE(DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet) const
+JPtr<JTransaction> JClient::Make_Quest_MESSAGE(DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -2556,14 +2558,14 @@ JPtr<JTransaction> CALLBACK JClient::Make_Quest_MESSAGE(DWORD idWho, const std::
 	return MakeTrn(QUEST(CCPM_MESSAGE), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JClient::Make_Cmd_BEEP(DWORD idWho) const
+JPtr<JTransaction> JClient::Make_Cmd_BEEP(DWORD idWho) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	return MakeTrn(COMMAND(CCPM_BEEP), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JClient::Make_Cmd_CLIPBOARD(DWORD idWho) const
+JPtr<JTransaction> JClient::Make_Cmd_CLIPBOARD(DWORD idWho) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -2593,7 +2595,7 @@ JPtr<JTransaction> CALLBACK JClient::Make_Cmd_CLIPBOARD(DWORD idWho) const
 	return MakeTrn(COMMAND(CCPM_CLIPBOARD), 0, os.str());
 }
 
-JPtr<JTransaction> CALLBACK JClient::Make_Cmd_SPLASHRTF(DWORD idWho, const std::string& text, const RECT& rcPos, bool bCloseOnDisconnect, DWORD dwCanclose, DWORD dwAutoclose, bool fTransparent, COLORREF crSheet) const
+JPtr<JTransaction> JClient::Make_Cmd_SPLASHRTF(DWORD idWho, const std::string& text, const RECT& rcPos, bool bCloseOnDisconnect, DWORD dwCanclose, DWORD dwAutoclose, bool fTransparent, COLORREF crSheet) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
