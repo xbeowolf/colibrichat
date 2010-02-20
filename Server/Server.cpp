@@ -275,16 +275,6 @@ LRESULT WINAPI JServer::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	return retval;
 }
 
-bool CALLBACK JServer::CheckAccess(const std::tstring& password, SetAccess& access) const
-{
-	if (password.empty() && !m_passwordNet.empty()) {
-		__super::CheckAccess(password, access);
-	} else if (m_passwordNet == password || m_passwordNet.empty()) {
-		access.insert(BNPM_MESSAGE);
-	} else return false;
-	return true;
-}
-
 bool CALLBACK JServer::hasCRC(DWORD crc) const
 {
 	return
@@ -522,6 +512,38 @@ void JServer::OnUnhook(JEventable* src)
 	__super::OnUnhook(src);
 }
 
+void JServer::OnLinkEstablished(SOCKET sock)
+{
+	__super::OnLinkEstablished(sock);
+
+	m_mSocketId.insert(MapSocketId::value_type(sock, CRC_NONAME));
+
+	if (m_hwndPage && m_bShowIcon)
+	{
+		NOTIFYICONDATA tnid;
+		tnid.cbSize = sizeof(NOTIFYICONDATA);
+		tnid.hWnd = m_hwndPage;
+		tnid.uID = 1;
+		tnid.uFlags = NIF_TIP;
+		tnid.uVersion = NOTIFYICON_VERSION;
+		_stprintf_s(tnid.szTip, _countof(tnid.szTip), APPNAME TEXT("\n%u connections"), countEstablished());
+		Shell_NotifyIcon(NIM_MODIFY, &tnid);
+	}
+}
+
+void JServer::OnLinkAccess(SOCKET sock, huge::number* K, SetAccess& access)
+{
+	__super::OnLinkAccess(sock, K, access);
+	if (K) {
+		access.insert(BNPM_MESSAGE);
+	}
+}
+
+void JServer::OnLinkStart(SOCKET sock)
+{
+	PushTrn(sock, Make_Notify_METRICS(m_metrics));
+}
+
 void JServer::OnLinkClose(SOCKET sock, UINT err)
 {
 	__super::OnLinkClose(sock, err);
@@ -558,30 +580,6 @@ void JServer::OnLinkClose(SOCKET sock, UINT err)
 		_stprintf_s(tnid.szTip, _countof(tnid.szTip), APPNAME TEXT("\n%u connections"), countEstablished());
 		Shell_NotifyIcon(NIM_MODIFY, &tnid);
 	}
-}
-
-void JServer::OnLinkEstablished(SOCKET sock)
-{
-	__super::OnLinkEstablished(sock);
-
-	m_mSocketId.insert(MapSocketId::value_type(sock, CRC_NONAME));
-
-	if (m_hwndPage && m_bShowIcon)
-	{
-		NOTIFYICONDATA tnid;
-		tnid.cbSize = sizeof(NOTIFYICONDATA);
-		tnid.hWnd = m_hwndPage;
-		tnid.uID = 1;
-		tnid.uFlags = NIF_TIP;
-		tnid.uVersion = NOTIFYICON_VERSION;
-		_stprintf_s(tnid.szTip, _countof(tnid.szTip), APPNAME TEXT("\n%u connections"), countEstablished());
-		Shell_NotifyIcon(NIM_MODIFY, &tnid);
-	}
-}
-
-void JServer::OnLinkStart(SOCKET sock)
-{
-	PushTrn(sock, Make_Notify_METRICS(m_metrics));
 }
 
 int  CALLBACK JServer::BroadcastTrn(const SetId& set, bool nested, JTransaction* jpTrn, size_t ssi) throw()

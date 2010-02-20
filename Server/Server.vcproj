@@ -208,10 +208,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Common\blowfish.c"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Common\CRC.cpp"
 					>
 				</File>
@@ -231,6 +227,55 @@
 					RelativePath="..\..\Common\stdafx.cpp"
 					>
 				</File>
+				<Filter
+					Name="Crypto"
+					Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
+					>
+					<File
+						RelativePath="..\..\Common\Crypto\hc-256.c"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								CompileAs="2"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								CompileAs="2"
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath="..\..\Common\Crypto\huge-number.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\..\Common\Crypto\rc4.c"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								CompileAs="2"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								CompileAs="2"
+							/>
+						</FileConfiguration>
+					</File>
+				</Filter>
 			</Filter>
 		</Filter>
 		<Filter
@@ -310,6 +355,27 @@
 					RelativePath="..\..\Common\stringutil.h"
 					>
 				</File>
+				<Filter
+					Name="Crypto"
+					Filter="h;hpp;hxx;hm;inl;inc;xsd"
+					>
+					<File
+						RelativePath="..\..\Common\Crypto\ecrypt.h"
+						>
+					</File>
+					<File
+						RelativePath="..\..\Common\Crypto\hc-256.h"
+						>
+					</File>
+					<File
+						RelativePath="..\..\Common\Crypto\huge-number.h"
+						>
+					</File>
+					<File
+						RelativePath="..\..\Common\Crypto\rc4.h"
+						>
+					</File>
+				</Filter>
 			</Filter>
 		</Filter>
 		<Filter

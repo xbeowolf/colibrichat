@@ -24,34 +24,34 @@
 
 //-----------------------------------------------------------------------------
 
-#define CCP_PORT               7531
+#define CCP_PORT                       7531
 
 // Current engine version
-#define BNP_ENGINEVERSSTRW MAKEVERSIONSTR(1, 2, 1, 2)
-#define BNP_ENGINEVERSSTRA MAKEVERSIONSTR(1, 2, 1, 2)
-#define BNP_ENGINEVERSNUM  MAKEVERSIONNUM(1, 2, 1, 2)
-#define BNP_ENGINEVERSMIN  MAKEVERSIONNUM(1, 2, 1, 1)
+#define BNP_ENGINEVERSSTRW             MAKEVERSIONSTR(1, 2, 3, 1)
+#define BNP_ENGINEVERSSTRA             MAKEVERSIONSTR(1, 2, 3, 1)
+#define BNP_ENGINEVERSNUM              MAKEVERSIONNUM(1, 2, 3, 1)
+#define BNP_ENGINEVERSMIN              MAKEVERSIONNUM(1, 2, 3, 1)
 #ifdef UNICODE
-#define BNP_ENGINEVERSSTR  BNP_ENGINEVERSSTRW
+#define BNP_ENGINEVERSSTR              BNP_ENGINEVERSSTRW
 #else
-#define BNP_ENGINEVERSSTR  BNP_ENGINEVERSSTRA
+#define BNP_ENGINEVERSSTR              BNP_ENGINEVERSSTRA
 #endif
 
 //-----------------------------------------------------------------------------
 
 // Reserved contacts identifiers
-#define CRC_SERVER             0xa67413a6
-#define NAME_SERVER            TEXT("Server")
-#define CRC_LIST               0xfc089517
-#define NAME_LIST              TEXT("Channels")
-#define CRC_NONAME             0x265cf8a4
-#define NAME_NONAME            TEXT("Noname")
-#define CRC_ANONYMOUS          0xbec1fbcd
-#define NAME_ANONYMOUS         TEXT("Anonymous")
-#define CRC_GOD                0x0dfc6129
-#define NAME_GOD               TEXT("God")
-#define CRC_DEVIL              0xf62ea53e
-#define NAME_DEVIL             TEXT("Devil")
+#define CRC_SERVER                     0xa67413a6
+#define NAME_SERVER                    TEXT("Server")
+#define CRC_LIST                       0xfc089517
+#define NAME_LIST                      TEXT("Channels")
+#define CRC_NONAME                     0x265cf8a4
+#define NAME_NONAME                    TEXT("Noname")
+#define CRC_ANONYMOUS                  0xbec1fbcd
+#define NAME_ANONYMOUS                 TEXT("Anonymous")
+#define CRC_GOD                        0x0dfc6129
+#define NAME_GOD                       TEXT("God")
+#define CRC_DEVIL                      0xf62ea53e
+#define NAME_DEVIL                     TEXT("Devil")
 
 //-----------------------------------------------------------------------------
 

@@ -828,7 +828,6 @@ namespace colibrichat
 		JPROPERTY_R(SOCKET, clientsock);
 		JPROPERTY_RREF_CONST(std::string, hostname);
 		JPROPERTY_R(u_short, port);
-		JPROPERTY_RREF_CONST(std::tstring, passwordNet);
 		JPROPERTY_R(bool, bReconnect);
 		JPROPERTY_R(int, nConnectCount);
 

@@ -148,8 +148,6 @@ namespace colibrichat
 
 		LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
-		bool CALLBACK CheckAccess(const std::tstring& password, SetAccess& access) const;
-
 		// --- CRC work ---
 
 		bool CALLBACK hasCRC(DWORD crc) const;
@@ -214,9 +212,10 @@ namespace colibrichat
 		void OnHook(JEventable* src);
 		void OnUnhook(JEventable* src);
 
-		void OnLinkClose(SOCKET sock, UINT err);
 		void OnLinkEstablished(SOCKET sock);
+		void OnLinkAccess(SOCKET sock, huge::number* K, SetAccess& access);
 		void OnLinkStart(SOCKET sock);
+		void OnLinkClose(SOCKET sock, UINT err);
 
 		// --- Commands ---
 
@@ -231,7 +230,6 @@ namespace colibrichat
 	protected:
 
 		JPROPERTY_R(u_short, port);
-		JPROPERTY_RREF_CONST(std::tstring, passwordNet);
 
 		// Connections dialog
 		JPtr<JAttachedDialog<JServer>> jpConnections, jpPasswords;

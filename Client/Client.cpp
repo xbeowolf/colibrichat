@@ -1176,13 +1176,7 @@ void JClient::OnLinkConnect(SOCKET sock)
 		si.sin_addr.S_un.S_un_b.s_b4,
 		ntohs(si.sin_port)), true);
 
-	PushTrn(m_clientsock,
-#ifdef UNICODE
-		Make_Quest_IdentifyW
-#else
-		Make_Quest_IdentifyA
-#endif
-		(m_passwordNet.c_str()));
+	PushTrn(m_clientsock, Make_Quest_Identify());
 
 	// Lua response
 	if (m_luaEvents) {
