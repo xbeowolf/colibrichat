@@ -49,6 +49,7 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
+				CallingConvention="1"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -121,7 +122,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="1"
 				FavorSizeOrSpeed="2"
 				AdditionalIncludeDirectories="..\..\SDK;..\..\Common"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
@@ -131,6 +131,7 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
+				CallingConvention="1"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -146,8 +147,6 @@
 				AdditionalDependencies="comctl32.lib Ws2_32.lib Winmm.lib"
 				OutputFile="$(OutDir)\ColibriClient.exe"
 				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -218,19 +217,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Common\CRC.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Common\jrtf.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Common\JService.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Common\netengine.cpp"
 					>
 				</File>
 				<File
@@ -261,55 +248,6 @@
 						/>
 					</FileConfiguration>
 				</File>
-				<Filter
-					Name="Crypto"
-					Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
-					>
-					<File
-						RelativePath="..\..\Common\Crypto\hc-256.c"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								CompileAs="2"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								CompileAs="2"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\Common\Crypto\huge-number.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Common\Crypto\rc4.c"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								CompileAs="2"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								CompileAs="2"
-							/>
-						</FileConfiguration>
-					</File>
-				</Filter>
 			</Filter>
 		</Filter>
 		<Filter
@@ -346,23 +284,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Common\blowfish.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Common\bnp.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Common\CRC.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Common\FastDelegate.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\Common\FastDelegateList.h"
 					>
 				</File>
 				<File
@@ -382,10 +304,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Common\netengine.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Common\Profile.h"
 					>
 				</File>
@@ -401,27 +319,6 @@
 					RelativePath="..\..\Common\stylepr.h"
 					>
 				</File>
-				<Filter
-					Name="Crypto"
-					Filter="h;hpp;hxx;hm;inl;inc;xsd"
-					>
-					<File
-						RelativePath="..\..\Common\Crypto\ecrypt.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Common\Crypto\hc-256.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Common\Crypto\huge-number.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\Common\Crypto\rc4.h"
-						>
-					</File>
-				</Filter>
 			</Filter>
 		</Filter>
 		<Filter

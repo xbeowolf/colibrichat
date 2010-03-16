@@ -578,12 +578,17 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 
 			// Init Host control
 			SetWindowTextA(m_hwndHost, pSource->m_hostname.c_str());
-			SendMessage(m_hwndHost, EM_LIMITTEXT, 100, 0);
+			SendMessage(m_hwndHost, CB_LIMITTEXT, 128, 0);
+			m_hostlist.clear();
+			int count = profile::getInt(RF_HOSTLIST, RK_HOSTCOUNT, 0);
+			for ( int i = 0; i < count; i++) {
+				std::string str = tstrToANSI(profile::getString(RF_HOSTLIST, tformat(TEXT("%02i"), i)));
+				m_hostlist.insert(str);
+				SendMessageA(m_hwndHost, CB_ADDSTRING, 0, (LPARAM)str.c_str());
+			}
 			// Init Port control
 			SetWindowText(m_hwndPort, tformat(TEXT("%u"), pSource->m_port).c_str());
 			SendMessage(m_hwndPort, EM_LIMITTEXT, 5, 0);
-			// Init Pass control
-			SetWindowText(m_hwndPass, pSource->m_passwordNet.c_str());
 			// Init Nick control
 			SetWindowText(m_hwndNick, pSource->m_mUser[pSource->m_idOwn].name.c_str());
 			// Init status combobox
@@ -757,6 +762,12 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 					break;
 				}
 
+			case IDC_PASS:
+				{
+					CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_CLIENTPASS), pSource->hwndPage, (DLGPROC)JDialog::DlgProcStub, (LPARAM)(JDialog*)new JPassword(pSource));
+					break;
+				}
+
 			case IDC_STATUS:
 				{
 					switch (HIWORD(wParam))
@@ -802,6 +813,7 @@ void JClient::JPageServer::OnHook(JEventable* src)
 
 	__super::OnHook(src);
 
+	pSource->EvLinkStart += MakeDelegate(this, &JClient::JPageServer::OnLinkStart);
 	pSource->EvLog += MakeDelegate(this, &JClient::JPageServer::OnLog);
 	pSource->EvReport += MakeDelegate(this, &JClient::JPageServer::OnReport);
 	pSource->EvMetrics += MakeDelegate(this, &JClient::JPageServer::OnMetrics);
@@ -812,11 +824,24 @@ void JClient::JPageServer::OnUnhook(JEventable* src)
 	ASSERT(pSource);
 	using namespace fastdelegate;
 
+	pSource->EvLinkStart -= MakeDelegate(this, &JClient::JPageServer::OnLinkStart);
 	pSource->EvLog -= MakeDelegate(this, &JClient::JPageServer::OnLog);
 	pSource->EvReport -= MakeDelegate(this, &JClient::JPageServer::OnReport);
 	pSource->EvMetrics -= MakeDelegate(this, &JClient::JPageServer::OnMetrics);
 
 	__super::OnUnhook(src);
+}
+
+void JClient::JPageServer::OnLinkStart(SOCKET sock)
+{
+	ASSERT(pSource);
+	if (m_hostlist.find(pSource->m_hostname) == m_hostlist.end()) {
+		m_hostlist.insert(pSource->m_hostname);
+		int count = profile::getInt(RF_HOSTLIST, RK_HOSTCOUNT, 0);
+		profile::setInt(RF_HOSTLIST, RK_HOSTCOUNT, count + 1);
+		profile::setString(RF_HOSTLIST, tformat(TEXT("%02i"), count), ANSIToTstr(pSource->m_hostname));
+		if (m_hwndPage) SendMessageA(m_hwndHost, CB_ADDSTRING, 0, (LPARAM)pSource->m_hostname.c_str());
+	}
 }
 
 void JClient::JPageServer::OnLog(const std::tstring& str, bool withtime)
@@ -1749,7 +1774,7 @@ LRESULT WINAPI JClient::JPageChat::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 					LPNMUPDOWN lpnmud = (LPNMUPDOWN)lParam;
 					if (pnmh->idFrom == IDC_MSGSPINBLUE) {
 						if (lpnmud->iPos) {
-							if (Profile::GetInt(RF_CLIENT, RK_QUOTATIONBLUE, FALSE)) {
+							if (profile::getInt(RF_CLIENT, RK_QUOTATIONBLUE, FALSE)) {
 								SetWindowTextA(m_hwndEdit, "");
 								CHARRANGE cr;
 								SendMessage(m_hwndEdit, EM_SETSEL, 0, 0);
@@ -1771,7 +1796,7 @@ LRESULT WINAPI JClient::JPageChat::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 						}
 					} else if (pnmh->idFrom == IDC_MSGSPINRED) {
 						if (lpnmud->iPos) {
-							if (Profile::GetInt(RF_CLIENT, RK_QUOTATIONRED, TRUE)) {
+							if (profile::getInt(RF_CLIENT, RK_QUOTATIONRED, TRUE)) {
 								SetWindowTextA(m_hwndEdit, "");
 								CHARRANGE cr;
 								SendMessage(m_hwndEdit, EM_SETSEL, 0, 0);

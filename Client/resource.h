@@ -41,6 +41,7 @@
 #define IDM_CHANLIST                    168
 #define IDM_USER1                       169
 #define IDM_USERGOD                     169
+#define IDD_CLIENTPASS                  169
 #define idsRtfCmd                       200
 #define idsBold                         201
 #define idsItalic                       202
@@ -75,7 +76,12 @@
 #define IDS_MSG_KICK                    516
 #define IDS_MSG_EDITOR                  517
 #define IDS_MSG_LIMITCHATLINE           518
-#define IDS_MSG_READER                  520
+#define IDS_MSG_READER                  519
+#define IDS_MSG_PASSAUTH                530
+#define IDS_MSG_OLDPASS                 531
+#define IDS_MSG_NEWPASS                 532
+#define IDS_MSG_EASYPASS                533
+#define IDS_MSG_EMPTYPASS               534
 #define IDC_LOG                         1001
 #define IDC_USERLIST                    1002
 #define IDC_RICHEDIT                    1003
@@ -103,12 +109,21 @@
 #define IDC_AUTOCLOSESPIN               1053
 #define IDC_RICHEDIT21                  1054
 #define IDC_CHECK1                      1056
+#define IDC_SHOWPASS                    1056
 #define IDC_DATETIMEPICKER1             1058
 #define IDC_RECVTIME                    1058
 #define IDC_REPLY                       1059
 #define IDC_MSGSPINBLUE                 1060
+#define IDC_OLDPASS                     1061
 #define IDC_MSGSPINBLUE2                1062
 #define IDC_MSGSPINRED                  1062
+#define IDC_NEWPASS1                    1062
+#define IDC_NEWPASS2                    1063
+#define IDC_ENCRYPTLIST                 1065
+#define IDC_                            1066
+#define IDC_ENCRYPTSEL                  1066
+#define IDC_BUTTON1                     1067
+#define IDC_COMBO1                      1068
 #define IDC_NICK                        40002
 #define IDC_CONNECT                     40004
 #define IDC_SENDBYENTER                 40017
@@ -196,9 +211,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        169
+#define _APS_NEXT_RESOURCE_VALUE        170
 #define _APS_NEXT_COMMAND_VALUE         40115
-#define _APS_NEXT_CONTROL_VALUE         1061
+#define _APS_NEXT_CONTROL_VALUE         1069
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

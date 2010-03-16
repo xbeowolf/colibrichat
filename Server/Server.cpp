@@ -52,6 +52,8 @@ CALLBACK JServer::JServer()
 	m_metrics.nMsgSpinMaxCount = 20;
 	m_metrics.uChatLineMaxVolume = 80*1024;
 	m_metrics.flags.bTransmitClipboard = true;
+
+	m_encryptorname = ecrypt::hc256::ECRYPT_NAME;
 }
 
 void CALLBACK JServer::Init()
@@ -71,10 +73,10 @@ void CALLBACK JServer::Init()
 	CreateMsgWindow();
 
 	// Create listening sockets
-	int count = Profile::GetInt(RF_SERVER, RK_PORTCOUNT, 1);
+	int count = profile::getInt(RF_SERVER, RK_PORTCOUNT, 1);
 	std::set<u_short> port;
 	for (int i = 0; i < count; i++) {
-		u_short v = (u_short)Profile::GetInt(RF_SERVER, tformat(TEXT("Port%02i"), i).c_str(), CCP_PORT);
+		u_short v = (u_short)profile::getInt(RF_SERVER, tformat(TEXT("Port%02i"), i), CCP_PORT);
 		if (v < 1000) v = CCP_PORT; // do not use system ports
 		port.insert(v);
 	}
@@ -113,37 +115,39 @@ BOOL CALLBACK JServer::DestroyMsgWindow()
 
 void CALLBACK JServer::LoadState()
 {
-	m_passwordNet = Profile::GetString(RF_SERVER, RK_PASSWORDNET, TEXT("beowolf"));
-	m_passwordGod = Profile::GetString(RF_SERVER, RK_PASSWORDGOD, TEXT("godpassword"));
-	m_passwordDevil = Profile::GetString(RF_SERVER, RK_PASSWORDDEVIL, TEXT("devilpassword"));
+	m_passwordNet = profile::getString(RF_SERVER, RK_PASSWORDNET, TEXT("beowolf"));
+	m_passwordGod = profile::getString(RF_SERVER, RK_PASSWORDGOD, TEXT("godpassword"));
+	m_passwordDevil = profile::getString(RF_SERVER, RK_PASSWORDDEVIL, TEXT("devilpassword"));
 
-	m_bShowIcon = Profile::GetInt(RF_SERVER, RK_SHOWICON, TRUE) != 0;
+	m_bShowIcon = profile::getInt(RF_SERVER, RK_SHOWICON, TRUE) != 0;
 
-	m_nCompression = Profile::GetInt(RF_SERVER, RK_COMPRESSION, -1);
-	m_bUseEncoding = Profile::GetInt(RF_SERVER, RK_USEENCODING, true) != 0;
+	m_nCompression = profile::getInt(RF_SERVER, RK_COMPRESSION, -1);
+	m_encryptorname = tstrToANSI(profile::getString(RF_SERVER, RK_ENCRYPTALG, ANSIToTstr(ecrypt::hc256::ECRYPT_NAME)));
 
-	m_metrics.uNameMaxLength = (size_t)Profile::GetInt(RF_METRICS, RK_NameMaxLength, 20);
-	m_metrics.uPassMaxLength = (size_t)Profile::GetInt(RF_METRICS, RK_PassMaxLength, 32);
-	m_metrics.uStatusMsgMaxLength = (size_t)Profile::GetInt(RF_METRICS, RK_StatusMsgMaxLength, 32);
-	m_metrics.uTopicMaxLength = (size_t)Profile::GetInt(RF_METRICS, RK_TopicMaxLength, 100);
-	m_metrics.nMsgSpinMaxCount = (size_t)Profile::GetInt(RF_METRICS, RK_MsgSpinMaxCount, 20);
-	m_metrics.uChatLineMaxVolume = (size_t)Profile::GetInt(RF_METRICS, RK_ChatLineMaxVolume, 80*1024);
-	m_metrics.flags.bTransmitClipboard = Profile::GetInt(RF_METRICS, RK_TransmitClipboard, true) != 0;
+	m_metrics.uNameMaxLength = (size_t)profile::getInt(RF_METRICS, RK_NameMaxLength, 20);
+	m_metrics.uPassMaxLength = (size_t)profile::getInt(RF_METRICS, RK_PassMaxLength, 32);
+	m_metrics.uStatusMsgMaxLength = (size_t)profile::getInt(RF_METRICS, RK_StatusMsgMaxLength, 32);
+	m_metrics.uTopicMaxLength = (size_t)profile::getInt(RF_METRICS, RK_TopicMaxLength, 100);
+	m_metrics.nMsgSpinMaxCount = (size_t)profile::getInt(RF_METRICS, RK_MsgSpinMaxCount, 20);
+	m_metrics.uChatLineMaxVolume = (size_t)profile::getInt(RF_METRICS, RK_ChatLineMaxVolume, 80*1024);
+	m_metrics.flags.bTransmitClipboard = profile::getInt(RF_METRICS, RK_TransmitClipboard, true) != 0;
 }
 
 void CALLBACK JServer::SaveState()
 {
-	Profile::WriteString(RF_SERVER, RK_PASSWORDNET, m_passwordNet.c_str());
-	Profile::WriteString(RF_SERVER, RK_PASSWORDGOD, m_passwordGod.c_str());
-	Profile::WriteString(RF_SERVER, RK_PASSWORDDEVIL, m_passwordDevil.c_str());
+	profile::setString(RF_SERVER, RK_PASSWORDNET, m_passwordNet);
+	profile::setString(RF_SERVER, RK_PASSWORDGOD, m_passwordGod);
+	profile::setString(RF_SERVER, RK_PASSWORDDEVIL, m_passwordDevil);
 
-	Profile::WriteInt(RF_METRICS, RK_NameMaxLength, (UINT)m_metrics.uNameMaxLength);
-	Profile::WriteInt(RF_METRICS, RK_PassMaxLength, (UINT)m_metrics.uPassMaxLength);
-	Profile::WriteInt(RF_METRICS, RK_StatusMsgMaxLength, (UINT)m_metrics.uStatusMsgMaxLength);
-	Profile::WriteInt(RF_METRICS, RK_TopicMaxLength, (UINT)m_metrics.uTopicMaxLength);
-	Profile::WriteInt(RF_METRICS, RK_MsgSpinMaxCount, (UINT)m_metrics.nMsgSpinMaxCount);
-	Profile::WriteInt(RF_METRICS, RK_ChatLineMaxVolume, (UINT)m_metrics.uChatLineMaxVolume);
-	Profile::WriteInt(RF_METRICS, RK_TransmitClipboard, (UINT)m_metrics.flags.bTransmitClipboard);
+	profile::setInt(RF_METRICS, RK_NameMaxLength, (UINT)m_metrics.uNameMaxLength);
+	profile::setInt(RF_METRICS, RK_PassMaxLength, (UINT)m_metrics.uPassMaxLength);
+	profile::setInt(RF_METRICS, RK_StatusMsgMaxLength, (UINT)m_metrics.uStatusMsgMaxLength);
+	profile::setInt(RF_METRICS, RK_TopicMaxLength, (UINT)m_metrics.uTopicMaxLength);
+	profile::setInt(RF_METRICS, RK_MsgSpinMaxCount, (UINT)m_metrics.nMsgSpinMaxCount);
+	profile::setInt(RF_METRICS, RK_ChatLineMaxVolume, (UINT)m_metrics.uChatLineMaxVolume);
+	profile::setInt(RF_METRICS, RK_TransmitClipboard, (UINT)m_metrics.flags.bTransmitClipboard);
+
+	profile::setString(RF_SERVER, RK_ENCRYPTALG, ANSIToTstr(m_encryptorname));
 }
 
 LRESULT WINAPI JServer::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -1673,7 +1677,7 @@ void CALLBACK JServerApp::Init()
 	// Register the window RH-server classes.
 	VERIFY(RegisterClass(&MsgClass));
 
-	Profile::SetKey(TEXT("BEOWOLF"), APPNAME);
+	profile::setKey(TEXT("BEOWOLF"), APPNAME);
 
 	hiMain16 = LoadIcon(hinstApp, MAKEINTRESOURCE(IDI_SMALL));
 	hiMain32 = LoadIcon(hinstApp, MAKEINTRESOURCE(IDI_SERVER));

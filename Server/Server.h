@@ -41,7 +41,7 @@
 
 // NetEngine
 #define RK_COMPRESSION         TEXT("CompressionLevel")
-#define RK_USEENCODING         TEXT("UseEncoding")
+#define RK_ENCRYPTALG          TEXT("EncryptAlgorithm")
 
 // Metrics
 #define RK_NameMaxLength       TEXT("NameMaxLength")
@@ -146,6 +146,9 @@ namespace colibrichat
 		void CALLBACK SaveState(); // can be multiply calls for object
 		void CALLBACK InitLogs() {}
 
+		// encryption cipher name
+		const char* getEncryptorName() const {return m_encryptorname.c_str();}
+
 		LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
 		// --- CRC work ---
@@ -245,6 +248,7 @@ namespace colibrichat
 		JPROPERTY_RREF_CONST(std::tstring, passwordGod);
 		JPROPERTY_RREF_CONST(std::tstring, passwordDevil);
 		JPROPERTY_RREF_CONST(Metrics, metrics);
+		JPROPERTY_RREF_CONST(std::string, encryptorname);
 	};
 
 	class JServerApp : public JApplication // Singleton

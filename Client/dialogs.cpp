@@ -26,10 +26,211 @@ using namespace colibrichat;
 //-----------------------------------------------------------------------------
 
 //
+// JClient::JPassword dialog
+//
+
+JClient::JPassword::JPassword(JClient* p)
+: JAttachedDialog<JClient>(p)
+{
+	ASSERT(p);
+
+	SetupHooks();
+}
+
+int JClient::JPassword::checkPassword(int level)
+{
+	std::tstring oldbuf(pSource->m_metrics.uPassMaxLength, 0), pass1buf(pSource->m_metrics.uPassMaxLength, 0), m_pass2(pSource->m_metrics.uPassMaxLength, 0);
+	GetDlgItemText(m_hwndPage, IDC_OLDPASS, (TCHAR*)oldbuf.data(), (int)oldbuf.size());
+	GetDlgItemText(m_hwndPage, IDC_NEWPASS1, (TCHAR*)pass1buf.data(), (int)pass1buf.size());
+	GetDlgItemText(m_hwndPage, IDC_NEWPASS2, (TCHAR*)m_pass2.data(), (int)m_pass2.size());
+	std::tstring old = oldbuf.data(), pass1 = pass1buf.data(), pass2 = m_pass2.data();
+	if (pSource->m_passwordNet != old) {
+		if (level & 1) pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_OLDPASS), MAKEINTRESOURCE(IDS_MSG_OLDPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+		return 1;
+	} else if (pass1 != pass2) {
+		if (level & 1) pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+		return 1;
+	} else if (pass1.empty()) {
+		if (level & 2) pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+		m_password = pass1;
+		return 2;
+	} else if (pass1.length() <= 6) {
+		if (level & 2) pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+		m_password = pass1;
+		return 2;
+	} else {
+		m_password = pass1;
+		return 0;
+	}
+}
+
+LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	LRESULT retval = TRUE;
+
+	static TCHAR* lvs[][4] = {
+		{TEXT("COPY"), TEXT("0"), TEXT("0"), TEXT("no encryption")},
+		{TEXT("HC-256"), TEXT("256"), TEXT("256"), TEXT("eSTREAM Portfolio - software")},
+		{TEXT("Rabbit"), TEXT("128"), TEXT("64"), TEXT("eSTREAM Portfolio - software")},
+	};
+
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		{
+			if (!pSource)
+			{
+				retval = FALSE;
+				break;
+			}
+
+			m_password = pSource->m_passwordNet;
+
+			m_hwndList = GetDlgItem(hWnd, IDC_ENCRYPTLIST);
+
+			SetDlgItemText(m_hwndPage, IDC_OLDPASS, pSource->m_passwordNet.data());
+			SetDlgItemText(m_hwndPage, IDC_NEWPASS1, pSource->m_passwordNet.data());
+			SetDlgItemText(m_hwndPage, IDC_NEWPASS2, pSource->m_passwordNet.data());
+
+			// Inits Channels list
+			ListView_SetExtendedListViewStyle(m_hwndList,
+				LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_HEADERDRAGDROP | LVS_EX_ONECLICKACTIVATE | LVS_EX_SUBITEMIMAGES);
+			static LV_COLUMN lvc[] = {
+				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
+				80, TEXT("Cipher name"), -1, 0},
+				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
+				50, TEXT("Key, bits"), -1, 0},
+				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
+				50, TEXT("Nonce, bits"), -1, 0},
+				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
+				160, TEXT("Comments"), -1, 0},
+			};
+			for (int i = 0; i < _countof(lvc); ++i)
+				ListView_InsertColumn(m_hwndList, i, &lvc[i]);
+
+			for (int i = 0; i < _countof(lvs); ++i) {
+				LVITEM lvi;
+				lvi.iItem = i;
+				lvi.iSubItem = 0;
+				lvi.mask = 0;
+				VERIFY(ListView_InsertItem(m_hwndList, &lvi) >= 0);
+				ListView_SetItemText(m_hwndList, i, 0, lvs[i][0]);
+				ListView_SetItemText(m_hwndList, i, 1, lvs[i][1]);
+				ListView_SetItemText(m_hwndList, i, 2, lvs[i][2]);
+				ListView_SetItemText(m_hwndList, i, 3, lvs[i][3]);
+				if (ANSIToTstr(pSource->getEncryptorName()) == lvs[i][0])
+					ListView_SetItemState(m_hwndList, i, LVIS_SELECTED, LVIS_SELECTED);
+			}
+			SetDlgItemTextA(m_hwndPage, IDC_ENCRYPTSEL, pSource->getEncryptorName());
+
+			retval = TRUE;
+			break;
+		}
+
+	case WM_DESTROY:
+		{
+			ResetHooks();
+			break;
+		}
+
+	case WM_ACTIVATE:
+		JClientApp::jpApp->hdlgCurrent = wParam ? hWnd : 0;
+		JClientApp::jpApp->haccelCurrent = 0;
+		break;
+
+	case WM_COMMAND:
+		{
+			switch (LOWORD(wParam))
+			{
+			case IDOK:
+				{
+					if (checkPassword(1) == 0) {
+						char ciphbuf[32];
+						pSource->m_passwordNet = m_password;
+						GetDlgItemTextA(m_hwndPage, IDC_ENCRYPTSEL, ciphbuf, _countof(ciphbuf));
+						pSource->m_encryptorname = ciphbuf;
+						pSource->HideBaloon();
+						DestroyWindow(hWnd);
+					}
+					break;
+				}
+
+			case IDCANCEL:
+				pSource->HideBaloon();
+				DestroyWindow(hWnd);
+				break;
+
+			case IDC_OLDPASS:
+			case IDC_NEWPASS1:
+			case IDC_NEWPASS2:
+				switch (HIWORD(wParam))
+				{
+				case EN_KILLFOCUS:
+					{
+						checkPassword(3);
+						break;
+					}
+
+				case EN_CHANGE:
+					{
+						pSource->HideBaloon();
+						break;
+					}
+				}
+				break;
+
+			case IDC_SHOWPASS:
+				{
+					HWND hctrl;
+					bool check = IsDlgButtonChecked(m_hwndPage, IDC_SHOWPASS) != BST_UNCHECKED;
+					hctrl = GetDlgItem(m_hwndPage, IDC_OLDPASS);
+					SendMessage(hctrl, EM_SETPASSWORDCHAR, check ? 0 : '*', 0);
+					InvalidateRect(hctrl, 0, FALSE);
+					hctrl = GetDlgItem(m_hwndPage, IDC_NEWPASS1);
+					SendMessage(hctrl, EM_SETPASSWORDCHAR, check ? 0 : '*', 0);
+					InvalidateRect(hctrl, 0, FALSE);
+					hctrl = GetDlgItem(m_hwndPage, IDC_NEWPASS2);
+					SendMessage(hctrl, EM_SETPASSWORDCHAR, check ? 0 : '*', 0);
+					InvalidateRect(hctrl, 0, FALSE);
+					break;
+				}
+
+			default: retval = __super::DlgProc(hWnd, message, wParam, lParam);
+			}
+			break;
+		}
+
+	case WM_NOTIFY:
+		{
+			NMHDR* pnmh = (NMHDR*)lParam;
+			switch (pnmh->code)
+			{
+			case LVN_ITEMCHANGED:
+				{
+					LPNMLISTVIEW pnmv = (LPNMLISTVIEW)lParam;
+					if (pnmh->idFrom == IDC_ENCRYPTLIST && pnmv->uChanged == LVIF_STATE
+						&& (pnmv->uNewState & LVIS_SELECTED) != 0)
+					{
+						SetDlgItemText(m_hwndPage, IDC_ENCRYPTSEL, lvs[pnmv->iItem][0]);
+					}
+					break;
+				}
+
+			default: retval = __super::DlgProc(hWnd, message, wParam, lParam);
+			}
+			break;
+		}
+
+		default: retval = __super::DlgProc(hWnd, message, wParam, lParam);
+	}
+	return retval;
+}
+
+//
 // JClient::JTopic dialog
 //
 
-CALLBACK JClient::JTopic::JTopic(JClient* p, DWORD id, const std::tstring& n, const std::tstring& t)
+JClient::JTopic::JTopic(JClient* p, DWORD id, const std::tstring& n, const std::tstring& t)
 : JAttachedDialog<JClient>(p)
 {
 	ASSERT(p);
@@ -459,7 +660,7 @@ void JClient::JSplashRtfEditor::doneclass()
 	s_mapButTips.clear();
 }
 
-CALLBACK JClient::JSplashRtfEditor::JSplashRtfEditor(JClient* p, DWORD who)
+JClient::JSplashRtfEditor::JSplashRtfEditor(JClient* p, DWORD who)
 : JDialog(), rtf::Editor(), JAttachment<JClient>(p)
 {
 	idWho = who;
@@ -1089,7 +1290,7 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 				if (pSource->m_mUser[pSource->m_idOwn].accessibility.fPlayAlert)
 					pSource->PlaySound(JClientApp::jpApp->strWavAlert.c_str());
 				if (pSource->m_mUser[pSource->m_idOwn].accessibility.fFlashPageSayPrivate
-					&& Profile::GetInt(RF_CLIENT, RK_FLASHPAGESAYPRIVATE, TRUE)
+					&& profile::getInt(RF_CLIENT, RK_FLASHPAGESAYPRIVATE, TRUE)
 					&& !pSource->m_mUser[pSource->m_idOwn].isOnline)
 					FlashWindow(m_hwndPage, TRUE);
 			}

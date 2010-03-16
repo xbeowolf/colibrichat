@@ -33,10 +33,10 @@ static int getInt(lua_State *luaVM)
 {
 	ASSERT(lua_gettop(luaVM) >= 3);
 	if (lua_isstring(luaVM, 1) && lua_isstring(luaVM, 2) && lua_isnumber(luaVM, 3)) {
-		std::tstring szSection = ANSIToTstr(lua_tostring(luaVM, 1));
-		std::tstring szEntry = ANSIToTstr(lua_tostring(luaVM, 2));
+		std::tstring section = ANSIToTstr(lua_tostring(luaVM, 1));
+		std::tstring entry = ANSIToTstr(lua_tostring(luaVM, 2));
 		UINT nDefault = (UINT)lua_tointeger(luaVM, 3);
-		UINT result = Profile::GetInt(szSection.c_str(), szEntry.c_str(), nDefault);
+		UINT result = profile::getInt(section, entry, nDefault);
 		lua_pushinteger(luaVM, result);
 	} else {
 		lua_pushstring(luaVM, "incorrect argument in function \"getInt\"");
@@ -49,10 +49,10 @@ static int setInt(lua_State *luaVM)
 {
 	ASSERT(lua_gettop(luaVM) >= 3);
 	if (lua_isstring(luaVM, 1) && lua_isstring(luaVM, 2) && lua_isnumber(luaVM, 3)) {
-		std::tstring szSection = ANSIToTstr(lua_tostring(luaVM, 1));
-		std::tstring szEntry = ANSIToTstr(lua_tostring(luaVM, 2));
+		std::tstring section = ANSIToTstr(lua_tostring(luaVM, 1));
+		std::tstring entry = ANSIToTstr(lua_tostring(luaVM, 2));
 		UINT nValue = (UINT)lua_tointeger(luaVM, 3);
-		Profile::WriteInt(szSection.c_str(), szEntry.c_str(), nValue);
+		profile::setInt(section, entry, nValue);
 	} else {
 		lua_pushstring(luaVM, "incorrect argument in function \"setInt\"");
 		lua_error(luaVM);

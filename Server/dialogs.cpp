@@ -333,7 +333,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 			case NM_DBLCLK:
 				if (pnmh->idFrom == IDC_LIST
-					&& Profile::GetInt(RF_SERVER, RK_CANEDITNICK, FALSE)) // disabled for not installed
+					&& profile::getInt(RF_SERVER, RK_CANEDITNICK, FALSE)) // disabled for not installed
 				{
 					SendMessage(hWnd, WM_COMMAND, IDC_RENAME, 0);
 				}
@@ -368,13 +368,13 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 				VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_RENAME, FALSE));
 				EnableMenuItem((HMENU)wParam, IDC_RENAME,
-					MF_BYCOMMAND | (Profile::GetInt(RF_SERVER, RK_CANEDITNICK, FALSE) ? MF_ENABLED : MF_GRAYED)); // disabled for not installed
+					MF_BYCOMMAND | (profile::getInt(RF_SERVER, RK_CANEDITNICK, FALSE) ? MF_ENABLED : MF_GRAYED)); // disabled for not installed
 				EnableMenuItem((HMENU)wParam, IDC_GODMODE,
-					MF_BYCOMMAND | (Profile::GetInt(RF_SERVER, RK_CANMAKEGOD, FALSE) ? MF_ENABLED : MF_GRAYED)); // disabled for not installed
+					MF_BYCOMMAND | (profile::getInt(RF_SERVER, RK_CANMAKEGOD, FALSE) ? MF_ENABLED : MF_GRAYED)); // disabled for not installed
 				CheckMenuItem((HMENU)wParam, IDC_GODMODE,
 					MF_BYCOMMAND | (valid && iu->second.cheat.isGod ? MF_CHECKED : MF_UNCHECKED));
 				EnableMenuItem((HMENU)wParam, IDC_DEVILMODE,
-					MF_BYCOMMAND | (Profile::GetInt(RF_SERVER, RK_CANMAKEDEVIL, FALSE) ? MF_ENABLED : MF_GRAYED)); // disabled for not installed
+					MF_BYCOMMAND | (profile::getInt(RF_SERVER, RK_CANMAKEDEVIL, FALSE) ? MF_ENABLED : MF_GRAYED)); // disabled for not installed
 				CheckMenuItem((HMENU)wParam, IDC_DEVILMODE,
 					MF_BYCOMMAND | (valid && iu->second.cheat.isDevil ? MF_CHECKED : MF_UNCHECKED));
 			} else {

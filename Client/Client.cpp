@@ -127,6 +127,8 @@ jpOnline(0)
 	m_metrics.nMsgSpinMaxCount = 20;
 	m_metrics.uChatLineMaxVolume = 80*1024;
 	m_metrics.flags.bTransmitClipboard = true;
+
+	m_encryptorname = ecrypt::hc256::ECRYPT_NAME;
 }
 
 void CALLBACK JClient::Init()
@@ -188,40 +190,42 @@ void CALLBACK JClient::LoadState()
 	m_idOwn = CRC_NONAME;
 
 	User& user = m_mUser[m_idOwn];
-	user.name = Profile::GetString(RF_CLIENT, RK_NICK, NAME_NONAME);
+	user.name = profile::getString(RF_CLIENT, RK_NICK, NAME_NONAME);
 	const TCHAR* msg;
 	if (!CheckNick(user.name, msg)) user.name = NAME_NONAME; // ensure that nick is valid
 	user.opened.insert(CRC_SERVER); // make it permanent
 	user.IP.S_un.S_addr = ntohl(INADDR_LOOPBACK);
 	user.isOnline = eOnline;
 	user.idOnline = 0;
-	user.nStatus = (EUserStatus)Profile::GetInt(RF_CLIENT, RK_STATUS, eReady);
+	user.nStatus = (EUserStatus)profile::getInt(RF_CLIENT, RK_STATUS, eReady);
 	user.accessibility = m_mAlert[user.nStatus];
-	user.nStatusImg = Profile::GetInt(RF_CLIENT, RK_STATUSIMG, 0);
-	user.strStatus = Profile::GetString(RF_CLIENT, RK_STATUSMSG, TEXT("ready to talk"));
+	user.nStatusImg = profile::getInt(RF_CLIENT, RK_STATUSIMG, 0);
+	user.strStatus = profile::getString(RF_CLIENT, RK_STATUSMSG, TEXT("ready to talk"));
 
-	m_nCompression = Profile::GetInt(RF_CLIENT, RK_COMPRESSION, -1);
-	m_bUseEncoding = Profile::GetInt(RF_CLIENT, RK_USEENCODING, true) != 0;
+	m_nCompression = profile::getInt(RF_CLIENT, RK_COMPRESSION, -1);
+	m_encryptorname = tstrToANSI(profile::getString(RF_CLIENT, RK_ENCRYPTALG, ANSIToTstr(ecrypt::hc256::ECRYPT_NAME)));
 
-	m_hostname = tstrToANSI(Profile::GetString(RF_CLIENT, RK_HOST, TEXT("127.0.0.1")));
-	m_port = (u_short)Profile::GetInt(RF_CLIENT, RK_PORT, CCP_PORT);
-	m_passwordNet = Profile::GetString(RF_CLIENT, RK_PASSWORDNET, TEXT("beowolf"));
-	m_bSendByEnter = Profile::GetInt(RF_CLIENT, RK_SENDBYENTER, true) != 0;
-	m_bCheatAnonymous = Profile::GetInt(RF_CLIENT, RK_CHEATANONYMOUS, false) != 0;
+	m_hostname = tstrToANSI(profile::getString(RF_CLIENT, RK_HOST, TEXT("127.0.0.1")));
+	m_port = (u_short)profile::getInt(RF_CLIENT, RK_PORT, CCP_PORT);
+	m_passwordNet = profile::getString(RF_CLIENT, RK_PASSWORDNET, TEXT("beowolf"));
+	m_bSendByEnter = profile::getInt(RF_CLIENT, RK_SENDBYENTER, true) != 0;
+	m_bCheatAnonymous = profile::getInt(RF_CLIENT, RK_CHEATANONYMOUS, false) != 0;
 }
 
 void CALLBACK JClient::SaveState()
 {
-	Profile::WriteString(RF_CLIENT, RK_HOST, ANSIToTstr(m_hostname).c_str());
-	Profile::WriteInt(RF_CLIENT, RK_PORT, m_port);
-	Profile::WriteString(RF_CLIENT, RK_PASSWORDNET, m_passwordNet.c_str());
-	Profile::WriteInt(RF_CLIENT, RK_SENDBYENTER, m_bSendByEnter);
+	profile::setString(RF_CLIENT, RK_HOST, ANSIToTstr(m_hostname));
+	profile::setInt(RF_CLIENT, RK_PORT, m_port);
+	profile::setString(RF_CLIENT, RK_PASSWORDNET, m_passwordNet);
+	profile::setInt(RF_CLIENT, RK_SENDBYENTER, m_bSendByEnter);
 
 	User& user = m_mUser[m_idOwn];
-	Profile::WriteString(RF_CLIENT, RK_NICK, user.name.c_str());
-	Profile::WriteInt(RF_CLIENT, RK_STATUS, user.nStatus);
-	Profile::WriteInt(RF_CLIENT, RK_STATUSIMG, user.nStatusImg);
-	Profile::WriteString(RF_CLIENT, RK_STATUSMSG, user.strStatus.c_str());
+	profile::setString(RF_CLIENT, RK_NICK, user.name);
+	profile::setInt(RF_CLIENT, RK_STATUS, user.nStatus);
+	profile::setInt(RF_CLIENT, RK_STATUSIMG, user.nStatusImg);
+	profile::setString(RF_CLIENT, RK_STATUSMSG, user.strStatus);
+
+	profile::setString(RF_CLIENT, RK_ENCRYPTALG, ANSIToTstr(m_encryptorname));
 }
 
 LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -275,7 +279,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 				ASSERT(lua_gettop(m_luaEvents) == 1);
 				lua_call(m_luaEvents, 0, 0);
 			} else {
-				if (Profile::GetInt(RF_CLIENT, RK_STATE, FALSE))
+				if (profile::getInt(RF_CLIENT, RK_STATE, FALSE))
 					Connect();
 				else
 					EvLog(TEXT("[style=msg]Ready to connect[/style]"), true);
@@ -293,7 +297,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 				ASSERT(lua_gettop(m_luaEvents) == 1);
 				lua_call(m_luaEvents, 0, 0);
 			} else {
-				Profile::WriteInt(RF_CLIENT, RK_STATE, m_clientsock != 0);
+				profile::setInt(RF_CLIENT, RK_STATE, m_clientsock != 0);
 				if (m_clientsock != 0) DeleteLink(m_clientsock);
 			}
 
@@ -472,7 +476,6 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 					case IDC_HOST:
 					case IDC_PORT:
-					case IDC_PASS:
 						{
 							std::tstring nickbuf(m_metrics.uNameMaxLength, 0), nick;
 							const TCHAR* msg;
@@ -645,13 +648,11 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 void CALLBACK JClient::Connect(bool getsetting)
 {
 	if (getsetting && jpPageServer) {
-		TCHAR host[128], pass[64];
+		char host[128];
 		ASSERT(jpPageServer);
-		GetDlgItemText(jpPageServer->hwndPage, IDC_HOST, host, _countof(host));
-		m_hostname = tstrToANSI(host);
+		GetDlgItemTextA(jpPageServer->hwndPage, IDC_HOST, host, _countof(host));
+		m_hostname = host;
 		m_port = (u_short)GetDlgItemInt(jpPageServer->hwndPage, IDC_PORT, FALSE, FALSE);
-		GetDlgItemText(jpPageServer->hwndPage, IDC_PASS, pass, _countof(pass));
-		m_passwordNet = pass;
 
 		// Checkup nick for future identification
 		std::tstring nickbuf(m_metrics.uNameMaxLength, 0), nick;
@@ -700,24 +701,24 @@ void CALLBACK JClient::saveAutoopen() const
 {
 	int i = 0;
 	for each (MapPageChannel::value_type const& v in mPageChannel) {
-		Profile::WriteInt(RF_AUTOOPEN, tformat(TEXT("type%02i"), i).c_str(), (UINT)v.second->gettype());
-		Profile::WriteString(RF_AUTOOPEN, tformat(TEXT("name%02i"), i).c_str(), v.second->m_channel.name.c_str());
-		Profile::WriteString(RF_AUTOOPEN, tformat(TEXT("pass%02i"), i).c_str(), v.second->m_channel.password.c_str());
+		profile::setInt(RF_AUTOOPEN, tformat(TEXT("type%02i"), i), (UINT)v.second->gettype());
+		profile::setString(RF_AUTOOPEN, tformat(TEXT("name%02i"), i), v.second->m_channel.name);
+		profile::setString(RF_AUTOOPEN, tformat(TEXT("pass%02i"), i), v.second->m_channel.password);
 		i++;
 	}
-	Profile::WriteInt(RF_AUTOOPEN, RK_CHANCOUNT, i);
+	profile::setInt(RF_AUTOOPEN, RK_CHANCOUNT, i);
 }
 
 void CALLBACK JClient::openAutoopen()
 {
-	if (Profile::GetInt(RF_AUTOOPEN, RK_USEAUTOOPEN, FALSE)) {
-		int count = Profile::GetInt(RF_AUTOOPEN, RK_CHANCOUNT, 0);
+	if (profile::getInt(RF_AUTOOPEN, RK_USEAUTOOPEN, FALSE)) {
+		int count = profile::getInt(RF_AUTOOPEN, RK_CHANCOUNT, 0);
 		EContact type;
 		std::tstring name, pass;
 		for (int i = 0; i < count; i++) {
-			type = (EContact)Profile::GetInt(RF_AUTOOPEN, tformat(TEXT("type%02i"), i).c_str(), (UINT)eChannel);
-			name = Profile::GetString(RF_AUTOOPEN, tformat(TEXT("name%02i"), i).c_str(), TEXT("main"));
-			pass = Profile::GetString(RF_AUTOOPEN, tformat(TEXT("pass%02i"), i).c_str(), TEXT(""));
+			type = (EContact)profile::getInt(RF_AUTOOPEN, tformat(TEXT("type%02i"), i), (UINT)eChannel);
+			name = profile::getString(RF_AUTOOPEN, tformat(TEXT("name%02i"), i), TEXT("main"));
+			pass = profile::getString(RF_AUTOOPEN, tformat(TEXT("pass%02i"), i), TEXT(""));
 			PushTrn(m_clientsock, Make_Quest_JOIN(name, pass, type));
 		}
 	}
@@ -726,7 +727,7 @@ void CALLBACK JClient::openAutoopen()
 int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact type)
 {
 	if (m_mUser[m_idOwn].accessibility.fFlashPageNew
-		&& Profile::GetInt(RF_CLIENT, RK_FLASHPAGENEW, TRUE)
+		&& profile::getInt(RF_CLIENT, RK_FLASHPAGENEW, TRUE)
 		&& !m_mUser[m_idOwn].isOnline)
 		FlashWindow(m_hwndPage, TRUE);
 
@@ -1176,7 +1177,7 @@ void JClient::OnLinkConnect(SOCKET sock)
 		si.sin_addr.S_un.S_un_b.s_b4,
 		ntohs(si.sin_port)), true);
 
-	PushTrn(m_clientsock, Make_Quest_Identify());
+	PushTrn(sock, Make_Quest_Identify(m_mLinks[sock].getEncryptor()));
 
 	// Lua response
 	if (m_luaEvents) {
@@ -1239,7 +1240,7 @@ void JClient::OnLinkFail(SOCKET sock, UINT err)
 		EvLog(tformat(TEXT("[style=msg]Connecting failed. Reason: [i]%s[/i][/style]"), JClient::s_mapWsaErr[err].c_str()), true);
 		// If not disconnected by user, try to reconnect again
 		if (err && m_bReconnect) {
-			SetTimer(m_hwndPage, IDT_CONNECT, Profile::GetInt(RF_CLIENT, RK_TIMERCONNECT, TIMER_CONNECT), 0);
+			SetTimer(m_hwndPage, IDT_CONNECT, profile::getInt(RF_CLIENT, RK_TIMERCONNECT, TIMER_CONNECT), 0);
 			// Update interface
 			EvLog(tformat(TEXT("[style=msg]Waiting %u seconds and try again (attempt #%i).[/style]"), TIMER_CONNECT/1000, m_nConnectCount), true);
 		}
@@ -1856,7 +1857,7 @@ void JClient::Recv_Notify_SAY(SOCKET sock, io::mem& is)
 		jp = ipu->second;
 		jp->setAlert(eRed);
 		if (m_mUser[m_idOwn].accessibility.fFlashPageSayPrivate
-			&& Profile::GetInt(RF_CLIENT, RK_FLASHPAGESAYPRIVATE, TRUE)
+			&& profile::getInt(RF_CLIENT, RK_FLASHPAGESAYPRIVATE, TRUE)
 			&& !m_mUser[m_idOwn].isOnline)
 			FlashWindow(m_hwndPage, TRUE);
 		if (m_mUser[m_idOwn].accessibility.fPlayPrivateSounds)
@@ -1869,7 +1870,7 @@ void JClient::Recv_Notify_SAY(SOCKET sock, io::mem& is)
 			jp = ipc->second;
 			jp->setAlert(eRed);
 			if (m_mUser[m_idOwn].accessibility.fFlahPageSayChannel
-				&& Profile::GetInt(RF_CLIENT, RK_FLASHPAGESAYCHANNEL, FALSE)
+				&& profile::getInt(RF_CLIENT, RK_FLASHPAGESAYCHANNEL, FALSE)
 				&& !m_mUser[m_idOwn].isOnline)
 				FlashWindow(m_hwndPage, TRUE);
 			if (m_mUser[m_idOwn].accessibility.fPlayChatSounds)
@@ -1916,7 +1917,7 @@ void JClient::Recv_Notify_TOPIC(SOCKET sock, io::mem& is)
 		if (ipc != mPageChannel.end()) { // channel
 			jp = ipc->second;
 			if (m_mUser[m_idOwn].accessibility.fFlashPageChangeTopic
-				&& Profile::GetInt(RF_CLIENT, RK_FLASHPAGETOPIC, TRUE)
+				&& profile::getInt(RF_CLIENT, RK_FLASHPAGETOPIC, TRUE)
 				&& !m_mUser[m_idOwn].isOnline)
 				FlashWindow(m_hwndPage, TRUE);
 
@@ -2641,21 +2642,21 @@ void CALLBACK JClientApp::Init()
 		|| (hinstRichEdit = LoadLibrary(TEXT("Riched32.dll"))) != 0 // version 1.0
 		);
 
-	Profile::SetKey(TEXT("BEOWOLF"), APPNAME);
+	profile::setKey(TEXT("BEOWOLF"), APPNAME);
 
 	// Waves
-	m_strWavMeline = Profile::GetString(RF_SOUNDS, RK_WAVMELINE, TEXT("Sounds\\me_line.wav"));
-	m_strWavChatline = Profile::GetString(RF_SOUNDS, RK_WAVCHATLINE, TEXT("Sounds\\chat_line.wav"));
-	m_strWavConfirm = Profile::GetString(RF_SOUNDS, RK_WAVCONFIRM, TEXT("Sounds\\confirm.wav"));
-	m_strWavPrivateline = Profile::GetString(RF_SOUNDS, RK_WAVPRIVATELINE, TEXT("Sounds\\chat_line.wav"));
-	m_strWavTopic = Profile::GetString(RF_SOUNDS, RK_WAVTOPIC, TEXT("Sounds\\topic_change.wav"));
-	m_strWavJoin = Profile::GetString(RF_SOUNDS, RK_WAVJOIN, TEXT("Sounds\\channel_join.wav"));
-	m_strWavPart = Profile::GetString(RF_SOUNDS, RK_WAVPART, TEXT("Sounds\\channel_leave.wav"));
-	m_strWavPrivate = Profile::GetString(RF_SOUNDS, RK_WAVPRIVATE, TEXT("Sounds\\private_start.wav"));
-	m_strWavAlert = Profile::GetString(RF_SOUNDS, RK_WAVALERT, TEXT("Sounds\\alert.wav"));
-	m_strWavMessage = Profile::GetString(RF_SOUNDS, RK_WAVMESSAGE, TEXT("Sounds\\message.wav"));
-	m_strWavBeep = Profile::GetString(RF_SOUNDS, RK_WAVBEEP, TEXT("Sounds\\beep.wav"));
-	m_strWavClipboard = Profile::GetString(RF_SOUNDS, RK_WAVCLIPBOARD, TEXT("Sounds\\clipboard.wav"));
+	m_strWavMeline = profile::getString(RF_SOUNDS, RK_WAVMELINE, TEXT("Sounds\\me_line.wav"));
+	m_strWavChatline = profile::getString(RF_SOUNDS, RK_WAVCHATLINE, TEXT("Sounds\\chat_line.wav"));
+	m_strWavConfirm = profile::getString(RF_SOUNDS, RK_WAVCONFIRM, TEXT("Sounds\\confirm.wav"));
+	m_strWavPrivateline = profile::getString(RF_SOUNDS, RK_WAVPRIVATELINE, TEXT("Sounds\\chat_line.wav"));
+	m_strWavTopic = profile::getString(RF_SOUNDS, RK_WAVTOPIC, TEXT("Sounds\\topic_change.wav"));
+	m_strWavJoin = profile::getString(RF_SOUNDS, RK_WAVJOIN, TEXT("Sounds\\channel_join.wav"));
+	m_strWavPart = profile::getString(RF_SOUNDS, RK_WAVPART, TEXT("Sounds\\channel_leave.wav"));
+	m_strWavPrivate = profile::getString(RF_SOUNDS, RK_WAVPRIVATE, TEXT("Sounds\\private_start.wav"));
+	m_strWavAlert = profile::getString(RF_SOUNDS, RK_WAVALERT, TEXT("Sounds\\alert.wav"));
+	m_strWavMessage = profile::getString(RF_SOUNDS, RK_WAVMESSAGE, TEXT("Sounds\\message.wav"));
+	m_strWavBeep = profile::getString(RF_SOUNDS, RK_WAVBEEP, TEXT("Sounds\\beep.wav"));
+	m_strWavClipboard = profile::getString(RF_SOUNDS, RK_WAVCLIPBOARD, TEXT("Sounds\\clipboard.wav"));
 
 	hiMain16 = LoadIcon(hinstApp, MAKEINTRESOURCE(IDI_SMALL));
 	hiMain32 = LoadIcon(hinstApp, MAKEINTRESOURCE(IDI_CLIENT));

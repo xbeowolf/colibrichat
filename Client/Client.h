@@ -48,11 +48,12 @@
 // Folders
 #define RF_CLIENT              TEXT("Client\\")
 #define RF_AUTOOPEN            RF_CLIENT TEXT("Autoopen\\")
+#define RF_HOSTLIST            RF_CLIENT TEXT("HostList\\")
 #define RF_SOUNDS              RF_CLIENT TEXT("Sounds\\")
 
 // NetEngine
 #define RK_COMPRESSION         TEXT("CompressionLevel")
-#define RK_USEENCODING         TEXT("UseEncoding")
+#define RK_ENCRYPTALG          TEXT("EncryptAlgorithm")
 
 // Server
 #define RK_NICK                TEXT("Nickname")
@@ -80,6 +81,9 @@
 // Autoopen
 #define RK_USEAUTOOPEN         TEXT("UseAutoopen")
 #define RK_CHANCOUNT           TEXT("ContactsCount")
+
+// Host list
+#define RK_HOSTCOUNT           TEXT("HostCount")
 
 // Sounds
 #define RK_WAVMELINE           TEXT("MeLine")
@@ -288,6 +292,7 @@ namespace colibrichat
 			void OnHook(JEventable* src);
 			void OnUnhook(JEventable* src);
 
+			void OnLinkStart(SOCKET sock);
 			void OnLog(const std::tstring& str, bool withtime = true);
 			void OnReport(const std::tstring& str, EGroup gr = eMessage, EPriority prior = eNormal);
 			void OnMetrics(const Metrics& metrics);
@@ -304,6 +309,8 @@ namespace colibrichat
 
 			RECT rcHost, rcPort, rcPass, rcNick, rcStatus, rcStatusImg, rcStatusMsg;
 			RECT rcStatic1, rcStatic2, rcStatic3, rcStatic4, rcStatic5, rcConnect;
+
+			JPROPERTY_RREF_CONST(std::set<std::string>, hostlist);
 		};
 
 		class JPageList : public JPage
@@ -499,11 +506,30 @@ namespace colibrichat
 		// Dialogs
 		//
 
+		class JPassword : public JAttachedDialog<JClient>
+		{
+		public:
+
+			JPassword(JClient* p);
+
+			int checkPassword(int level);
+
+		protected:
+
+			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
+
+		protected:
+
+			JPROPERTY_R(HWND, hwndList);
+
+			std::tstring m_password;
+		};
+
 		class JTopic : public JAttachedDialog<JClient>
 		{
 		public:
 
-			CALLBACK JTopic(JClient* p, DWORD id, const std::tstring& n, const std::tstring& t);
+			JTopic(JClient* p, DWORD id, const std::tstring& n, const std::tstring& t);
 
 		protected:
 
@@ -530,7 +556,7 @@ namespace colibrichat
 
 			static void initclass();
 			static void doneclass();
-			CALLBACK JSplashRtfEditor(JClient* p, DWORD who);
+			JSplashRtfEditor(JClient* p, DWORD who);
 
 		protected:
 
@@ -682,6 +708,9 @@ namespace colibrichat
 		void CALLBACK LoadState(); // can be only one call for object
 		void CALLBACK SaveState(); // can be multiply calls for object
 		void CALLBACK InitLogs() {}
+
+		// encryption cipher name
+		const char* getEncryptorName() const {return m_encryptorname.c_str();}
 
 		LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -855,6 +884,7 @@ namespace colibrichat
 		JPROPERTY_RREF_CONST(std::set<MCIDEVICEID>, wDeviceID);
 
 		JPROPERTY_RREF_CONST(Metrics, metrics);
+		JPROPERTY_RREF_CONST(std::string, encryptorname);
 
 		// Lua managment
 		JPROPERTY_R(lua_State*, luaEvents);

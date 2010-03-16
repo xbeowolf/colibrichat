@@ -615,7 +615,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Colibri Chat"
         "ProductCode" = "8:{CB4F402C-DC95-4E54-8F11-A91C0416DCAB}"
-        "PackageCode" = "8:{0A8154D0-CD4A-4264-9760-B3A769B722EE}"
+        "PackageCode" = "8:{A2423774-CAC1-4CCF-9A33-775B50C7F665}"
         "UpgradeCode" = "8:{9CE85361-B45F-48AE-B43E-D9C165BF7E24}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
@@ -835,14 +835,6 @@
                                                 }
                                                 "Values"
                                                 {
-                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_163FB703ED8D451D89CDBFA0AAFF28E6"
-                                                    {
-                                                    "Name" = "8:UseEncoding"
-                                                    "Condition" = "8:"
-                                                    "Transitive" = "11:FALSE"
-                                                    "ValueTypes" = "3:3"
-                                                    "Value" = "3:1"
-                                                    }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_2925F71457B04CB598CD22E5B474F306"
                                                     {
                                                     "Name" = "8:Port00"
@@ -898,6 +890,14 @@
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:3"
                                                     "Value" = "3:1"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_E5C8F324078246D59A3D0CD2A0C734EF"
+                                                    {
+                                                    "Name" = "8:EncryptAlgorithm"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:1"
+                                                    "Value" = "8:HC-256"
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_EA553F055F64415281A70FB7686F3AF9"
                                                     {
@@ -1044,6 +1044,28 @@
                                                             }
                                                         }
                                                     }
+                                                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_9C66BDEC8E6C49F4BA9230633A38D02B"
+                                                    {
+                                                    "Name" = "8:HostList"
+                                                    "Condition" = "8:"
+                                                    "AlwaysCreate" = "11:FALSE"
+                                                    "DeleteAtUninstall" = "11:FALSE"
+                                                    "Transitive" = "11:FALSE"
+                                                        "Keys"
+                                                        {
+                                                        }
+                                                        "Values"
+                                                        {
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_200E1EE91A4249FFAA65F490365470B1"
+                                                            {
+                                                            "Name" = "8:HostCount"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:3"
+                                                            "Value" = "3:0"
+                                                            }
+                                                        }
+                                                    }
                                                     "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_A0EE56E06F9145D78A1C3691DF182546"
                                                     {
                                                     "Name" = "8:Autoopen"
@@ -1116,14 +1138,6 @@
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:3"
                                                     "Value" = "3:0"
-                                                    }
-                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_39B39B5FE59B43C9A163247106EFBD36"
-                                                    {
-                                                    "Name" = "8:UseEncoding"
-                                                    "Condition" = "8:"
-                                                    "Transitive" = "11:FALSE"
-                                                    "ValueTypes" = "3:3"
-                                                    "Value" = "3:1"
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_5256B7EBA5D64D9081B51C56883C259B"
                                                     {
@@ -1220,6 +1234,14 @@
                                                     "Transitive" = "11:FALSE"
                                                     "ValueTypes" = "3:1"
                                                     "Value" = "8:beowolf"
+                                                    }
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_EFA45E0D995C48EF9568D9BC4CA323E3"
+                                                    {
+                                                    "Name" = "8:EncryptAlgorithm"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:1"
+                                                    "Value" = "8:HC-256"
                                                     }
                                                     "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_F16E0724384D46B4864E811BBC1733A7"
                                                     {
