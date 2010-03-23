@@ -196,6 +196,11 @@ namespace colibrichat
 		class JMessageEditor;
 		class JMessage;
 
+		static INT_PTR WINAPI DlgProcHelper0(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+		static INT_PTR WINAPI DlgProcHelper1(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+		static INT_PTR WINAPI DlgProcHelper2(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+		static INT_PTR WINAPI DlgProcHelper3(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
 		//
 		// Pages
 		//
@@ -512,8 +517,6 @@ namespace colibrichat
 
 			JPassword(JClient* p);
 
-			int checkPassword(int level);
-
 		protected:
 
 			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
@@ -521,8 +524,6 @@ namespace colibrichat
 		protected:
 
 			JPROPERTY_R(HWND, hwndList);
-
-			std::tstring m_password;
 		};
 
 		class JTopic : public JAttachedDialog<JClient>
@@ -703,6 +704,8 @@ namespace colibrichat
 
 		void CALLBACK JobQuantum() {}
 
+		void CALLBACK DoHelper();
+
 	protected:
 
 		void CALLBACK LoadState(); // can be only one call for object
@@ -734,9 +737,10 @@ namespace colibrichat
 		void CALLBACK ShowTopic(const std::tstring& topic);
 
 		// Error provider
-		void CALLBACK DisplayMessage(HWND hwndId, const TCHAR* msg, const TCHAR* title, int icon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
-		void CALLBACK ShowBaloon(const POINT& p, HWND hwndId, const TCHAR* msg, const TCHAR* title = 0, HICON hicon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
-		void CALLBACK HideBaloon(HWND hwnd = 0);
+		void CALLBACK DisplayMessage(HWND hwndCtrl, const TCHAR* msg, const TCHAR* title, int icon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
+		static void CALLBACK DisplayMessage(HWND hwndId, HWND hwndCtrl, const TCHAR* msg, const TCHAR* title, int icon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
+		static void CALLBACK ShowBaloon(HWND hwndId, const POINT& p, const TCHAR* msg, const TCHAR* title = 0, HICON hicon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
+		static void CALLBACK HideBaloon(HWND hwndId = 0);
 		void CALLBACK PlaySound(const TCHAR* snd);
 
 		// Users managment
@@ -866,8 +870,8 @@ namespace colibrichat
 		JPROPERTY_RREF_CONST(MapAlert, mAlert);
 
 		// Baloon tooltip
-		JPROPERTY_R(HWND, isBaloon);
-		JPROPERTY_R(HWND, hwndBaloon);
+		static HWND m_isBaloon;
+		static HWND m_hwndBaloon;
 
 		// Pages
 		JPtr<JPage> jpOnline;

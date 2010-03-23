@@ -84,8 +84,8 @@ IDI_SMALL               ICON                    "Chat.ico"
 //
 
 1 VERSIONINFO
- FILEVERSION 1,2,3,2
- PRODUCTVERSION 1,2,3,2
+ FILEVERSION 1,2,3,4
+ PRODUCTVERSION 1,2,3,4
  FILEFLAGSMASK 0x1fL
 #ifdef _DEBUG
  FILEFLAGS 0x9L
@@ -103,14 +103,14 @@ BEGIN
             VALUE "Comments", "Shareware; Colibri Chat created 19.04.2009 17:17:32\r\n\r\nContact information:\r\nmailto:xbeowolf@gmail.com\r\nicq:320-329-575\r\nphone:+380684862837"
             VALUE "CompanyName", "Podobashev D. O. / BEOWOLF"
             VALUE "FileDescription", "Colibri Chat Client Application"
-            VALUE "FileVersion", "1, 2, 3, 2"
+            VALUE "FileVersion", "1, 2, 3, 4"
             VALUE "InternalName", "ColibriClient"
             VALUE "LegalCopyright", "© BEOWOLF / Podobashev Dmitry, 2010"
             VALUE "LegalTrademarks", "MetaShape"
             VALUE "OriginalFilename", "ColibriClient.exe"
-            VALUE "PrivateBuild", "Build 39"
+            VALUE "PrivateBuild", "Build 41"
             VALUE "ProductName", "Colibri Chat"
-            VALUE "ProductVersion", "1, 2, 3, 2"
+            VALUE "ProductVersion", "1, 2, 3, 4"
         END
     END
     BLOCK "VarFileInfo"
@@ -154,6 +154,112 @@ BEGIN
 END
 
 #endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_HELPER0, DIALOG
+    BEGIN
+        LEFTMARGIN, 4
+        RIGHTMARGIN, 320
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 196
+    END
+
+    IDD_HELPER1, DIALOG
+    BEGIN
+        LEFTMARGIN, 4
+        RIGHTMARGIN, 320
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 196
+    END
+
+    IDD_HELPER2, DIALOG
+    BEGIN
+        LEFTMARGIN, 4
+        RIGHTMARGIN, 320
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 196
+    END
+
+    IDD_HELPER3, DIALOG
+    BEGIN
+        LEFTMARGIN, 4
+        RIGHTMARGIN, 320
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 196
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_HELPER0 DIALOGEX 0, 0, 324, 200
+STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE | WS_CAPTION
+EXSTYLE WS_EX_CONTEXTHELP
+CAPTION "Мастер быстрой настройки"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Этот мастер поможет вам настроить основные параметры работы чата в 3 шага. Все настройки сохранятся, и таким образом, при дальнейших запусках чата можно сразу же приступать к работе, без повторного определения каких-либо параметров.",IDC_STATIC,4,4,316,24
+    LTEXT           "Любые установки можно будет изменить в дальнейшем.",IDC_STATIC,4,28,316,8
+    LTEXT           "Для перехода к следующим этапам нажимайте кнопку ""Дальше >""",IDC_STATIC,4,188,316,8
+END
+
+IDD_HELPER1 DIALOGEX 0, 0, 324, 200
+STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE | WS_CAPTION
+EXSTYLE WS_EX_CONTEXTHELP
+CAPTION "Мастер быстрой настройки"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Введите ниже ваш ник. Под этим ником вы будете видны в списке пользователей канала, с него будут начинаться ваши сообщения на канале, либо посылаемые другим пользователям.",IDC_STATIC,4,42,316,24
+    LTEXT           "Например, ник может быть ""Beowolf"". В нике допускаются любые символы национальных алфавитов и пробелы.",IDC_STATIC,4,68,316,16
+    EDITTEXT        IDC_NICK,82,92,160,14,ES_CENTER | ES_AUTOHSCROLL,0,HIDC_NICK
+    LTEXT           "Поле ника не должно быть пустым, либо содержать одни пробелы, либо содержать непечатаемые символы. Пробелы в начале и в конце ника - удаляются.",IDC_STATIC,4,114,316,16
+    LTEXT           "Длина ника не должна превышать лимита, определённого на сервере, по умолчанию составляющего 20 символов. Если введённый ник длиннее, лишние символы будут обрезаны.",IDC_STATIC,4,130,316,24
+    LTEXT           "Если на сервере уже зарегистрирован пользователь под данным ником, то сервер сгенерирует вам новый оригинальный ник, на основе введённой строки, путём приписывания в конец цифр.",IDC_STATIC,4,154,316,24
+END
+
+IDD_HELPER2 DIALOGEX 0, 0, 324, 200
+STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE | WS_CAPTION
+EXSTYLE WS_EX_CONTEXTHELP
+CAPTION "Мастер быстрой настройки"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Введите ниже ваш пароль и подтвердите его. Пароль совместно с ником используется для вашей аутентификации. Кроме того, этот пароль служит закрытым паролем шифрования данных, защита вашей информации в сети зависит главным образом от него.",IDC_STATIC,4,4,316,24
+    LTEXT           "Например, паролем может быть такая строка: ""#jF4$GHi7%vXqD""",IDC_STATIC,4,30,316,8
+    LTEXT           "Введите пароль",IDC_STATIC,4,45,78,8
+    EDITTEXT        IDC_PASS1,82,42,160,14,ES_PASSWORD | ES_AUTOHSCROLL,0,HIDC_PASS1
+    LTEXT           "Подтвердите пароль",IDC_STATIC,4,61,72,8
+    EDITTEXT        IDC_PASS2,82,58,160,14,ES_PASSWORD | ES_AUTOHSCROLL,0,HIDC_PASS2
+    CONTROL         "Показать пароль",IDC_SHOWPASS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,82,74,160,14,0,HIDC_SHOWPASS
+    LTEXT           "При выборе пароля лучше всего использовать длинную случайную последовательность символов, которая может содержать буквы различных алфавитов, цифры и другие символы. В данной программе для паролей допускаются любые символы Unicode.",IDC_STATIC,4,92,316,24
+    LTEXT           "Например, если вы в качестве пароля используете последовательность из 6 заглавных латинских букв, то количество возможных комбинаций будет 26^6, если используете также цифры и строчные латинские буквы, то количество возможных комбинаций возрастёт до 62^6.",IDC_STATIC,4,116,316,32
+    LTEXT           "Шифр, защищённый паролем не более 6 буквенно-цифровых символов, что соответствует 36-битному ключу, может быть взломан за несколько минут на одном персональном компьютере путём полного перебора всех комбинаций.",IDC_STATIC,4,148,316,24
+    LTEXT           "На сегодняшний день считается надёжным шифрование, защищенное, по крайней мере, 80-битным ключом, что соответствует текстовому паролю из 14 буквенно-цифровых символов. Программа позволяет использовать ключи длиной до 256 бит.",IDC_STATIC,4,172,316,24
+END
+
+IDD_HELPER3 DIALOGEX 0, 0, 324, 200
+STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE | WS_CAPTION
+EXSTYLE WS_EX_CONTEXTHELP
+CAPTION "Мастер быстрой настройки"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Введите ниже адрес сервера, и укажите при необходимости порт. В качестве адреса сервера вы можете написать IP-адрес компьютера, на котором запущена программа-сервер чата, либо DNS-имя этого компьютера.",IDC_STATIC,4,52,316,24
+    LTEXT           "Например, если программа-сервер запущена на данном компьютере, введите 127.0.0.1",IDC_STATIC,4,76,316,8
+    EDITTEXT        IDC_HOST,4,92,316,14,ES_AUTOHSCROLL,0,HIDC_HOST
+    LTEXT           "Если номер порта сервера отличается от порта по умолчанию, измените его ниже:",IDC_STATIC,4,114,316,8
+    EDITTEXT        IDC_PORT,4,130,40,14,ES_AUTOHSCROLL | ES_NUMBER
+END
 
 #endif    // Russian resources
 /////////////////////////////////////////////////////////////////////////////
@@ -577,6 +683,23 @@ BEGIN
     IDS_MSG_NEWPASS         "First password copy not equal to second."
     IDS_MSG_EASYPASS        "Password is too easy, recommended length should be more than 6 characters. At least 14 characters can be trusted."
     IDS_MSG_EMPTYPASS       "Empty password avoid encryption."
+    IDS_MSG_HOSTVRF         "wrong host"
+    IDS_MSG_BADHOST         "Invalid host name. String can not be translated to IP-address."
+    IDS_MSG_BADPORT         "Invalid port number. Port can not be converted to digital."
+    IDS_MSG_PORTRANGE       "Port number is out of range 1000 ... 65535."
+END
+
+STRINGTABLE 
+BEGIN
+    IDS_QSW                 "Quick Setup Wizard"
+    IDS_QSW_QSW             "Quick Setup Wizard"
+    IDS_QSW_INTRO           "Introduction to wizard"
+    IDS_QSW_STEP1           "Step 1"
+    IDS_QSW_NICK            "Nickname definition"
+    IDS_QSW_STEP2           "Step 2"
+    IDS_QSW_PASS            "Network password definition"
+    IDS_QSW_STEP3           "Step 3"
+    IDS_QSW_HOST            "Host and port definition"
 END
 
 #endif    // English (U.S.) resources

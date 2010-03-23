@@ -38,6 +38,8 @@ static TCHAR szHelpFile[MAX_PATH];
 
 std::map<EChanStatus, std::tstring> JClient::s_mapChanStatName;
 std::map<UINT, std::tstring> JClient::s_mapWsaErr;
+HWND JClient::m_isBaloon = 0;
+HWND JClient::m_hwndBaloon = 0;
 
 void JClient::initclass()
 {
@@ -63,10 +65,22 @@ void JClient::initclass()
 	JClient::s_mapWsaErr[WSAENETDOWN] = TEXT("The network subsystem failed."); // and all other
 	JClient::s_mapWsaErr[WSAECONNRESET] = TEXT("The connection was reset by the remote side.");
 	JClient::s_mapWsaErr[WSAECONNABORTED] = TEXT("The connection was terminated due to a time-out or other failure.");
+
+	// Create baloon tool tip for users list
+	ASSERT(JClientApp::jpApp);
+	m_hwndBaloon = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, 0,
+		WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP | TTS_BALLOON,
+		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+		0, 0, JClientApp::jpApp->hinstApp, 0);
+	ASSERT(m_hwndBaloon);
+	SendMessage(m_hwndBaloon, TTM_SETMAXTIPWIDTH, 0, 300);
 }
 
 void JClient::doneclass()
 {
+	DestroyWindow(m_hwndBaloon);
+	m_hwndBaloon = 0;
+
 	JClient::s_mapChanStatName.clear();
 	JClient::s_mapWsaErr.clear();
 }
@@ -80,6 +94,8 @@ jpOnline(0)
 	m_nConnectCount = 0;
 	m_bSendByEnter = true;
 	m_bCheatAnonymous = false;
+
+	m_hwndTab = 0;
 
 	static Alert alert[] = {
 		{
@@ -246,20 +262,11 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			SNDMSG(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)JClientApp::jpApp->hiMain16);
 			SNDMSG(hWnd, WM_SETICON, ICON_BIG, (LPARAM)JClientApp::jpApp->hiMain32);
 
-			// Create baloon tool tip for users list
-			m_hwndBaloon = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, 0,
-				WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP | TTS_BALLOON,
-				CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-				hWnd, 0, JClientApp::jpApp->hinstApp, 0);
-			ASSERT(m_hwndBaloon);
-			SendMessage(m_hwndBaloon, TTM_SETMAXTIPWIDTH, 0, 300);
-			m_isBaloon = 0;
-
 			TOOLINFO ti;
 			ti.cbSize = sizeof(ti);
 			ti.uFlags = TTF_ABSOLUTE | TTF_IDISHWND | TTF_TRACK;
-			ti.hwnd = hwndPage;
-			ti.uId = (UINT_PTR)hwndPage;
+			ti.hwnd = hWnd;
+			ti.uId = (UINT_PTR)hWnd;
 			ti.hinst = JClientApp::jpApp->hinstApp;
 			ti.lpszText = 0;
 			VERIFY(SendMessage(m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
@@ -301,11 +308,13 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 				if (m_clientsock != 0) DeleteLink(m_clientsock);
 			}
 
-			HideBaloon(hwndPage);
+			m_hwndTab = 0;
+
+			HideBaloon(hWnd);
 			TOOLINFO ti;
 			ti.cbSize = sizeof(ti);
-			ti.hwnd = hwndPage;
-			ti.uId = (UINT_PTR)hwndPage;
+			ti.hwnd = hWnd;
+			ti.uId = (UINT_PTR)hWnd;
 			SendMessage(m_hwndBaloon, TTM_DELTOOL, 0, (LPARAM)&ti);
 
 			// Close all opened waves
@@ -965,47 +974,57 @@ void CALLBACK JClient::ShowTopic(const std::tstring& topic)
 	SetWindowText(m_hwndPage, tformat(TEXT("[%s] - Colibri Chat"), topic.c_str()).c_str());
 }
 
-void CALLBACK JClient::DisplayMessage(HWND hwnd, const TCHAR* msg, const TCHAR* title, int icon, COLORREF cr)
+void CALLBACK JClient::DisplayMessage(HWND hwndCtrl, const TCHAR* msg, const TCHAR* title, int icon, COLORREF cr)
 {
-	RECT r;
-	VERIFY(GetWindowRect(hwnd, &r));
-	POINT p;
-	p.x = (r.left + r.right)/2, p.y = (r.top + r.bottom)/2;
-	ShowBaloon(p, m_hwndPage, msg, title, (HICON)(INT_PTR)icon, cr);
+	DisplayMessage(m_hwndPage, hwndCtrl, msg, title, icon, cr);
 }
 
-void CALLBACK JClient::ShowBaloon(const POINT& p, HWND hwndId, const TCHAR* msg, const TCHAR* title, HICON hicon, COLORREF cr)
+void CALLBACK JClient::DisplayMessage(HWND hwndId, HWND hwndCtrl, const TCHAR* msg, const TCHAR* title, int icon, COLORREF cr)
 {
-	TOOLINFO ti;
-	static TCHAR bufmsg[1024], buftitle[100];
-	if (HIWORD(msg)) _tcscpy_s(bufmsg, _countof(bufmsg), msg);
-	else LoadString(JClientApp::jpApp->hinstApp, LOWORD(msg), bufmsg, _countof(bufmsg));
-	ti.cbSize = sizeof(ti);
-	ti.hwnd = m_hwndPage;
-	ti.uId = (UINT_PTR)hwndId;
-	ti.hinst = JClientApp::jpApp->hinstApp;
-	ti.lpszText = bufmsg;
-	SendMessage(m_hwndBaloon, TTM_UPDATETIPTEXT, 0, (LPARAM)&ti);
+	RECT r;
+	VERIFY(GetWindowRect(hwndCtrl, &r));
+	POINT p;
+	p.x = (r.left + r.right)/2, p.y = (r.top + r.bottom)/2;
+	ShowBaloon(hwndId, p, msg, title, (HICON)(INT_PTR)icon, cr);
+}
+
+void CALLBACK JClient::ShowBaloon(HWND hwndId, const POINT& p, const TCHAR* msg, const TCHAR* title, HICON hicon, COLORREF cr)
+{
+	static TCHAR buftitle[256];
 	if (HIWORD(title)) _tcscpy_s(buftitle, _countof(buftitle), title);
 	else LoadString(JClientApp::jpApp->hinstApp, LOWORD(title), buftitle, _countof(buftitle));
 	VERIFY(SendMessage(m_hwndBaloon, TTM_SETTITLE, (WPARAM)hicon, (LPARAM)buftitle));
+
+	static TCHAR bufmsg[1024]; // resorce string may be greater than 80 chars
+	if (HIWORD(msg)) _tcscpy_s(bufmsg, _countof(bufmsg), msg);
+	else LoadString(JClientApp::jpApp->hinstApp, LOWORD(msg), bufmsg, _countof(bufmsg));
+	TOOLINFO ti;
+	ti.cbSize = sizeof(ti);
+	ti.hwnd = hwndId;
+	ti.uId = (UINT_PTR)hwndId;
+	ti.hinst = JClientApp::jpApp->hinstApp;
+	ti.lpszText = (TCHAR*)bufmsg;
+	SendMessage(m_hwndBaloon, TTM_UPDATETIPTEXT, 0, (LPARAM)&ti);
+
 	SendMessage(m_hwndBaloon, TTM_SETTIPTEXTCOLOR, cr, 0);
 	SendMessage(m_hwndBaloon, TTM_TRACKPOSITION, 0, MAKELPARAM(p.x, p.y));
 	SendMessage(m_hwndBaloon, TTM_TRACKACTIVATE, TRUE, (LPARAM)&ti);
+
 	m_isBaloon = hwndId;
-	SetTimer(hwndPage, IDT_BALOONPOP, TIMER_BALOONPOP, 0);
+	SetTimer(hwndId, IDT_BALOONPOP, TIMER_BALOONPOP, 0);
 }
 
-void CALLBACK JClient::HideBaloon(HWND hwnd)
+void CALLBACK JClient::HideBaloon(HWND hwndId)
 {
-	if (hwnd || m_isBaloon) {
+	if (!hwndId) hwndId = m_isBaloon;
+	if (hwndId) {
 		TOOLINFO ti;
 		ti.cbSize = sizeof(ti);
-		ti.hwnd = m_hwndPage;
-		ti.uId = (UINT_PTR)(hwnd ? hwnd : m_isBaloon);
+		ti.hwnd = hwndId;
+		ti.uId = (UINT_PTR)hwndId;
 		SendMessage(m_hwndBaloon, TTM_TRACKACTIVATE, FALSE, (LPARAM)&ti);
-		m_isBaloon = 0;
-		KillTimer(m_hwndPage, IDT_BALOONPOP);
+		if (hwndId == m_isBaloon) m_isBaloon = 0;
+		KillTimer(hwndId, IDT_BALOONPOP);
 	}
 }
 
@@ -2686,11 +2705,19 @@ void CALLBACK JClientApp::Init()
 	m_himgULHot = LoadBitmap(hinstApp, MAKEINTRESOURCE(IDB_UL_HOT));
 
 	jpClient = new JClient;
-	jpClient->Init();
 }
 
 bool CALLBACK JClientApp::InitInstance()
 {
+	ASSERT(jpClient);
+#ifdef _DEBUG
+	jpClient->DoHelper();
+#else
+	if (!profile::getInt(RF_HOSTLIST, RK_HOSTCOUNT, 0)) {
+		jpClient->DoHelper();
+	}
+#endif
+	jpClient->Init();
 	if (CreateDialogParam(hinstApp, MAKEINTRESOURCE(IDD_MAIN), 0, (DLGPROC)JClient::DlgProcStub, (LPARAM)(JDialog*)jpClient)) {
 		return true;
 	} else {

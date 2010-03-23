@@ -2122,8 +2122,8 @@ void CALLBACK JClient::JPageChannel::DisplayMessage(DWORD idUser, const TCHAR* m
 	if (p.y < r.top || p.y > r.bottom) p.y = (r.top + r.bottom)/2;
 	MapUser::const_iterator iu = pSource->m_mUser.find(idUser);
 	pSource->ShowBaloon(
+		pSource->hwndPage,
 		p,
-		m_hwndList,
 		msg,
 		iu != pSource->m_mUser.end() ? iu->second.name.c_str() : 0,
 		hicon,
@@ -2339,15 +2339,6 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			// Get initial windows sizes
 			MapControl(m_hwndList, rcList);
 
-			TOOLINFO ti;
-			ti.cbSize = sizeof(ti);
-			ti.uFlags = TTF_ABSOLUTE | TTF_IDISHWND | TTF_TRACK;
-			ti.hwnd = pSource->hwndPage;
-			ti.uId = (UINT_PTR)m_hwndList;
-			ti.hinst = JClientApp::jpApp->hinstApp;
-			ti.lpszText = 0;
-			VERIFY(SendMessage(pSource->m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
-
 			// Inits Users list
 			ListView_SetExtendedListViewStyle(m_hwndList,
 				LVS_EX_GRIDLINES | LVS_EX_HEADERDRAGDROP | LVS_EX_ONECLICKACTIVATE | LVS_EX_SUBITEMIMAGES | LVS_EX_TRACKSELECT);
@@ -2375,11 +2366,6 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 	case WM_DESTROY:
 		{
 			pSource->HideBaloon(m_hwndList);
-			TOOLINFO ti;
-			ti.cbSize = sizeof(ti);
-			ti.hwnd = pSource->hwndPage;
-			ti.uId = (UINT_PTR)m_hwndList;
-			SendMessage(pSource->m_hwndBaloon, TTM_DELTOOL, 0, (LPARAM)&ti);
 
 			pSource->EvPageClose.Invoke(m_ID);
 

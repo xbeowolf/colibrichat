@@ -25,6 +25,601 @@ using namespace colibrichat;
 
 //-----------------------------------------------------------------------------
 
+void CALLBACK JClient::DoHelper()
+{
+	TCHAR title[4][80], subtitle[4][256];
+	LoadString(JClientApp::jpApp->hinstApp, IDS_QSW_QSW, title[0], _countof(title[0]));
+	LoadString(JClientApp::jpApp->hinstApp, IDS_QSW_INTRO, subtitle[0], _countof(subtitle[0]));
+	LoadString(JClientApp::jpApp->hinstApp, IDS_QSW_STEP1, title[1], _countof(title[1]));
+	LoadString(JClientApp::jpApp->hinstApp, IDS_QSW_NICK, subtitle[1], _countof(subtitle[1]));
+	LoadString(JClientApp::jpApp->hinstApp, IDS_QSW_STEP2, title[2], _countof(title[2]));
+	LoadString(JClientApp::jpApp->hinstApp, IDS_QSW_PASS, subtitle[2], _countof(subtitle[2]));
+	LoadString(JClientApp::jpApp->hinstApp, IDS_QSW_STEP3, title[3], _countof(title[3]));
+	LoadString(JClientApp::jpApp->hinstApp, IDS_QSW_HOST, subtitle[3], _countof(subtitle[3]));
+
+	PROPSHEETPAGE psp[] = {
+		{
+			sizeof(PROPSHEETPAGE), // dwSize
+			PSP_USEHEADERTITLE | PSP_USEHEADERSUBTITLE | PSP_USEICONID, // dwFlags
+			JClientApp::jpApp->hinstApp, // hInstance
+			MAKEINTRESOURCE(IDD_HELPER0), // pszTemplate
+			(HICON)MAKEINTRESOURCE(0), // pszIcon
+			0, // pszTitle
+			(DLGPROC)JClient::DlgProcHelper0, // pfnDlgProc
+			(LPARAM)this, // lParam
+			0, // pfnCallback
+			0, // pcRefParent
+			title[0], // pszHeaderTitle
+			subtitle[0], // pszHeaderSubTitle
+		},
+		{
+			sizeof(PROPSHEETPAGE), // dwSize
+			PSP_USEHEADERTITLE | PSP_USEHEADERSUBTITLE | PSP_USEICONID, // dwFlags
+			JClientApp::jpApp->hinstApp, // hInstance
+			MAKEINTRESOURCE(IDD_HELPER1), // pszTemplate
+			(HICON)MAKEINTRESOURCE(0), // pszIcon
+			0, // pszTitle
+			(DLGPROC)JClient::DlgProcHelper1, // pfnDlgProc
+			(LPARAM)this, // lParam
+			0, // pfnCallback
+			0, // pcRefParent
+			title[1], // pszHeaderTitle
+			subtitle[1], // pszHeaderSubTitle
+		},
+		{
+			sizeof(PROPSHEETPAGE), // dwSize
+			PSP_USEHEADERTITLE | PSP_USEHEADERSUBTITLE | PSP_USEICONID, // dwFlags
+			JClientApp::jpApp->hinstApp, // hInstance
+			MAKEINTRESOURCE(IDD_HELPER2), // pszTemplate
+			(HICON)MAKEINTRESOURCE(0), // pszIcon
+			0, // pszTitle
+			(DLGPROC)JClient::DlgProcHelper2, // pfnDlgProc
+			(LPARAM)this, // lParam
+			0, // pfnCallback
+			0, // pcRefParent
+			title[2], // pszHeaderTitle
+			subtitle[2], // pszHeaderSubTitle
+		},
+		{
+			sizeof(PROPSHEETPAGE), // dwSize
+			PSP_USEHEADERTITLE | PSP_USEHEADERSUBTITLE | PSP_USEICONID, // dwFlags
+			JClientApp::jpApp->hinstApp, // hInstance
+			MAKEINTRESOURCE(IDD_HELPER3), // pszTemplate
+			(HICON)MAKEINTRESOURCE(0), // pszIcon
+			0, // pszTitle
+			(DLGPROC)JClient::DlgProcHelper3, // pfnDlgProc
+			(LPARAM)this, // lParam
+			0, // pfnCallback
+			0, // pcRefParent
+			title[3], // pszHeaderTitle
+			subtitle[3], // pszHeaderSubTitle
+		},
+	};
+
+	PROPSHEETHEADER psh = {
+		sizeof(PROPSHEETHEADER), // dwSize
+		PSH_PROPSHEETPAGE | PSH_PROPTITLE | PSH_USEICONID | PSH_WIZARD97, // dwFlags
+		0, // hwndParent
+		JClientApp::jpApp->hinstApp, // hInstance
+		(HICON)MAKEINTRESOURCE(IDI_SMALL), // pszIcon
+		MAKEINTRESOURCE(IDS_QSW), // pszCaption
+		_countof(psp), // nPages
+		0, // nStartPage
+		(LPCPROPSHEETPAGE)&psp, // ppsp
+		0, // pfnCallback
+	};
+
+	PropertySheet(&psh);
+}
+
+INT_PTR WINAPI JClient::DlgProcHelper0(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	JPtr<JClient> obj = (JClient*)(LONG_PTR)(message != WM_INITDIALOG
+		? GetWindowLongPtr(hWnd, GWLP_USERDATA)
+		: ((PROPSHEETPAGE*)lParam)->lParam);
+	if (obj) {
+		switch (message)
+		{
+		case WM_INITDIALOG:
+			SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG)((PROPSHEETPAGE*)lParam)->lParam);
+			obj->JAddRef();
+			break;
+		case WM_DESTROY:
+			obj->JRelease();
+			SetWindowLongPtr(hWnd, GWLP_USERDATA, 0);
+			break;
+		}
+	} else return FALSE;
+
+	LRESULT retval = TRUE;
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		{
+			TOOLINFO ti;
+			ti.cbSize = sizeof(ti);
+			ti.uFlags = TTF_ABSOLUTE | TTF_IDISHWND | TTF_TRACK;
+			ti.hwnd = hWnd;
+			ti.uId = (UINT_PTR)hWnd;
+			ti.hinst = JClientApp::jpApp->hinstApp;
+			ti.lpszText = 0;
+			VERIFY(SendMessage(m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
+
+			break;
+		}
+
+	case WM_DESTROY:
+		{
+			HideBaloon(hWnd);
+			TOOLINFO ti;
+			ti.cbSize = sizeof(ti);
+			ti.hwnd = hWnd;
+			ti.uId = (UINT_PTR)hWnd;
+			SendMessage(m_hwndBaloon, TTM_DELTOOL, 0, (LPARAM)&ti);
+
+			break;
+		}
+
+	case WM_COMMAND:
+		{
+			break;
+		}
+
+	case WM_NOTIFY:
+		{
+			NMHDR* pnmh = (NMHDR*)lParam;
+			switch (pnmh->code)
+			{
+			case PSN_SETACTIVE:
+				PropSheet_SetWizButtons(GetParent(hWnd), PSWIZB_NEXT);
+				retval = 0;
+				break;
+			case PSN_WIZBACK:
+			case PSN_WIZNEXT:
+				retval = 0;
+				break;
+			case PSN_WIZFINISH:
+				retval = FALSE;
+				break;
+			default: retval = FALSE;
+			}
+			break;
+		}
+
+	case WM_TIMER:
+		{
+			switch (wParam)
+			{
+			case IDT_BALOONPOP:
+				{
+					HideBaloon();
+					break;
+				}
+			}
+			break;
+		}
+
+	default: retval = FALSE;
+	}
+	SetWindowLong(hWnd, DWL_MSGRESULT, (LONG)retval);
+	return retval;
+}
+
+INT_PTR WINAPI JClient::DlgProcHelper1(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	JPtr<JClient> obj = (JClient*)(LONG_PTR)(message != WM_INITDIALOG
+		? GetWindowLongPtr(hWnd, GWLP_USERDATA)
+		: ((PROPSHEETPAGE*)lParam)->lParam);
+	if (obj) {
+		switch (message)
+		{
+		case WM_INITDIALOG:
+			SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG)((PROPSHEETPAGE*)lParam)->lParam);
+			obj->JAddRef();
+			break;
+		case WM_DESTROY:
+			obj->JRelease();
+			SetWindowLongPtr(hWnd, GWLP_USERDATA, 0);
+			break;
+		}
+	} else return FALSE;
+
+	LRESULT retval = TRUE;
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		{
+			TOOLINFO ti;
+			ti.cbSize = sizeof(ti);
+			ti.uFlags = TTF_ABSOLUTE | TTF_IDISHWND | TTF_TRACK;
+			ti.hwnd = hWnd;
+			ti.uId = (UINT_PTR)hWnd;
+			ti.hinst = JClientApp::jpApp->hinstApp;
+			ti.lpszText = 0;
+			VERIFY(SendMessage(m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
+
+			SetDlgItemText(hWnd, IDC_NICK, profile::getString(RF_CLIENT, RK_NICK, NAME_NONAME).c_str());
+			break;
+		}
+
+	case WM_DESTROY:
+		{
+			HideBaloon(hWnd);
+			TOOLINFO ti;
+			ti.cbSize = sizeof(ti);
+			ti.hwnd = hWnd;
+			ti.uId = (UINT_PTR)hWnd;
+			SendMessage(m_hwndBaloon, TTM_DELTOOL, 0, (LPARAM)&ti);
+
+			break;
+		}
+
+	case WM_COMMAND:
+		{
+			break;
+		}
+
+	case WM_NOTIFY:
+		{
+			NMHDR* pnmh = (NMHDR*)lParam;
+			switch (pnmh->code)
+			{
+			case PSN_SETACTIVE:
+				PropSheet_SetWizButtons(GetParent(hWnd), PSWIZB_BACK | PSWIZB_NEXT);
+				retval = 0;
+				break;
+			case PSN_WIZBACK:
+			case PSN_WIZNEXT:
+				{
+					std::tstring nickbuf(obj->m_metrics.uNameMaxLength, 0), nick;
+					const TCHAR* msg;
+					GetDlgItemText(hWnd, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
+					nick = nickbuf.c_str();
+					if (JClient::CheckNick(nick, msg)) { // check content
+						// on OK
+						profile::setString(RF_CLIENT, RK_NICK, nick);
+						retval = 0;
+					} else {
+						// on failure
+						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_NICK), msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
+						retval = -1;
+					}
+					break;
+				}
+			case PSN_WIZFINISH:
+				retval = FALSE;
+				break;
+			default: retval = FALSE;
+			}
+			break;
+		}
+
+	case WM_TIMER:
+		{
+			switch (wParam)
+			{
+			case IDT_BALOONPOP:
+				{
+					HideBaloon();
+					break;
+				}
+			}
+			break;
+		}
+
+	default: retval = FALSE;
+	}
+	SetWindowLong(hWnd, DWL_MSGRESULT, (LONG)retval);
+	return retval;
+}
+
+INT_PTR WINAPI JClient::DlgProcHelper2(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	JPtr<JClient> obj = (JClient*)(LONG_PTR)(message != WM_INITDIALOG
+		? GetWindowLongPtr(hWnd, GWLP_USERDATA)
+		: ((PROPSHEETPAGE*)lParam)->lParam);
+	if (obj) {
+		switch (message)
+		{
+		case WM_INITDIALOG:
+			SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG)((PROPSHEETPAGE*)lParam)->lParam);
+			obj->JAddRef();
+			break;
+		case WM_DESTROY:
+			obj->JRelease();
+			SetWindowLongPtr(hWnd, GWLP_USERDATA, 0);
+			break;
+		}
+	} else return FALSE;
+
+	LRESULT retval = TRUE;
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		{
+			TOOLINFO ti;
+			ti.cbSize = sizeof(ti);
+			ti.uFlags = TTF_ABSOLUTE | TTF_IDISHWND | TTF_TRACK;
+			ti.hwnd = hWnd;
+			ti.uId = (UINT_PTR)hWnd;
+			ti.hinst = JClientApp::jpApp->hinstApp;
+			ti.lpszText = 0;
+			VERIFY(SendMessage(m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
+
+			std::tstring pass = profile::getString(RF_CLIENT, RK_PASSWORDNET, TEXT("beowolf"));
+			SetDlgItemText(hWnd, IDC_PASS1, pass.c_str());
+			SetDlgItemText(hWnd, IDC_PASS2, pass.c_str());
+			break;
+		}
+
+	case WM_DESTROY:
+		{
+			HideBaloon(hWnd);
+			TOOLINFO ti;
+			ti.cbSize = sizeof(ti);
+			ti.hwnd = hWnd;
+			ti.uId = (UINT_PTR)hWnd;
+			SendMessage(m_hwndBaloon, TTM_DELTOOL, 0, (LPARAM)&ti);
+
+			break;
+		}
+
+	case WM_COMMAND:
+		{
+			switch (LOWORD(wParam))
+			{
+			case IDC_PASS1:
+			case IDC_PASS2:
+				switch (HIWORD(wParam))
+				{
+				case EN_KILLFOCUS:
+					{
+						std::tstring pass1buf(obj->m_metrics.uPassMaxLength, 0), pass2buf(obj->m_metrics.uPassMaxLength, 0);
+						GetDlgItemText(hWnd, IDC_PASS1, (TCHAR*)pass1buf.data(), (int)pass1buf.size());
+						GetDlgItemText(hWnd, IDC_PASS2, (TCHAR*)pass2buf.data(), (int)pass2buf.size());
+						std::tstring pass1 = pass1buf.data(), pass2 = pass2buf.data();
+						if (pass1.empty()) {
+							obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+						} else if (pass2.empty()) {
+							obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PASS2), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+						} else if (pass1.length() <= 6) {
+							obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+						} else if (pass2.length() <= 6) {
+							obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PASS2), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+						} else if (pass1 != pass2) {
+							obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+						} else if (pass1.empty()) {
+							obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+						} else {
+							obj->HideBaloon();
+						}
+						break;
+					}
+
+				case EN_CHANGE:
+					{
+						obj->HideBaloon();
+						break;
+					}
+				}
+				break;
+
+			case IDC_SHOWPASS:
+				{
+					HWND hctrl;
+					bool check = IsDlgButtonChecked(hWnd, IDC_SHOWPASS) != BST_UNCHECKED;
+					hctrl = GetDlgItem(hWnd, IDC_PASS1);
+					SendMessage(hctrl, EM_SETPASSWORDCHAR, check ? 0 : '*', 0);
+					InvalidateRect(hctrl, 0, FALSE);
+					hctrl = GetDlgItem(hWnd, IDC_PASS2);
+					SendMessage(hctrl, EM_SETPASSWORDCHAR, check ? 0 : '*', 0);
+					InvalidateRect(hctrl, 0, FALSE);
+					break;
+				}
+
+			default: retval = FALSE;
+			}
+			break;
+		}
+
+	case WM_NOTIFY:
+		{
+			NMHDR* pnmh = (NMHDR*)lParam;
+			switch (pnmh->code)
+			{
+			case PSN_SETACTIVE:
+				PropSheet_SetWizButtons(GetParent(hWnd), PSWIZB_BACK | PSWIZB_NEXT);
+				retval = 0;
+				break;
+			case PSN_WIZBACK:
+			case PSN_WIZNEXT:
+				{
+					std::tstring pass1buf(obj->m_metrics.uPassMaxLength, 0), pass2buf(obj->m_metrics.uPassMaxLength, 0);
+					GetDlgItemText(hWnd, IDC_PASS1, (TCHAR*)pass1buf.data(), (int)pass1buf.size());
+					GetDlgItemText(hWnd, IDC_PASS2, (TCHAR*)pass2buf.data(), (int)pass2buf.size());
+					std::tstring pass1 = pass1buf.data(), pass2 = pass2buf.data();
+					if (pass1 != pass2) {
+						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+						retval = -1;
+					} else if (pass1.empty()) {
+						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+						retval = -1;
+					} else {
+						// on OK
+						profile::setString(RF_CLIENT, RK_PASSWORDNET, pass1);
+						retval = 0;
+					}
+					break;
+				}
+			case PSN_WIZFINISH:
+				retval = FALSE;
+				break;
+			default: retval = FALSE;
+			}
+			break;
+		}
+
+	case WM_TIMER:
+		{
+			switch (wParam)
+			{
+			case IDT_BALOONPOP:
+				{
+					HideBaloon();
+					break;
+				}
+			}
+			break;
+		}
+
+	default: retval = FALSE;
+	}
+	SetWindowLong(hWnd, DWL_MSGRESULT, (LONG)retval);
+	return retval;
+}
+
+INT_PTR WINAPI JClient::DlgProcHelper3(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	JPtr<JClient> obj = (JClient*)(LONG_PTR)(message != WM_INITDIALOG
+		? GetWindowLongPtr(hWnd, GWLP_USERDATA)
+		: ((PROPSHEETPAGE*)lParam)->lParam);
+	if (obj) {
+		switch (message)
+		{
+		case WM_INITDIALOG:
+			SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG)((PROPSHEETPAGE*)lParam)->lParam);
+			obj->JAddRef();
+			break;
+		case WM_DESTROY:
+			obj->JRelease();
+			SetWindowLongPtr(hWnd, GWLP_USERDATA, 0);
+			break;
+		}
+	} else return FALSE;
+
+	LRESULT retval = TRUE;
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		{
+			TOOLINFO ti;
+			ti.cbSize = sizeof(ti);
+			ti.uFlags = TTF_ABSOLUTE | TTF_IDISHWND | TTF_TRACK;
+			ti.hwnd = hWnd;
+			ti.uId = (UINT_PTR)hWnd;
+			ti.hinst = JClientApp::jpApp->hinstApp;
+			ti.lpszText = 0;
+			VERIFY(SendMessage(m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
+
+			SetDlgItemText(hWnd, IDC_HOST, profile::getString(RF_CLIENT, RK_HOST, TEXT("127.0.0.1")).c_str());
+			SendDlgItemMessage(hWnd, IDC_HOST, CB_LIMITTEXT, 128, 0);
+			SetDlgItemInt(hWnd, IDC_PORT, profile::getInt(RF_CLIENT, RK_PORT, CCP_PORT), FALSE);
+			SendDlgItemMessage(hWnd, IDC_PORT, EM_LIMITTEXT, 5, 0);
+			break;
+		}
+
+	case WM_DESTROY:
+		{
+			HideBaloon(hWnd);
+			TOOLINFO ti;
+			ti.cbSize = sizeof(ti);
+			ti.hwnd = hWnd;
+			ti.uId = (UINT_PTR)hWnd;
+			SendMessage(m_hwndBaloon, TTM_DELTOOL, 0, (LPARAM)&ti);
+
+			break;
+		}
+
+	case WM_COMMAND:
+		{
+			break;
+		}
+
+	case WM_NOTIFY:
+		{
+			NMHDR* pnmh = (NMHDR*)lParam;
+			switch (pnmh->code)
+			{
+			case PSN_SETACTIVE:
+				PropSheet_SetWizButtons(GetParent(hWnd), PSWIZB_BACK | PSWIZB_FINISH);
+				retval = 0;
+				break;
+			case PSN_WIZBACK:
+			case PSN_WIZNEXT:
+				{
+					char host[128];
+					GetDlgItemTextA(hWnd, IDC_HOST, host, _countof(host));
+					hostent* h = gethostbyname(host);
+					BOOL bTranslated;
+					UINT port = GetDlgItemInt(hWnd, IDC_PORT, &bTranslated, FALSE);
+					if (!h) {
+						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_HOST), MAKEINTRESOURCE(IDS_MSG_BADHOST), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
+						retval = -1;
+					} else if (!bTranslated) {
+						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PORT), MAKEINTRESOURCE(IDS_MSG_BADPORT), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
+						retval = -1;
+					} else if (port < 1000 || port > 0xFFFF) {
+						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PORT), MAKEINTRESOURCE(IDS_MSG_PORTRANGE), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
+						retval = -1;
+					} else {
+						// on OK
+						profile::setString(RF_CLIENT, RK_HOST, ANSIToTstr(host));
+						profile::setInt(RF_CLIENT, RK_PORT, port);
+						retval = FALSE;
+					}
+					break;
+				}
+			case PSN_WIZFINISH:
+				{
+					char host[128];
+					GetDlgItemTextA(hWnd, IDC_HOST, host, _countof(host));
+					hostent* h = gethostbyname(host);
+					BOOL bTranslated;
+					UINT port = GetDlgItemInt(hWnd, IDC_PORT, &bTranslated, FALSE);
+					if (!h) {
+						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_HOST), MAKEINTRESOURCE(IDS_MSG_BADHOST), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
+						retval = -1;
+					} else if (!bTranslated) {
+						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PORT), MAKEINTRESOURCE(IDS_MSG_BADPORT), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
+						retval = -1;
+					} else if (port < 1000 || port > 0xFFFF) {
+						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PORT), MAKEINTRESOURCE(IDS_MSG_PORTRANGE), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
+						retval = -1;
+					} else {
+						// on OK
+						profile::setString(RF_CLIENT, RK_HOST, ANSIToTstr(host));
+						profile::setInt(RF_CLIENT, RK_PORT, port);
+						profile::setInt(RF_CLIENT, RK_STATE, TRUE);
+						retval = FALSE;
+					}
+					break;
+				}
+			default: retval = FALSE;
+			}
+			break;
+		}
+
+	case WM_TIMER:
+		{
+			switch (wParam)
+			{
+			case IDT_BALOONPOP:
+				{
+					HideBaloon();
+					break;
+				}
+			}
+			break;
+		}
+
+	default: retval = FALSE;
+	}
+	SetWindowLong(hWnd, DWL_MSGRESULT, (LONG)retval);
+	return retval;
+}
+
+//-----------------------------------------------------------------------------
+
 //
 // JClient::JPassword dialog
 //
@@ -35,33 +630,6 @@ JClient::JPassword::JPassword(JClient* p)
 	ASSERT(p);
 
 	SetupHooks();
-}
-
-int JClient::JPassword::checkPassword(int level)
-{
-	std::tstring oldbuf(pSource->m_metrics.uPassMaxLength, 0), pass1buf(pSource->m_metrics.uPassMaxLength, 0), m_pass2(pSource->m_metrics.uPassMaxLength, 0);
-	GetDlgItemText(m_hwndPage, IDC_OLDPASS, (TCHAR*)oldbuf.data(), (int)oldbuf.size());
-	GetDlgItemText(m_hwndPage, IDC_NEWPASS1, (TCHAR*)pass1buf.data(), (int)pass1buf.size());
-	GetDlgItemText(m_hwndPage, IDC_NEWPASS2, (TCHAR*)m_pass2.data(), (int)m_pass2.size());
-	std::tstring old = oldbuf.data(), pass1 = pass1buf.data(), pass2 = m_pass2.data();
-	if (pSource->m_passwordNet != old) {
-		if (level & 1) pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_OLDPASS), MAKEINTRESOURCE(IDS_MSG_OLDPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
-		return 1;
-	} else if (pass1 != pass2) {
-		if (level & 1) pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
-		return 1;
-	} else if (pass1.empty()) {
-		if (level & 2) pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
-		m_password = pass1;
-		return 2;
-	} else if (pass1.length() <= 6) {
-		if (level & 2) pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
-		m_password = pass1;
-		return 2;
-	} else {
-		m_password = pass1;
-		return 0;
-	}
 }
 
 LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -83,8 +651,6 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 				retval = FALSE;
 				break;
 			}
-
-			m_password = pSource->m_passwordNet;
 
 			m_hwndList = GetDlgItem(hWnd, IDC_ENCRYPTLIST);
 
@@ -144,9 +710,18 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 			{
 			case IDOK:
 				{
-					if (checkPassword(1) == 0) {
+					std::tstring oldbuf(pSource->m_metrics.uPassMaxLength, 0), pass1buf(pSource->m_metrics.uPassMaxLength, 0), pass2buf(pSource->m_metrics.uPassMaxLength, 0);
+					GetDlgItemText(m_hwndPage, IDC_OLDPASS, (TCHAR*)oldbuf.data(), (int)oldbuf.size());
+					GetDlgItemText(m_hwndPage, IDC_NEWPASS1, (TCHAR*)pass1buf.data(), (int)pass1buf.size());
+					GetDlgItemText(m_hwndPage, IDC_NEWPASS2, (TCHAR*)pass2buf.data(), (int)pass2buf.size());
+					std::tstring old = oldbuf.data(), pass1 = pass1buf.data(), pass2 = pass2buf.data();
+					if (pSource->m_passwordNet != old) {
+						pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_OLDPASS), MAKEINTRESOURCE(IDS_MSG_OLDPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+					} else if (pass1 != pass2) {
+						pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+					} else {
 						char ciphbuf[32];
-						pSource->m_passwordNet = m_password;
+						pSource->m_passwordNet = pass1;
 						GetDlgItemTextA(m_hwndPage, IDC_ENCRYPTSEL, ciphbuf, _countof(ciphbuf));
 						pSource->m_encryptorname = ciphbuf;
 						pSource->HideBaloon();
@@ -167,7 +742,26 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 				{
 				case EN_KILLFOCUS:
 					{
-						checkPassword(3);
+						std::tstring oldbuf(pSource->m_metrics.uPassMaxLength, 0), pass1buf(pSource->m_metrics.uPassMaxLength, 0), pass2buf(pSource->m_metrics.uPassMaxLength, 0);
+						GetDlgItemText(m_hwndPage, IDC_OLDPASS, (TCHAR*)oldbuf.data(), (int)oldbuf.size());
+						GetDlgItemText(m_hwndPage, IDC_NEWPASS1, (TCHAR*)pass1buf.data(), (int)pass1buf.size());
+						GetDlgItemText(m_hwndPage, IDC_NEWPASS2, (TCHAR*)pass2buf.data(), (int)pass2buf.size());
+						std::tstring old = oldbuf.data(), pass1 = pass1buf.data(), pass2 = pass2buf.data();
+						if (pass1.empty()) {
+							pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+						} else if (pass2.empty()) {
+							pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS2), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+						} else if (pass1.length() <= 6) {
+							pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+						} else if (pass2.length() <= 6) {
+							pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS2), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+						} else if (pSource->m_passwordNet != old) {
+							pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_OLDPASS), MAKEINTRESOURCE(IDS_MSG_OLDPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+						} else if (pass1 != pass2) {
+							pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+						} else {
+							pSource->HideBaloon();
+						}
 						break;
 					}
 

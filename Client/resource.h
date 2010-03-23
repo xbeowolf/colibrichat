@@ -9,15 +9,25 @@
 #define IDA_MAIN                        100
 #define IDI_MAIN                        100
 #define IDI_CLIENT                      100
+#define IDS_HELPER                      100
+#define IDS_QSW                         100
 #define IDB_TAB                         101
 #define IDI_SMALL                       101
 #define IDD_SERVER                      101
 #define IDM_RICHEDIT                    101
+#define IDS_QSW_QSW                     101
 #define IDB_SEND                        102
 #define IDD_LIST                        102
+#define IDS_QSW_INTRO                   102
 #define IDD_USER                        103
+#define IDS_QSW_STEP1                   103
 #define IDD_CHANNEL                     104
 #define IDC_JOIN                        104
+#define IDS_QSW_NICK                    104
+#define IDS_QSW_STEP2                   105
+#define IDS_QSW_PASS                    106
+#define IDS_QSW_STEP3                   107
+#define IDS_QSW_HOST                    108
 #define IDD_TOPIC                       110
 #define IDD_SPLASHRTFEDITOR             111
 #define IDB_MAN                         133
@@ -42,6 +52,10 @@
 #define IDM_USER1                       169
 #define IDM_USERGOD                     169
 #define IDD_CLIENTPASS                  169
+#define IDD_HELPER0                     171
+#define IDD_HELPER1                     172
+#define IDD_HELPER2                     173
+#define IDD_HELPER3                     174
 #define idsRtfCmd                       200
 #define idsBold                         201
 #define idsItalic                       202
@@ -82,6 +96,10 @@
 #define IDS_MSG_NEWPASS                 532
 #define IDS_MSG_EASYPASS                533
 #define IDS_MSG_EMPTYPASS               534
+#define IDS_MSG_HOSTVRF                 535
+#define IDS_MSG_BADHOST                 536
+#define IDS_MSG_BADPORT                 537
+#define IDS_MSG_PORTRANGE               538
 #define IDC_LOG                         1001
 #define IDC_USERLIST                    1002
 #define IDC_RICHEDIT                    1003
@@ -108,7 +126,6 @@
 #define IDC_AUTOCLOSE                   1052
 #define IDC_AUTOCLOSESPIN               1053
 #define IDC_RICHEDIT21                  1054
-#define IDC_CHECK1                      1056
 #define IDC_SHOWPASS                    1056
 #define IDC_DATETIMEPICKER1             1058
 #define IDC_RECVTIME                    1058
@@ -120,10 +137,11 @@
 #define IDC_NEWPASS1                    1062
 #define IDC_NEWPASS2                    1063
 #define IDC_ENCRYPTLIST                 1065
-#define IDC_                            1066
 #define IDC_ENCRYPTSEL                  1066
-#define IDC_BUTTON1                     1067
 #define IDC_COMBO1                      1068
+#define IDC_EDIT1                       1069
+#define IDC_PASS1                       1069
+#define IDC_PASS2                       1070
 #define IDC_NICK                        40002
 #define IDC_CONNECT                     40004
 #define IDC_SENDBYENTER                 40017
@@ -187,8 +205,6 @@
 #define ID_ENTRYSTATUS_MODERATOR        40093
 #define ID_ENTRYSTATUS_MEMBER           40094
 #define ID_ENTRYSTATUS_WRITER           40095
-#define ID_ENTRYSTATUS_WRITER40096      40096
-#define ID_ENTRYSTATUS_WRITER40097      40097
 #define ID_ENTRYSTATUS_READER           40098
 #define ID_ENTRYSTATUS_PRIVATECHANNEL   40099
 #define IDC_CHANFOUNDER                 40100
@@ -211,9 +227,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        170
+#define _APS_NEXT_RESOURCE_VALUE        173
 #define _APS_NEXT_COMMAND_VALUE         40115
-#define _APS_NEXT_CONTROL_VALUE         1069
+#define _APS_NEXT_CONTROL_VALUE         1071
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif
