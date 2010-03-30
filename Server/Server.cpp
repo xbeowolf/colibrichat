@@ -53,7 +53,7 @@ CALLBACK JServer::JServer()
 	m_metrics.uChatLineMaxVolume = 80*1024;
 	m_metrics.flags.bTransmitClipboard = true;
 
-	m_encryptorname = ecrypt::hc256::ECRYPT_NAME;
+	m_encryptorname = ECRYPT_DEFAULT;
 }
 
 void CALLBACK JServer::Init()
@@ -122,7 +122,7 @@ void CALLBACK JServer::LoadState()
 	m_bShowIcon = profile::getInt(RF_SERVER, RK_SHOWICON, TRUE) != 0;
 
 	m_nCompression = profile::getInt(RF_SERVER, RK_COMPRESSION, -1);
-	m_encryptorname = tstrToANSI(profile::getString(RF_SERVER, RK_ENCRYPTALG, ANSIToTstr(ecrypt::hc256::ECRYPT_NAME)));
+	m_encryptorname = tstrToANSI(profile::getString(RF_SERVER, RK_ENCRYPTALG, ANSIToTstr(ECRYPT_DEFAULT)));
 
 	m_metrics.uNameMaxLength = (size_t)profile::getInt(RF_METRICS, RK_NameMaxLength, 20);
 	m_metrics.uPassMaxLength = (size_t)profile::getInt(RF_METRICS, RK_PassMaxLength, 32);

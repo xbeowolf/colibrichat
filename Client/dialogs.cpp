@@ -638,8 +638,14 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 
 	static TCHAR* lvs[][4] = {
 		{TEXT("COPY"), TEXT("0"), TEXT("0"), TEXT("no encryption")},
-		{TEXT("HC-256"), TEXT("256"), TEXT("256"), TEXT("eSTREAM Portfolio - software")},
-		{TEXT("Rabbit"), TEXT("128"), TEXT("64"), TEXT("eSTREAM Portfolio - software")},
+		{TEXT("HC-256"), TEXT("256"), TEXT("256"), TEXT("eSTREAM Portfolio - Profile 1 (SW)")},
+		{TEXT("Rabbit"), TEXT("128"), TEXT("64"), TEXT("eSTREAM Portfolio - Profile 1 (SW)")},
+		{TEXT("Salsa20"), TEXT("256"), TEXT("64"), TEXT("eSTREAM Portfolio - Profile 1 (SW)")},
+		{TEXT("LEX-v2"), TEXT("128"), TEXT("128"), TEXT("eSTREAM Phase 3 - Profile 1 (SW)")},
+		{TEXT("Grain-v1"), TEXT("80"), TEXT("64"), TEXT("eSTREAM Portfolio - Profile 2 (HW)")},
+		{TEXT("Grain-128"), TEXT("128"), TEXT("96"), TEXT("eSTREAM Phase 3 - Profile 2 (HW)")},
+		{TEXT("TRIVIUM"), TEXT("80"), TEXT("80"), TEXT("eSTREAM Portfolio - Profile 2 (HW)")},
+		{TEXT("Edon80"), TEXT("80"), TEXT("64"), TEXT("eSTREAM Phase 3 - Profile 2 (HW)")},
 	};
 
 	switch (message)
@@ -669,7 +675,7 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
 				50, TEXT("Nonce, bits"), -1, 0},
 				{LVCF_FMT | LVCF_SUBITEM | LVCF_TEXT | LVCF_WIDTH, LVCFMT_LEFT,
-				160, TEXT("Comments"), -1, 0},
+				180, TEXT("Comments"), -1, 0},
 			};
 			for (int i = 0; i < _countof(lvc); ++i)
 				ListView_InsertColumn(m_hwndList, i, &lvc[i]);

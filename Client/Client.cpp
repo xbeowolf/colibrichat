@@ -144,7 +144,7 @@ jpOnline(0)
 	m_metrics.uChatLineMaxVolume = 80*1024;
 	m_metrics.flags.bTransmitClipboard = true;
 
-	m_encryptorname = ecrypt::hc256::ECRYPT_NAME;
+	m_encryptorname = ECRYPT_DEFAULT;
 }
 
 void CALLBACK JClient::Init()
@@ -219,7 +219,7 @@ void CALLBACK JClient::LoadState()
 	user.strStatus = profile::getString(RF_CLIENT, RK_STATUSMSG, TEXT("ready to talk"));
 
 	m_nCompression = profile::getInt(RF_CLIENT, RK_COMPRESSION, -1);
-	m_encryptorname = tstrToANSI(profile::getString(RF_CLIENT, RK_ENCRYPTALG, ANSIToTstr(ecrypt::hc256::ECRYPT_NAME)));
+	m_encryptorname = tstrToANSI(profile::getString(RF_CLIENT, RK_ENCRYPTALG, ANSIToTstr(ECRYPT_DEFAULT)));
 
 	m_hostname = tstrToANSI(profile::getString(RF_CLIENT, RK_HOST, TEXT("127.0.0.1")));
 	m_port = (u_short)profile::getInt(RF_CLIENT, RK_PORT, CCP_PORT);
