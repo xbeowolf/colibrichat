@@ -593,12 +593,12 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 			SetWindowText(m_hwndNick, pSource->m_mUser[pSource->m_idOwn].name.c_str());
 			// Init status combobox
 			COMBOBOXEXITEM cbei[] = {
-				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, 0, TEXT("Ready"), -1, 0, 0, 0, 0, 0},
-				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, 1, TEXT("D'N'D"), -1, 1, 1, 0, 0, 0},
-				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, 2, TEXT("Busy"), -1, 2, 2, 0, 0, 0},
-				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, 3, TEXT("N/A"), -1, 3, 3, 0, 0, 0},
-				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, 4, TEXT("Away"), -1, 4, 4, 0, 0, 0},
-				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, 5, TEXT("Glass"), -1, 5, 5, 0, 0, 0},
+				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, eReady, (LPWSTR)s_mapUserStatName[eReady].c_str(), -1, 0, 0, 0, 0, 0},
+				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, eDND, (LPWSTR)s_mapUserStatName[eDND].c_str(), -1, 1, 1, 0, 0, 0},
+				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, eBusy, (LPWSTR)s_mapUserStatName[eBusy].c_str(), -1, 2, 2, 0, 0, 0},
+				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, eNA, (LPWSTR)s_mapUserStatName[eNA].c_str(), -1, 3, 3, 0, 0, 0},
+				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, eAway, (LPWSTR)s_mapUserStatName[eAway].c_str(), -1, 4, 4, 0, 0, 0},
+				{CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_TEXT, eInvisible, (LPWSTR)s_mapUserStatName[eInvisible].c_str(), -1, 5, 5, 0, 0, 0},
 			};
 			for (int i = 0; i < _countof(cbei); i++)
 				SendMessage(m_hwndStatus, CBEM_INSERTITEM, 0, (LPARAM)&cbei[i]);
@@ -2774,13 +2774,14 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 							DisplayMessage(
 								iu->first,
 								tformat(
-								TEXT("%s%s%s\n")
+								TEXT("%s\t%s%s%s\n")
 								TEXT("Status text:\t\"%s\"\n")
 								TEXT("IP-address:\t%i.%i.%i.%i\n")
 								TEXT("Connected:\t%02i:%02i:%02i, %02i.%02i.%04i"),
 								iu->second.isOnline ? TEXT("User online") : TEXT("User offline"),
-								iu->second.cheat.isGod ? TEXT(", god mode") : TEXT(""),
-								iu->second.cheat.isDevil ? TEXT(", devil mode") : TEXT(""),
+								iu->second.cheat.isGod ? TEXT("god mode, ") : TEXT(""),
+								iu->second.cheat.isDevil ? TEXT("devil mode, ") : TEXT(""),
+								s_mapUserStatName[iu->second.nStatus].c_str(),
 								iu->second.strStatus.c_str(),
 								iu->second.IP.S_un.S_un_b.s_b1,
 								iu->second.IP.S_un.S_un_b.s_b2,

@@ -1039,12 +1039,14 @@ void JServer::Recv_Cmd_SAY(SOCKET sock, io::mem& is)
 	} else {
 		MapChannel::const_iterator ic = m_mChannel.find(idWhere);
 		if (ic != m_mChannel.end()) { // channel
+			MapUser::const_iterator iu2 = m_mUser.find(idSrc);
+			bool isAnonymous = ic->second.isAnonymous || (iu2 != m_mUser.end() && iu2->second.nStatus == eInvisible);
 #ifdef CHEATS
 			if (ic->second.getStatus(idSrc) > eReader || isCheats(idSrc))
-				BroadcastTrn(ic->second.opened, false, Make_Notify_SAY(!ic->second.isAnonymous || isGod(idSrc) ? idSrc : CRC_ANONYMOUS, idWhere, type, content));
+				BroadcastTrn(ic->second.opened, false, Make_Notify_SAY(!isAnonymous || isGod(idSrc) ? idSrc : CRC_ANONYMOUS, idWhere, type, content));
 #else
 			if (ic->second.getStatus(idSrc) > eReader)
-				BroadcastTrn(ic->second.opened, false, Make_Notify_SAY(!ic->second.isAnonymous ? idSrc : CRC_ANONYMOUS, idWhere, type, content));
+				BroadcastTrn(ic->second.opened, false, Make_Notify_SAY(!isAnonymous ? idSrc : CRC_ANONYMOUS, idWhere, type, content));
 #endif
 		}
 	}

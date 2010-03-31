@@ -37,6 +37,7 @@ static TCHAR szHelpFile[MAX_PATH];
 //
 
 std::map<EChanStatus, std::tstring> JClient::s_mapChanStatName;
+std::map<EUserStatus, std::tstring> JClient::s_mapUserStatName;
 std::map<UINT, std::tstring> JClient::s_mapWsaErr;
 HWND JClient::m_isBaloon = 0;
 HWND JClient::m_hwndBaloon = 0;
@@ -51,6 +52,13 @@ void JClient::initclass()
 	JClient::s_mapChanStatName[eModerator] = TEXT("moderator");
 	JClient::s_mapChanStatName[eAdmin] = TEXT("administrator");
 	JClient::s_mapChanStatName[eFounder] = TEXT("founder");
+
+	JClient::s_mapUserStatName[eReady] = TEXT("Ready");
+	JClient::s_mapUserStatName[eDND] = TEXT("DND");
+	JClient::s_mapUserStatName[eBusy] = TEXT("Busy");
+	JClient::s_mapUserStatName[eNA] = TEXT("N/A");
+	JClient::s_mapUserStatName[eAway] = TEXT("Away");
+	JClient::s_mapUserStatName[eInvisible] = TEXT("Glass");
 
 	//   WSA error codes
 	// on FD_CONNECT

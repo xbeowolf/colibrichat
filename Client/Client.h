@@ -838,6 +838,7 @@ namespace colibrichat
 	public:
 
 		static std::map<EChanStatus, std::tstring> s_mapChanStatName;
+		static std::map<EUserStatus, std::tstring> s_mapUserStatName;
 		static std::map<UINT, std::tstring> s_mapWsaErr;
 
 		// --- Events ---
