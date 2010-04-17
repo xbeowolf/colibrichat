@@ -208,10 +208,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\Common\JService.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\..\Common\Profile.cpp"
 					>
 				</File>

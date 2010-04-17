@@ -211,7 +211,7 @@ namespace colibrichat
 
 			static bool CALLBACK Write(HWND hwnd, const TCHAR* str);
 
-			GETJATTACH(JClient);
+			GETJNODE(JClient);
 			JPage();
 
 			virtual int ImageIndex() const = 0;
@@ -516,7 +516,7 @@ namespace colibrichat
 		{
 		public:
 
-			GETJATTACH(JClient);
+			GETJNODE(JClient);
 			JPassword(JClient* p);
 
 		protected:
@@ -532,7 +532,7 @@ namespace colibrichat
 		{
 		public:
 
-			GETJATTACH(JClient);
+			GETJNODE(JClient);
 			JTopic(JClient* p, DWORD id, const std::tstring& n, const std::tstring& t);
 
 		protected:
@@ -561,7 +561,7 @@ namespace colibrichat
 			static void initclass();
 			static void doneclass();
 
-			GETJATTACH(JClient);
+			GETJNODE(JClient);
 			JSplashRtfEditor(JClient* p, DWORD who);
 
 		protected:
@@ -586,7 +586,7 @@ namespace colibrichat
 		{
 		public:
 
-			GETJATTACH(JClient);
+			GETJNODE(JClient);
 			JSplash(JClient* p);
 
 		protected:
@@ -643,7 +643,7 @@ namespace colibrichat
 			static void initclass();
 			static void doneclass();
 
-			GETJATTACH(JClient);
+			GETJNODE(JClient);
 			JMessageEditor(JClient* p, const std::tstring& who, bool alert = false);
 
 		protected:
@@ -670,7 +670,7 @@ namespace colibrichat
 		{
 		public:
 
-			GETJATTACH(JClient);
+			GETJNODE(JClient);
 			JMessage(JClient* p);
 
 		protected:

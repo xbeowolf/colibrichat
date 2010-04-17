@@ -87,7 +87,7 @@ namespace colibrichat
 		{
 		public:
 
-			GETJATTACH(JServer);
+			GETJNODE(JServer);
 			JConnections();
 
 		protected:
@@ -116,7 +116,7 @@ namespace colibrichat
 		{
 		public:
 
-			GETJATTACH(JServer);
+			GETJNODE(JServer);
 			JPasswords();
 
 		protected:

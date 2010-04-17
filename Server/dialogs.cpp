@@ -23,7 +23,6 @@
 //-----------------------------------------------------------------------------
 
 using namespace colibrichat;
-using namespace attachment;
 
 //-----------------------------------------------------------------------------
 
@@ -48,7 +47,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			// Get initial windows sizes
 			MapControl(m_hwndList, rcList);
 
-			if (!pSource)
+			if (!pNode)
 			{
 				retval = FALSE;
 				break;
@@ -142,11 +141,11 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				{
 					int index = -1;
 					for (MapUser::iterator iu = getSelUser(index); index >= 0; iu = getSelUser(index)) {
-						if (iu == pSource->m_mUser.end()) continue;
+						if (iu == pNode->m_mUser.end()) continue;
 						iu->second.cheat.isGod = !iu->second.cheat.isGod;
 						SetId set = iu->second.opened;
 						set.insert(iu->first);
-						pSource->BroadcastTrn(set, true, pSource->Make_Notify_STATUS_God(iu->first, iu->second.cheat.isGod));
+						pNode->BroadcastTrn(set, true, pNode->Make_Notify_STATUS_God(iu->first, iu->second.cheat.isGod));
 					}
 					break;
 				}
@@ -155,11 +154,11 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				{
 					int index = -1;
 					for (MapUser::iterator iu = getSelUser(index); index >= 0; iu = getSelUser(index)) {
-						if (iu == pSource->m_mUser.end()) continue;
+						if (iu == pNode->m_mUser.end()) continue;
 						iu->second.cheat.isDevil = !iu->second.cheat.isDevil;
 						SetId set = iu->second.opened;
 						set.insert(iu->first);
-						pSource->BroadcastTrn(set, true, pSource->Make_Notify_STATUS_Devil(iu->first, iu->second.cheat.isDevil));
+						pNode->BroadcastTrn(set, true, pNode->Make_Notify_STATUS_Devil(iu->first, iu->second.cheat.isDevil));
 					}
 					break;
 				}
@@ -172,7 +171,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 						lvi.iItem = index;
 						lvi.iSubItem = 0;
 						if (ListView_GetItem(m_hwndList, &lvi)) {
-							pSource->EvLinkClose((SOCKET)lvi.lParam, 0);
+							pNode->EvLinkClose((SOCKET)lvi.lParam, 0);
 						}
 					}
 					break;
@@ -195,18 +194,18 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 					if (pnmh->idFrom == IDC_LIST)
 					{
-						MapLink::const_iterator iter = pSource->mLinks.find((SOCKET)pnmv->item.lParam);
-						if (iter == pSource->mLinks.end()) break;
-						MapSocketId::const_iterator iid = pSource->mSocketId.find(iter->second.Sock);
-						if (iid == pSource->mSocketId.end()) break;
-						MapUser::const_iterator iu = pSource->mUser.find(iid->second);
-						ASSERT(iu != pSource->m_mUser.end());
+						MapLink::const_iterator iter = pNode->mLinks.find((SOCKET)pnmv->item.lParam);
+						if (iter == pNode->mLinks.end()) break;
+						MapSocketId::const_iterator iid = pNode->mSocketId.find(iter->second.Sock);
+						if (iid == pNode->mSocketId.end()) break;
+						MapUser::const_iterator iu = pNode->mUser.find(iid->second);
+						ASSERT(iu != pNode->m_mUser.end());
 						if (pnmv->item.mask & LVIF_TEXT)
 						{
 							switch (pnmv->item.iSubItem)
 							{
 							case 0:
-								if (iu != pSource->mUser.end()) {
+								if (iu != pNode->mUser.end()) {
 									_stprintf_s(buffer, _countof(buffer),
 										iu->second.name.c_str());
 								} else {
@@ -216,7 +215,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 								break;
 
 							case 1:
-								if (iu != pSource->mUser.end()) {
+								if (iu != pNode->mUser.end()) {
 									_stprintf_s(buffer, _countof(buffer),
 										TEXT("0x%08X"), iid->second);
 								} else {
@@ -226,7 +225,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 								break;
 
 							case 2:
-								if (iu != pSource->mUser.end()) {
+								if (iu != pNode->mUser.end()) {
 									_stprintf_s(buffer, _countof(buffer), TEXT("%u"),
 										iu->second.opened.size());
 								} else {
@@ -236,11 +235,11 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 								break;
 
 							case 3:
-								pnmv->item.pszText = (iu != pSource->mUser.end() && iu->second.cheat.isGod) ? TEXT("+") : TEXT("-");
+								pnmv->item.pszText = (iu != pNode->mUser.end() && iu->second.cheat.isGod) ? TEXT("+") : TEXT("-");
 								break;
 
 							case 4:
-								pnmv->item.pszText = (iu != pSource->mUser.end() && iu->second.cheat.isDevil) ? TEXT("+") : TEXT("-");
+								pnmv->item.pszText = (iu != pNode->mUser.end() && iu->second.cheat.isDevil) ? TEXT("+") : TEXT("-");
 								break;
 
 							case 5:
@@ -301,8 +300,8 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 							std::tstring nick = pdi->item.pszText;
 							const TCHAR* msg;
 							if (JServer::CheckNick(nick, msg)) {
-								DWORD idOld = pSource->m_mSocketId[(SOCKET)pdi->item.lParam];
-								pSource->RenameContact(
+								DWORD idOld = pNode->m_mSocketId[(SOCKET)pdi->item.lParam];
+								pNode->RenameContact(
 									idOld == CRC_NONAME ? (DWORD)pdi->item.lParam : CRC_SERVER,
 									idOld,
 									nick);
@@ -348,7 +347,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			if ((HMENU)wParam == GetSubMenu(JServerApp::jpApp->hmenuConnections, 0)) {
 				int index = -1;
 				MapUser::const_iterator iu = getSelUser(index);
-				bool valid = iu != pSource->m_mUser.end();
+				bool valid = iu != pNode->m_mUser.end();
 
 				VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_RENAME, FALSE));
 				EnableMenuItem((HMENU)wParam, IDC_RENAME,
@@ -408,7 +407,7 @@ void JServer::JConnections::DelLine(SOCKET sock)
 
 void JServer::JConnections::BuildView()
 {
-	for each (MapLink::value_type const& v in pSource->mLinks) {
+	for each (MapLink::value_type const& v in pNode->mLinks) {
 		if (v.second.isEstablished()) AddLine(v.first);
 	}
 }
@@ -422,13 +421,13 @@ MapUser::iterator JServer::JConnections::getSelUser(int& index)
 		lvi.iItem = index;
 		lvi.iSubItem = 0;
 		if (ListView_GetItem(m_hwndList, &lvi)) {
-			MapSocketId::const_iterator iid = pSource->mSocketId.find((SOCKET)lvi.lParam);
-			if (iid != pSource->mSocketId.end()) {
-				return pSource->m_mUser.find(iid->second);
+			MapSocketId::const_iterator iid = pNode->mSocketId.find((SOCKET)lvi.lParam);
+			if (iid != pNode->mSocketId.end()) {
+				return pNode->m_mUser.find(iid->second);
 			}
 		}
 	}
-	return pSource->m_mUser.end();
+	return pNode->m_mUser.end();
 }
 
 void JServer::JConnections::OnHook(JNode* src)
@@ -437,29 +436,33 @@ void JServer::JConnections::OnHook(JNode* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkEstablished += MakeDelegate(this, &JServer::JConnections::OnLinkEstablished);
-	pSource->EvLinkClose += MakeDelegate(this, &JServer::JConnections::OnLinkClose);
+	JNODE(JServer, node, src);
+	if (node) {
+		node->EvLinkEstablished += MakeDelegate(this, &JServer::JConnections::OnLinkEstablished);
+		node->EvLinkClose += MakeDelegate(this, &JServer::JConnections::OnLinkClose);
+	}
 }
 
 void JServer::JConnections::OnUnhook(JNode* src)
 {
 	using namespace fastdelegate;
 
-	pSource->EvLinkEstablished -= MakeDelegate(this, &JServer::JConnections::OnLinkEstablished);
-	pSource->EvLinkClose -= MakeDelegate(this, &JServer::JConnections::OnLinkClose);
+	JNODE(JServer, node, src);
+	if (node) {
+		node->EvLinkEstablished -= MakeDelegate(this, &JServer::JConnections::OnLinkEstablished);
+		node->EvLinkClose -= MakeDelegate(this, &JServer::JConnections::OnLinkClose);
+	}
 
 	__super::OnUnhook(src);
 }
 
 void JServer::JConnections::OnLinkEstablished(SOCKET sock)
 {
-	ASSERT(pSource);
 	if (m_hwndPage) AddLine(sock);
 }
 
 void JServer::JConnections::OnLinkClose(SOCKET sock, UINT err)
 {
-	ASSERT(pSource);
 	if (m_hwndPage) DelLine(sock);
 }
 
@@ -479,7 +482,7 @@ LRESULT WINAPI JServer::JPasswords::DlgProc(HWND hWnd, UINT message, WPARAM wPar
 	{
 	case WM_INITDIALOG:
 		{
-			if (!pSource)
+			if (!pNode)
 			{
 				retval = FALSE;
 				break;
@@ -489,14 +492,14 @@ LRESULT WINAPI JServer::JPasswords::DlgProc(HWND hWnd, UINT message, WPARAM wPar
 			SNDMSG(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)JServerApp::jpApp->hiMain16);
 			SNDMSG(hWnd, WM_SETICON, ICON_BIG, (LPARAM)JServerApp::jpApp->hiMain32);
 
-			SetDlgItemText(m_hwndPage, IDC_PASSWORDNET1, pSource->m_passwordNet.c_str());
-			SetDlgItemText(m_hwndPage, IDC_PASSWORDNET2, pSource->m_passwordNet.c_str());
-			SetDlgItemText(m_hwndPage, IDC_PASSWORDGOD1, pSource->m_passwordGod.c_str());
-			SetDlgItemText(m_hwndPage, IDC_PASSWORDGOD2, pSource->m_passwordGod.c_str());
-			SetDlgItemText(m_hwndPage, IDC_PASSWORDDEVIL1, pSource->m_passwordDevil.c_str());
-			SetDlgItemText(m_hwndPage, IDC_PASSWORDDEVIL2, pSource->m_passwordDevil.c_str());
+			SetDlgItemText(m_hwndPage, IDC_PASSWORDNET1, pNode->m_passwordNet.c_str());
+			SetDlgItemText(m_hwndPage, IDC_PASSWORDNET2, pNode->m_passwordNet.c_str());
+			SetDlgItemText(m_hwndPage, IDC_PASSWORDGOD1, pNode->m_passwordGod.c_str());
+			SetDlgItemText(m_hwndPage, IDC_PASSWORDGOD2, pNode->m_passwordGod.c_str());
+			SetDlgItemText(m_hwndPage, IDC_PASSWORDDEVIL1, pNode->m_passwordDevil.c_str());
+			SetDlgItemText(m_hwndPage, IDC_PASSWORDDEVIL2, pNode->m_passwordDevil.c_str());
 
-			OnMetrics(pSource->m_metrics);
+			OnMetrics(pNode->m_metrics);
 
 			retval = TRUE;
 			break;
@@ -521,18 +524,18 @@ LRESULT WINAPI JServer::JPasswords::DlgProc(HWND hWnd, UINT message, WPARAM wPar
 			{
 			case IDOK:
 				{
-					std::tstring buffer1(pSource->m_metrics.uPassMaxLength, 0);
-					std::tstring buffer2(pSource->m_metrics.uPassMaxLength, 0);
+					std::tstring buffer1(pNode->m_metrics.uPassMaxLength, 0);
+					std::tstring buffer2(pNode->m_metrics.uPassMaxLength, 0);
 					GetDlgItemText(m_hwndPage, IDC_PASSWORDNET1, (TCHAR*)buffer1.data(), (int)buffer1.size() + 1);
 					GetDlgItemText(m_hwndPage, IDC_PASSWORDNET2, (TCHAR*)buffer2.data(), (int)buffer2.size() + 1);
 					if (buffer1 == buffer2) {
-						std::tstring buffer1(pSource->m_metrics.uPassMaxLength, 0);
-						std::tstring buffer2(pSource->m_metrics.uPassMaxLength, 0);
+						std::tstring buffer1(pNode->m_metrics.uPassMaxLength, 0);
+						std::tstring buffer2(pNode->m_metrics.uPassMaxLength, 0);
 						GetDlgItemText(m_hwndPage, IDC_PASSWORDGOD1, (TCHAR*)buffer1.data(), (int)buffer1.size() + 1);
 						GetDlgItemText(m_hwndPage, IDC_PASSWORDGOD2, (TCHAR*)buffer2.data(), (int)buffer2.size() + 1);
 						if (buffer1 == buffer2) {
-							std::tstring buffer1(pSource->m_metrics.uPassMaxLength, 0);
-							std::tstring buffer2(pSource->m_metrics.uPassMaxLength, 0);
+							std::tstring buffer1(pNode->m_metrics.uPassMaxLength, 0);
+							std::tstring buffer2(pNode->m_metrics.uPassMaxLength, 0);
 							GetDlgItemText(m_hwndPage, IDC_PASSWORDDEVIL1, (TCHAR*)buffer1.data(), (int)buffer1.size() + 1);
 							GetDlgItemText(m_hwndPage, IDC_PASSWORDDEVIL2, (TCHAR*)buffer2.data(), (int)buffer2.size() + 1);
 							if (buffer1 == buffer2) {
@@ -541,19 +544,19 @@ LRESULT WINAPI JServer::JPasswords::DlgProc(HWND hWnd, UINT message, WPARAM wPar
 								SetFocus(GetDlgItem(m_hwndPage, IDC_PASSWORDDEVIL1));
 								break;
 							}
-							pSource->m_passwordDevil = buffer1.c_str();
+							pNode->m_passwordDevil = buffer1.c_str();
 						} else {
 							MessageBox(m_hwndPage, JServerApp::jpApp->LoadStringW(IDS_PASS_GOD).c_str(), JServerApp::jpApp->sAppName.c_str(), MB_OK | MB_ICONEXCLAMATION);
 							SetFocus(GetDlgItem(m_hwndPage, IDC_PASSWORDGOD1));
 							break;
 						}
-						pSource->m_passwordGod = buffer1.c_str();
+						pNode->m_passwordGod = buffer1.c_str();
 					} else {
 						MessageBox(m_hwndPage, JServerApp::jpApp->LoadStringW(IDS_PASS_NET).c_str(), JServerApp::jpApp->sAppName.c_str(), MB_OK | MB_ICONEXCLAMATION);
 						SetFocus(GetDlgItem(m_hwndPage, IDC_PASSWORDNET1));
 						break;
 					}
-					pSource->m_passwordNet = buffer1.c_str();
+					pNode->m_passwordNet = buffer1.c_str();
 
 					DestroyWindow(hWnd);
 					break;
@@ -581,7 +584,6 @@ LRESULT WINAPI JServer::JPasswords::DlgProc(HWND hWnd, UINT message, WPARAM wPar
 
 void JServer::JPasswords::OnMetrics(const Metrics& metrics)
 {
-	ASSERT(pSource);
 	if (!m_hwndPage) return; // ignore if window closed
 
 	SendDlgItemMessage(m_hwndPage, IDC_PASSWORDNET1, EM_LIMITTEXT, metrics.uPassMaxLength, 0);

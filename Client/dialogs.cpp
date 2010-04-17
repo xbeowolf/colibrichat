@@ -24,7 +24,6 @@
 //-----------------------------------------------------------------------------
 
 using namespace colibrichat;
-using namespace attachment;
 
 //-----------------------------------------------------------------------------
 
@@ -654,7 +653,7 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 	{
 	case WM_INITDIALOG:
 		{
-			if (!pSource)
+			if (!pNode)
 			{
 				retval = FALSE;
 				break;
@@ -662,9 +661,9 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 
 			m_hwndList = GetDlgItem(hWnd, IDC_ENCRYPTLIST);
 
-			SetDlgItemText(m_hwndPage, IDC_OLDPASS, pSource->m_passwordNet.data());
-			SetDlgItemText(m_hwndPage, IDC_NEWPASS1, pSource->m_passwordNet.data());
-			SetDlgItemText(m_hwndPage, IDC_NEWPASS2, pSource->m_passwordNet.data());
+			SetDlgItemText(m_hwndPage, IDC_OLDPASS, pNode->m_passwordNet.data());
+			SetDlgItemText(m_hwndPage, IDC_NEWPASS1, pNode->m_passwordNet.data());
+			SetDlgItemText(m_hwndPage, IDC_NEWPASS2, pNode->m_passwordNet.data());
 
 			// Inits Channels list
 			ListView_SetExtendedListViewStyle(m_hwndList,
@@ -692,10 +691,10 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 				ListView_SetItemText(m_hwndList, i, 1, lvs[i][1]);
 				ListView_SetItemText(m_hwndList, i, 2, lvs[i][2]);
 				ListView_SetItemText(m_hwndList, i, 3, lvs[i][3]);
-				if (ANSIToTstr(pSource->getEncryptorName()) == lvs[i][0])
+				if (ANSIToTstr(pNode->getEncryptorName()) == lvs[i][0])
 					ListView_SetItemState(m_hwndList, i, LVIS_SELECTED, LVIS_SELECTED);
 			}
-			SetDlgItemTextA(m_hwndPage, IDC_ENCRYPTSEL, pSource->getEncryptorName());
+			SetDlgItemTextA(m_hwndPage, IDC_ENCRYPTSEL, pNode->getEncryptorName());
 
 			retval = TRUE;
 			break;
@@ -717,28 +716,28 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 			{
 			case IDOK:
 				{
-					std::tstring oldbuf(pSource->m_metrics.uPassMaxLength, 0), pass1buf(pSource->m_metrics.uPassMaxLength, 0), pass2buf(pSource->m_metrics.uPassMaxLength, 0);
+					std::tstring oldbuf(pNode->m_metrics.uPassMaxLength, 0), pass1buf(pNode->m_metrics.uPassMaxLength, 0), pass2buf(pNode->m_metrics.uPassMaxLength, 0);
 					GetDlgItemText(m_hwndPage, IDC_OLDPASS, (TCHAR*)oldbuf.data(), (int)oldbuf.size());
 					GetDlgItemText(m_hwndPage, IDC_NEWPASS1, (TCHAR*)pass1buf.data(), (int)pass1buf.size());
 					GetDlgItemText(m_hwndPage, IDC_NEWPASS2, (TCHAR*)pass2buf.data(), (int)pass2buf.size());
 					std::tstring old = oldbuf.data(), pass1 = pass1buf.data(), pass2 = pass2buf.data();
-					if (pSource->m_passwordNet != old) {
-						pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_OLDPASS), MAKEINTRESOURCE(IDS_MSG_OLDPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+					if (pNode->m_passwordNet != old) {
+						pNode->DisplayMessage(GetDlgItem(m_hwndPage, IDC_OLDPASS), MAKEINTRESOURCE(IDS_MSG_OLDPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
 					} else if (pass1 != pass2) {
-						pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+						pNode->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
 					} else {
 						char ciphbuf[32];
-						pSource->m_passwordNet = pass1;
+						pNode->m_passwordNet = pass1;
 						GetDlgItemTextA(m_hwndPage, IDC_ENCRYPTSEL, ciphbuf, _countof(ciphbuf));
-						pSource->m_encryptorname = ciphbuf;
-						pSource->HideBaloon();
+						pNode->m_encryptorname = ciphbuf;
+						pNode->HideBaloon();
 						DestroyWindow(hWnd);
 					}
 					break;
 				}
 
 			case IDCANCEL:
-				pSource->HideBaloon();
+				pNode->HideBaloon();
 				DestroyWindow(hWnd);
 				break;
 
@@ -749,32 +748,32 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 				{
 				case EN_KILLFOCUS:
 					{
-						std::tstring oldbuf(pSource->m_metrics.uPassMaxLength, 0), pass1buf(pSource->m_metrics.uPassMaxLength, 0), pass2buf(pSource->m_metrics.uPassMaxLength, 0);
+						std::tstring oldbuf(pNode->m_metrics.uPassMaxLength, 0), pass1buf(pNode->m_metrics.uPassMaxLength, 0), pass2buf(pNode->m_metrics.uPassMaxLength, 0);
 						GetDlgItemText(m_hwndPage, IDC_OLDPASS, (TCHAR*)oldbuf.data(), (int)oldbuf.size());
 						GetDlgItemText(m_hwndPage, IDC_NEWPASS1, (TCHAR*)pass1buf.data(), (int)pass1buf.size());
 						GetDlgItemText(m_hwndPage, IDC_NEWPASS2, (TCHAR*)pass2buf.data(), (int)pass2buf.size());
 						std::tstring old = oldbuf.data(), pass1 = pass1buf.data(), pass2 = pass2buf.data();
 						if (pass1.empty()) {
-							pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+							pNode->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
 						} else if (pass2.empty()) {
-							pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS2), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+							pNode->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS2), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
 						} else if (pass1.length() <= 6) {
-							pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+							pNode->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
 						} else if (pass2.length() <= 6) {
-							pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS2), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
-						} else if (pSource->m_passwordNet != old) {
-							pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_OLDPASS), MAKEINTRESOURCE(IDS_MSG_OLDPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+							pNode->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS2), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+						} else if (pNode->m_passwordNet != old) {
+							pNode->DisplayMessage(GetDlgItem(m_hwndPage, IDC_OLDPASS), MAKEINTRESOURCE(IDS_MSG_OLDPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
 						} else if (pass1 != pass2) {
-							pSource->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+							pNode->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
 						} else {
-							pSource->HideBaloon();
+							pNode->HideBaloon();
 						}
 						break;
 					}
 
 				case EN_CHANGE:
 					{
-						pSource->HideBaloon();
+						pNode->HideBaloon();
 						break;
 					}
 				}
@@ -850,7 +849,7 @@ LRESULT WINAPI JClient::JTopic::DlgProc(HWND hWnd, UINT message, WPARAM wParam, 
 	{
 	case WM_INITDIALOG:
 		{
-			if (!pSource)
+			if (!pNode)
 			{
 				retval = FALSE;
 				break;
@@ -862,7 +861,7 @@ LRESULT WINAPI JClient::JTopic::DlgProc(HWND hWnd, UINT message, WPARAM wParam, 
 
 			SetDlgItemText(hWnd, IDC_TOPICTEXT, m_topic.c_str());
 
-			OnMetrics(pSource->m_metrics);
+			OnMetrics(pNode->m_metrics);
 
 			retval = TRUE;
 			break;
@@ -884,9 +883,9 @@ LRESULT WINAPI JClient::JTopic::DlgProc(HWND hWnd, UINT message, WPARAM wParam, 
 			{
 			case IDOK:
 				{
-					std::tstring buffer(pSource->m_metrics.uTopicMaxLength, 0);
+					std::tstring buffer(pNode->m_metrics.uTopicMaxLength, 0);
 					GetDlgItemText(hWnd, IDC_TOPICTEXT, &buffer[0], (int)buffer.size()+1);
-					pSource->PushTrn(pSource->m_clientsock, pSource->Make_Cmd_TOPIC(m_idChannel, buffer));
+					pNode->PushTrn(pNode->m_clientsock, pNode->Make_Cmd_TOPIC(m_idChannel, buffer));
 					DestroyWindow(hWnd);
 					break;
 				}
@@ -911,45 +910,46 @@ void JClient::JTopic::OnHook(JNode* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkEstablished += MakeDelegate(this, &JClient::JTopic::OnLinkEstablished);
-	pSource->EvLinkClose += MakeDelegate(this, &JClient::JTopic::OnLinkClose);
-	pSource->EvPageClose += MakeDelegate(this, &JClient::JTopic::OnPageClose);
-	pSource->EvMetrics += MakeDelegate(this, &JClient::JTopic::OnMetrics);
+	JNODE(JClient, node, src);
+	if (node) {
+		node->EvLinkEstablished += MakeDelegate(this, &JClient::JTopic::OnLinkEstablished);
+		node->EvLinkClose += MakeDelegate(this, &JClient::JTopic::OnLinkClose);
+		node->EvPageClose += MakeDelegate(this, &JClient::JTopic::OnPageClose);
+		node->EvMetrics += MakeDelegate(this, &JClient::JTopic::OnMetrics);
+	}
 }
 
 void JClient::JTopic::OnUnhook(JNode* src)
 {
 	using namespace fastdelegate;
 
-	pSource->EvLinkEstablished -= MakeDelegate(this, &JClient::JTopic::OnLinkEstablished);
-	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JTopic::OnLinkClose);
-	pSource->EvPageClose -= MakeDelegate(this, &JClient::JTopic::OnPageClose);
-	pSource->EvMetrics -= MakeDelegate(this, &JClient::JTopic::OnMetrics);
+	JNODE(JClient, node, src);
+	if (node) {
+		node->EvLinkEstablished -= MakeDelegate(this, &JClient::JTopic::OnLinkEstablished);
+		node->EvLinkClose -= MakeDelegate(this, &JClient::JTopic::OnLinkClose);
+		node->EvPageClose -= MakeDelegate(this, &JClient::JTopic::OnPageClose);
+		node->EvMetrics -= MakeDelegate(this, &JClient::JTopic::OnMetrics);
+	}
 
 	__super::OnUnhook(src);
 }
 
 void JClient::JTopic::OnLinkEstablished(SOCKET sock)
 {
-	ASSERT(pSource);
 }
 
 void JClient::JTopic::OnLinkClose(SOCKET sock, UINT err)
 {
-	ASSERT(pSource);
 }
 
 void JClient::JTopic::OnPageClose(DWORD id)
 {
-	ASSERT(pSource);
-
 	if (m_hwndPage && id == m_idChannel)
 		SendMessage(m_hwndPage, WM_COMMAND, IDCANCEL, 0);
 }
 
 void JClient::JTopic::OnMetrics(const Metrics& metrics)
 {
-	ASSERT(pSource);
 	if (!m_hwndPage) return; // ignore if window closed
 
 	SendDlgItemMessage(m_hwndPage, IDC_TOPICTEXT, EM_LIMITTEXT, metrics.uTopicMaxLength, 0);
@@ -1045,7 +1045,7 @@ LRESULT WINAPI JClient::JSplashRtfEditor::DlgProc(HWND hWnd, UINT message, WPARA
 			m_fTransparent = true;
 			wCharFormatting = SCF_SELECTION;
 
-			if (!pSource) {
+			if (!pNode) {
 				retval = FALSE;
 				break;
 			}
@@ -1084,7 +1084,7 @@ LRESULT WINAPI JClient::JSplashRtfEditor::DlgProc(HWND hWnd, UINT message, WPARA
 			SendDlgItemMessage(hWnd, IDC_AUTOCLOSESPIN, UDM_SETRANGE, 0, MAKELONG(600, 3));
 			SetDlgItemInt(hWnd, IDC_AUTOCLOSE, 30, FALSE);
 
-			EnableWindow(GetDlgItem(m_hwndPage, IDOK), pSource->m_clientsock != 0);
+			EnableWindow(GetDlgItem(m_hwndPage, IDOK), pNode->m_clientsock != 0);
 
 			retval = TRUE;
 			break;
@@ -1150,7 +1150,7 @@ LRESULT WINAPI JClient::JSplashRtfEditor::DlgProc(HWND hWnd, UINT message, WPARA
 			{
 			case IDOK:
 				{
-					if (!pSource->m_clientsock) break;
+					if (!pNode->m_clientsock) break;
 					// Get RTF content
 					std::string content;
 					getContent(content, SF_RTF);
@@ -1165,7 +1165,7 @@ LRESULT WINAPI JClient::JSplashRtfEditor::DlgProc(HWND hWnd, UINT message, WPARA
 
 					SetWindowText(m_hwndEdit, TEXT(""));
 
-					pSource->PushTrn(pSource->m_clientsock, pSource->Make_Cmd_SPLASHRTF(idWho,
+					pNode->PushTrn(pNode->m_clientsock, pNode->Make_Cmd_SPLASHRTF(idWho,
 						content.c_str(), rect,
 						true, dwCanclose, dwAutoclose, m_fTransparent, crSheet));
 					break;
@@ -1273,29 +1273,33 @@ void JClient::JSplashRtfEditor::OnHook(JNode* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkEstablished += MakeDelegate(this, &JClient::JSplashRtfEditor::OnLinkEstablished);
-	pSource->EvLinkClose += MakeDelegate(this, &JClient::JSplashRtfEditor::OnLinkClose);
+	JNODE(JClient, node, src);
+	if (node) {
+		node->EvLinkEstablished += MakeDelegate(this, &JClient::JSplashRtfEditor::OnLinkEstablished);
+		node->EvLinkClose += MakeDelegate(this, &JClient::JSplashRtfEditor::OnLinkClose);
+	}
 }
 
 void JClient::JSplashRtfEditor::OnUnhook(JNode* src)
 {
 	using namespace fastdelegate;
 
-	pSource->EvLinkEstablished -= MakeDelegate(this, &JClient::JSplashRtfEditor::OnLinkEstablished);
-	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JSplashRtfEditor::OnLinkClose);
+	JNODE(JClient, node, src);
+	if (node) {
+		node->EvLinkEstablished -= MakeDelegate(this, &JClient::JSplashRtfEditor::OnLinkEstablished);
+		node->EvLinkClose -= MakeDelegate(this, &JClient::JSplashRtfEditor::OnLinkClose);
+	}
 
 	__super::OnUnhook(src);
 }
 
 void JClient::JSplashRtfEditor::OnLinkEstablished(SOCKET sock)
 {
-	ASSERT(pSource);
 	EnableWindow(GetDlgItem(m_hwndPage, IDOK), TRUE);
 }
 
 void JClient::JSplashRtfEditor::OnLinkClose(SOCKET sock, UINT err)
 {
-	ASSERT(pSource);
 	EnableWindow(GetDlgItem(m_hwndPage, IDOK), FALSE);
 }
 
@@ -1312,7 +1316,7 @@ LRESULT WINAPI JClient::JSplash::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 		{
 			SetLayeredWindowAttributes(hWnd, GetSysColor(COLOR_BTNFACE), 0, LWA_COLORKEY);
 
-			if (!pSource)
+			if (!pNode)
 			{
 				retval = FALSE;
 				break;
@@ -1419,21 +1423,26 @@ void JClient::JSplash::OnHook(JNode* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkClose += MakeDelegate(this, &JClient::JSplash::OnLinkClose);
+	JNODE(JClient, node, src);
+	if (node) {
+		node->EvLinkClose += MakeDelegate(this, &JClient::JSplash::OnLinkClose);
+	}
 }
 
 void JClient::JSplash::OnUnhook(JNode* src)
 {
 	using namespace fastdelegate;
 
-	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JSplash::OnLinkClose);
+	JNODE(JClient, node, src);
+	if (node) {
+		node->EvLinkClose -= MakeDelegate(this, &JClient::JSplash::OnLinkClose);
+	}
 
 	__super::OnUnhook(src);
 }
 
 void JClient::JSplash::OnLinkClose(SOCKET sock, UINT err)
 {
-	ASSERT(pSource);
 	if (m_hwndPage && m_bCloseOnDisconnect) DestroyWindow(m_hwndPage);
 }
 
@@ -1592,7 +1601,7 @@ LRESULT WINAPI JClient::JMessageEditor::DlgProc(HWND hWnd, UINT message, WPARAM 
 			m_fTransparent = true;
 			wCharFormatting = SCF_SELECTION;
 
-			if (!pSource) {
+			if (!pNode) {
 				retval = FALSE;
 				break;
 			}
@@ -1627,13 +1636,13 @@ LRESULT WINAPI JClient::JMessageEditor::DlgProc(HWND hWnd, UINT message, WPARAM 
 			SendMessage(m_hwndEdit, EM_SETEVENTMASK, 0, EN_DRAGDROPDONE | ENM_SELCHANGE);
 			SendMessage(m_hwndEdit, EM_SETBKGNDCOLOR, FALSE, (LPARAM)m_crSheet);
 
-			EnableWindow(GetDlgItem(m_hwndPage, IDOK), pSource->m_clientsock != 0);
+			EnableWindow(GetDlgItem(m_hwndPage, IDOK), pNode->m_clientsock != 0);
 
 			SetDlgItemText(hWnd, IDC_NICK, strWho.c_str());
 
 			CheckDlgButton(hWnd, IDC_ALERT, fAlert ? BST_CHECKED : BST_UNCHECKED);
 
-			OnMetrics(pSource->m_metrics);
+			OnMetrics(pNode->m_metrics);
 
 			retval = TRUE;
 			break;
@@ -1703,21 +1712,21 @@ LRESULT WINAPI JClient::JMessageEditor::DlgProc(HWND hWnd, UINT message, WPARAM 
 			{
 			case IDOK:
 				{
-					if (!pSource->m_clientsock) break;
+					if (!pNode->m_clientsock) break;
 					// Get RTF content
 					std::string content;
 					getContent(content, SF_RTF);
 
-					std::tstring nickbuf(pSource->m_metrics.uNameMaxLength, 0), nick;
+					std::tstring nickbuf(pNode->m_metrics.uNameMaxLength, 0), nick;
 					const TCHAR* msg;
 					GetDlgItemText(hWnd, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
 					nick = nickbuf.c_str();
 					if (JClient::CheckNick(nick, msg)) { // check content
-						pSource->PushTrn(pSource->m_clientsock, pSource->Make_Quest_MESSAGE(tCRCJJ(nick.c_str()),
+						pNode->PushTrn(pNode->m_clientsock, pNode->Make_Quest_MESSAGE(tCRCJJ(nick.c_str()),
 							content.c_str(), fAlert, crSheet));
 						DestroyWindow(hWnd);
 					} else {
-						pSource->DisplayMessage(pSource->jpPageServer->hwndNick, msg, strWho.c_str(), 2);
+						pNode->DisplayMessage(pNode->jpPageServer->hwndNick, msg, strWho.c_str(), 2);
 					}
 					break;
 				}
@@ -1813,37 +1822,40 @@ void JClient::JMessageEditor::OnHook(JNode* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkEstablished += MakeDelegate(this, &JClient::JMessageEditor::OnLinkEstablished);
-	pSource->EvLinkClose += MakeDelegate(this, &JClient::JMessageEditor::OnLinkClose);
-	pSource->EvMetrics += MakeDelegate(this, &JClient::JMessageEditor::OnMetrics);
+	JNODE(JClient, node, src);
+	if (node) {
+		node->EvLinkEstablished += MakeDelegate(this, &JClient::JMessageEditor::OnLinkEstablished);
+		node->EvLinkClose += MakeDelegate(this, &JClient::JMessageEditor::OnLinkClose);
+		node->EvMetrics += MakeDelegate(this, &JClient::JMessageEditor::OnMetrics);
+	}
 }
 
 void JClient::JMessageEditor::OnUnhook(JNode* src)
 {
 	using namespace fastdelegate;
 
-	pSource->EvLinkEstablished -= MakeDelegate(this, &JClient::JMessageEditor::OnLinkEstablished);
-	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JMessageEditor::OnLinkClose);
-	pSource->EvMetrics -= MakeDelegate(this, &JClient::JMessageEditor::OnMetrics);
+	JNODE(JClient, node, src);
+	if (node) {
+		node->EvLinkEstablished -= MakeDelegate(this, &JClient::JMessageEditor::OnLinkEstablished);
+		node->EvLinkClose -= MakeDelegate(this, &JClient::JMessageEditor::OnLinkClose);
+		node->EvMetrics -= MakeDelegate(this, &JClient::JMessageEditor::OnMetrics);
+	}
 
 	__super::OnUnhook(src);
 }
 
 void JClient::JMessageEditor::OnLinkEstablished(SOCKET sock)
 {
-	ASSERT(pSource);
 	EnableWindow(GetDlgItem(m_hwndPage, IDOK), TRUE);
 }
 
 void JClient::JMessageEditor::OnLinkClose(SOCKET sock, UINT err)
 {
-	ASSERT(pSource);
 	EnableWindow(GetDlgItem(m_hwndPage, IDOK), FALSE);
 }
 
 void JClient::JMessageEditor::OnMetrics(const Metrics& metrics)
 {
-	ASSERT(pSource);
 	if (!m_hwndPage) return; // ignore if window closed
 
 	SendDlgItemMessage(m_hwndPage, IDC_NICK, EM_LIMITTEXT, metrics.uNameMaxLength, 0);
@@ -1869,7 +1881,7 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 			MapControl(IDC_PRIVATETALK, rcPrivate);
 			MapControl(IDCANCEL, rcCancel);
 
-			if (!pSource) {
+			if (!pNode) {
 				retval = FALSE;
 				break;
 			}
@@ -1878,7 +1890,7 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 			SNDMSG(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)JClientApp::jpApp->hiMain16);
 			SNDMSG(hWnd, WM_SETICON, ICON_BIG, (LPARAM)JClientApp::jpApp->hiMain32);
 
-			SetWindowText(hWnd, pSource->getSafeName(m_idWho).c_str());
+			SetWindowText(hWnd, pNode->getSafeName(m_idWho).c_str());
 
 			SendDlgItemMessage(hWnd, IDC_RICHEDIT, EM_SETBKGNDCOLOR, FALSE, (LPARAM)m_crSheet);
 			SetDlgItemTextA(hWnd, IDC_RICHEDIT, m_content.c_str());
@@ -1887,16 +1899,16 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 			FileTimeToLocalTime(m_ftRecv, st);
 			SendDlgItemMessage(hWnd, IDC_RECVTIME, DTM_SETSYSTEMTIME, GDT_VALID, (LPARAM)&st);
 
-			EnableWindow(GetDlgItem(m_hwndPage, IDOK), pSource->m_clientsock != 0);
-			EnableWindow(GetDlgItem(m_hwndPage, IDC_PRIVATETALK), pSource->m_clientsock != 0);
+			EnableWindow(GetDlgItem(m_hwndPage, IDOK), pNode->m_clientsock != 0);
+			EnableWindow(GetDlgItem(m_hwndPage, IDC_PRIVATETALK), pNode->m_clientsock != 0);
 
 			if (m_fAlert) {
 				SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-				if (pSource->m_mUser[pSource->m_idOwn].accessibility.fPlayAlert)
-					pSource->PlaySound(JClientApp::jpApp->strWavAlert.c_str());
-				if (pSource->m_mUser[pSource->m_idOwn].accessibility.fFlashPageSayPrivate
+				if (pNode->m_mUser[pNode->m_idOwn].accessibility.fPlayAlert)
+					pNode->PlaySound(JClientApp::jpApp->strWavAlert.c_str());
+				if (pNode->m_mUser[pNode->m_idOwn].accessibility.fFlashPageSayPrivate
 					&& profile::getInt(RF_CLIENT, RK_FLASHPAGESAYPRIVATE, TRUE)
-					&& !pSource->m_mUser[pSource->m_idOwn].isOnline)
+					&& !pNode->m_mUser[pNode->m_idOwn].isOnline)
 					FlashWindow(m_hwndPage, TRUE);
 			}
 
@@ -1964,25 +1976,25 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 			{
 			case IDC_REPLY:
 				{
-					MapUser::const_iterator iu = pSource->m_mUser.find(m_idWho);
-					if (iu == pSource->m_mUser.end()) break;
+					MapUser::const_iterator iu = pNode->m_mUser.find(m_idWho);
+					if (iu == pNode->m_mUser.end()) break;
 					if (iu->second.accessibility.fCanMessage) {
-						ASSERT(pSource->m_clientsock);
-						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_MSGSEND), pSource->hwndPage, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JMessageEditor(pSource, iu->second.name, false));
+						ASSERT(pNode->m_clientsock);
+						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_MSGSEND), pNode->hwndPage, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JMessageEditor(pNode, iu->second.name, false));
 						DestroyWindow(hWnd);
-					} else pSource->DisplayMessage(m_hwndPage, MAKEINTRESOURCE(IDS_MSG_PRIVATEMESSAGE), pSource->getSafeName(m_idWho).c_str(), 1);
+					} else pNode->DisplayMessage(m_hwndPage, MAKEINTRESOURCE(IDS_MSG_PRIVATEMESSAGE), pNode->getSafeName(m_idWho).c_str(), 1);
 					break;
 				}
 
 			case IDC_PRIVATETALK:
 				{
-					MapUser::const_iterator iu = pSource->m_mUser.find(m_idWho);
-					if (iu == pSource->m_mUser.end()) break;
+					MapUser::const_iterator iu = pNode->m_mUser.find(m_idWho);
+					if (iu == pNode->m_mUser.end()) break;
 					if (iu->second.accessibility.fCanOpenPrivate) {
-						ASSERT(pSource->m_clientsock);
-						pSource->PushTrn(pSource->m_clientsock, pSource->Make_Quest_JOIN(iu->second.name));
+						ASSERT(pNode->m_clientsock);
+						pNode->PushTrn(pNode->m_clientsock, pNode->Make_Quest_JOIN(iu->second.name));
 						DestroyWindow(hWnd);
-					} else pSource->DisplayMessage(m_hwndPage, MAKEINTRESOURCE(IDS_MSG_PRIVATETALK), pSource->getSafeName(m_idWho).c_str(), 1);
+					} else pNode->DisplayMessage(m_hwndPage, MAKEINTRESOURCE(IDS_MSG_PRIVATETALK), pNode->getSafeName(m_idWho).c_str(), 1);
 					break;
 				}
 
@@ -2021,30 +2033,34 @@ void JClient::JMessage::OnHook(JNode* src)
 
 	__super::OnHook(src);
 
-	pSource->EvLinkEstablished += MakeDelegate(this, &JClient::JMessage::OnLinkEstablished);
-	pSource->EvLinkClose += MakeDelegate(this, &JClient::JMessage::OnLinkClose);
+	JNODE(JClient, node, src);
+	if (node) {
+		node->EvLinkEstablished += MakeDelegate(this, &JClient::JMessage::OnLinkEstablished);
+		node->EvLinkClose += MakeDelegate(this, &JClient::JMessage::OnLinkClose);
+	}
 }
 
 void JClient::JMessage::OnUnhook(JNode* src)
 {
 	using namespace fastdelegate;
 
-	pSource->EvLinkEstablished -= MakeDelegate(this, &JClient::JMessage::OnLinkEstablished);
-	pSource->EvLinkClose -= MakeDelegate(this, &JClient::JMessage::OnLinkClose);
+	JNODE(JClient, node, src);
+	if (node) {
+		node->EvLinkEstablished -= MakeDelegate(this, &JClient::JMessage::OnLinkEstablished);
+		node->EvLinkClose -= MakeDelegate(this, &JClient::JMessage::OnLinkClose);
+	}
 
 	__super::OnUnhook(src);
 }
 
 void JClient::JMessage::OnLinkEstablished(SOCKET sock)
 {
-	ASSERT(pSource);
 	EnableWindow(GetDlgItem(m_hwndPage, IDC_REPLY), TRUE);
 	EnableWindow(GetDlgItem(m_hwndPage, IDC_PRIVATETALK), TRUE);
 }
 
 void JClient::JMessage::OnLinkClose(SOCKET sock, UINT err)
 {
-	ASSERT(pSource);
 	if (m_hwndPage && m_bCloseOnDisconnect) DestroyWindow(m_hwndPage);
 	else {
 		EnableWindow(GetDlgItem(m_hwndPage, IDC_REPLY), FALSE);
