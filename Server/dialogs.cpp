@@ -23,23 +23,7 @@
 //-----------------------------------------------------------------------------
 
 using namespace colibrichat;
-
-//-----------------------------------------------------------------------------
-
-// Time funstions
-static void FileTimeToLocalTime(const FILETIME &ft, SYSTEMTIME &st)
-{
-	FILETIME temp;
-	FileTimeToLocalFileTime(&ft, &temp);
-	FileTimeToSystemTime(&temp, &st);
-}
-
-static void CALLBACK GetSystemFileTime(FILETIME& ft)
-{
-	SYSTEMTIME st;
-	GetSystemTime(&st);
-	SystemTimeToFileTime(&st, &ft);
-}
+using namespace attachment;
 
 //-----------------------------------------------------------------------------
 
@@ -47,8 +31,8 @@ static void CALLBACK GetSystemFileTime(FILETIME& ft)
 // JConnections dialog
 //
 
-CALLBACK JServer::JConnections::JConnections()
-: JAttachedDialog<JServer>()
+JServer::JConnections::JConnections()
+: JDialog()
 {
 }
 
@@ -394,7 +378,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 	return retval;
 }
 
-int CALLBACK JServer::JConnections::AddLine(SOCKET sock)
+int JServer::JConnections::AddLine(SOCKET sock)
 {
 	LVITEM lvi;
 	int index = INT_MAX;
@@ -414,7 +398,7 @@ int CALLBACK JServer::JConnections::AddLine(SOCKET sock)
 	return index;
 }
 
-void CALLBACK JServer::JConnections::DelLine(SOCKET sock)
+void JServer::JConnections::DelLine(SOCKET sock)
 {
 	LVFINDINFO lvfi;
 	lvfi.flags = LVFI_PARAM;
@@ -422,7 +406,7 @@ void CALLBACK JServer::JConnections::DelLine(SOCKET sock)
 	ListView_DeleteItem(m_hwndList, ListView_FindItem(m_hwndList, -1, &lvfi));
 }
 
-void CALLBACK JServer::JConnections::BuildView()
+void JServer::JConnections::BuildView()
 {
 	for each (MapLink::value_type const& v in pSource->mLinks) {
 		if (v.second.isEstablished()) AddLine(v.first);
@@ -447,7 +431,7 @@ MapUser::iterator JServer::JConnections::getSelUser(int& index)
 	return pSource->m_mUser.end();
 }
 
-void JServer::JConnections::OnHook(JEventable* src)
+void JServer::JConnections::OnHook(JNode* src)
 {
 	using namespace fastdelegate;
 
@@ -457,7 +441,7 @@ void JServer::JConnections::OnHook(JEventable* src)
 	pSource->EvLinkClose += MakeDelegate(this, &JServer::JConnections::OnLinkClose);
 }
 
-void JServer::JConnections::OnUnhook(JEventable* src)
+void JServer::JConnections::OnUnhook(JNode* src)
 {
 	using namespace fastdelegate;
 
@@ -483,8 +467,8 @@ void JServer::JConnections::OnLinkClose(SOCKET sock, UINT err)
 // JPasswords
 //
 
-CALLBACK JServer::JPasswords::JPasswords()
-: JAttachedDialog<JServer>()
+JServer::JPasswords::JPasswords()
+: JDialog()
 {
 }
 

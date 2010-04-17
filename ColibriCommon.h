@@ -149,7 +149,7 @@ namespace io
 //-----------------------------------------------------------------------------
 
 // Time funstions
-void FileTimeToLocalTime(const FILETIME &ft, SYSTEMTIME &st);
+void CALLBACK FileTimeToLocalTime(const FILETIME &ft, SYSTEMTIME &st);
 void CALLBACK GetSystemFileTime(FILETIME& ft);
 
 //-----------------------------------------------------------------------------

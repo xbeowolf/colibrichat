@@ -21,11 +21,14 @@
 
 #pragma endregion
 
+//-----------------------------------------------------------------------------
+
 using namespace colibrichat;
+using namespace attachment;
 
 //-----------------------------------------------------------------------------
 
-void CALLBACK JClient::DoHelper()
+void JClient::DoHelper()
 {
 	TCHAR title[4][80], subtitle[4][256];
 	LoadString(JClientApp::jpApp->hinstApp, IDS_QSW_QSW, title[0], _countof(title[0]));
@@ -625,10 +628,9 @@ INT_PTR WINAPI JClient::DlgProcHelper3(HWND hWnd, UINT message, WPARAM wParam, L
 //
 
 JClient::JPassword::JPassword(JClient* p)
-: JAttachedDialog<JClient>(p)
+: JNode(p, false), JDialog()
 {
 	ASSERT(p);
-
 	SetupHooks();
 }
 
@@ -701,7 +703,6 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 
 	case WM_DESTROY:
 		{
-			ResetHooks();
 			break;
 		}
 
@@ -831,15 +832,14 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 //
 
 JClient::JTopic::JTopic(JClient* p, DWORD id, const std::tstring& n, const std::tstring& t)
-: JAttachedDialog<JClient>(p)
+: JNode(p, false), JDialog()
 {
 	ASSERT(p);
+	SetupHooks();
 
 	m_idChannel = id;
 	m_name = n;
 	m_topic = t;
-
-	SetupHooks();
 }
 
 LRESULT WINAPI JClient::JTopic::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -870,7 +870,6 @@ LRESULT WINAPI JClient::JTopic::DlgProc(HWND hWnd, UINT message, WPARAM wParam, 
 
 	case WM_DESTROY:
 		{
-			ResetHooks();
 			break;
 		}
 
@@ -906,7 +905,7 @@ LRESULT WINAPI JClient::JTopic::DlgProc(HWND hWnd, UINT message, WPARAM wParam, 
 	return retval;
 }
 
-void JClient::JTopic::OnHook(JEventable* src)
+void JClient::JTopic::OnHook(JNode* src)
 {
 	using namespace fastdelegate;
 
@@ -918,7 +917,7 @@ void JClient::JTopic::OnHook(JEventable* src)
 	pSource->EvMetrics += MakeDelegate(this, &JClient::JTopic::OnMetrics);
 }
 
-void JClient::JTopic::OnUnhook(JEventable* src)
+void JClient::JTopic::OnUnhook(JNode* src)
 {
 	using namespace fastdelegate;
 
@@ -1093,7 +1092,6 @@ LRESULT WINAPI JClient::JSplashRtfEditor::DlgProc(HWND hWnd, UINT message, WPARA
 
 	case WM_DESTROY:
 		{
-			ResetHooks();
 			break;
 		}
 
@@ -1261,12 +1259,15 @@ void JClient::JSplashRtfEditor::doneclass()
 }
 
 JClient::JSplashRtfEditor::JSplashRtfEditor(JClient* p, DWORD who)
-: JDialog(), rtf::Editor(), JAttachment<JClient>(p)
+: JNode(p, false), JDialog(), rtf::Editor()
 {
+	ASSERT(p);
+	SetupHooks();
+
 	idWho = who;
 }
 
-void JClient::JSplashRtfEditor::OnHook(JEventable* src)
+void JClient::JSplashRtfEditor::OnHook(JNode* src)
 {
 	using namespace fastdelegate;
 
@@ -1276,7 +1277,7 @@ void JClient::JSplashRtfEditor::OnHook(JEventable* src)
 	pSource->EvLinkClose += MakeDelegate(this, &JClient::JSplashRtfEditor::OnLinkClose);
 }
 
-void JClient::JSplashRtfEditor::OnUnhook(JEventable* src)
+void JClient::JSplashRtfEditor::OnUnhook(JNode* src)
 {
 	using namespace fastdelegate;
 
@@ -1399,8 +1400,8 @@ LRESULT WINAPI JClient::JSplash::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 	return retval;
 }
 
-CALLBACK JClient::JSplash::JSplash(JClient* p)
-: JAttachedDialog<JClient>(p, false)
+JClient::JSplash::JSplash(JClient* p)
+: JDialog()
 {
 	m_trnid = 0;
 	m_result = 0;
@@ -1412,7 +1413,7 @@ CALLBACK JClient::JSplash::JSplash(JClient* p)
 	dwStarted = GetTickCount();
 }
 
-void JClient::JSplash::OnHook(JEventable* src)
+void JClient::JSplash::OnHook(JNode* src)
 {
 	using namespace fastdelegate;
 
@@ -1421,7 +1422,7 @@ void JClient::JSplash::OnHook(JEventable* src)
 	pSource->EvLinkClose += MakeDelegate(this, &JClient::JSplash::OnLinkClose);
 }
 
-void JClient::JSplash::OnUnhook(JEventable* src)
+void JClient::JSplash::OnUnhook(JNode* src)
 {
 	using namespace fastdelegate;
 
@@ -1496,9 +1497,11 @@ LRESULT WINAPI JClient::JSplashRtf::DlgProc(HWND hWnd, UINT message, WPARAM wPar
 	return retval;
 }
 
-CALLBACK JClient::JSplashRtf::JSplashRtf(JClient* p, const char* text, size_t size)
-: JClient::JSplash(p), content(text, size)
+JClient::JSplashRtf::JSplashRtf(JClient* p, const char* text, size_t size)
+: JNode(p, false), JClient::JSplash(p), content(text, size)
 {
+	ASSERT(p);
+	SetupHooks();
 }
 
 //
@@ -1638,7 +1641,6 @@ LRESULT WINAPI JClient::JMessageEditor::DlgProc(HWND hWnd, UINT message, WPARAM 
 
 	case WM_DESTROY:
 		{
-			ResetHooks();
 			break;
 		}
 
@@ -1795,14 +1797,17 @@ void JClient::JMessageEditor::doneclass()
 	s_mapButTips.clear();
 }
 
-CALLBACK JClient::JMessageEditor::JMessageEditor(JClient* p, const std::tstring& who, bool alert)
-: JDialog(), rtf::Editor(), JAttachment<JClient>(p)
+JClient::JMessageEditor::JMessageEditor(JClient* p, const std::tstring& who, bool alert)
+: JNode(p, false), JDialog(), rtf::Editor()
 {
+	ASSERT(p);
+	SetupHooks();
+
 	strWho = who;
 	fAlert = alert;
 }
 
-void JClient::JMessageEditor::OnHook(JEventable* src)
+void JClient::JMessageEditor::OnHook(JNode* src)
 {
 	using namespace fastdelegate;
 
@@ -1813,7 +1818,7 @@ void JClient::JMessageEditor::OnHook(JEventable* src)
 	pSource->EvMetrics += MakeDelegate(this, &JClient::JMessageEditor::OnMetrics);
 }
 
-void JClient::JMessageEditor::OnUnhook(JEventable* src)
+void JClient::JMessageEditor::OnUnhook(JNode* src)
 {
 	using namespace fastdelegate;
 
@@ -1901,7 +1906,6 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 
 	case WM_DESTROY:
 		{
-			ResetHooks();
 			break;
 		}
 
@@ -1998,9 +2002,12 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 	return retval;
 }
 
-CALLBACK JClient::JMessage::JMessage(JClient* p)
-: JAttachedDialog<JClient>(p)
+JClient::JMessage::JMessage(JClient* p)
+: JNode(p, false), JDialog()
 {
+	ASSERT(p);
+	SetupHooks();
+
 	m_idWho = CRC_ANONYMOUS;
 
 	m_fAlert = false;
@@ -2008,7 +2015,7 @@ CALLBACK JClient::JMessage::JMessage(JClient* p)
 	m_crSheet = GetSysColor(COLOR_WINDOW);
 }
 
-void JClient::JMessage::OnHook(JEventable* src)
+void JClient::JMessage::OnHook(JNode* src)
 {
 	using namespace fastdelegate;
 
@@ -2018,7 +2025,7 @@ void JClient::JMessage::OnHook(JEventable* src)
 	pSource->EvLinkClose += MakeDelegate(this, &JClient::JMessage::OnLinkClose);
 }
 
-void JClient::JMessage::OnUnhook(JEventable* src)
+void JClient::JMessage::OnUnhook(JNode* src)
 {
 	using namespace fastdelegate;
 

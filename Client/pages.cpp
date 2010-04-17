@@ -21,7 +21,10 @@
 
 #pragma endregion
 
+//-----------------------------------------------------------------------------
+
 using namespace colibrichat;
+using namespace attachment;
 
 //-----------------------------------------------------------------------------
 
@@ -37,23 +40,6 @@ CHARFORMAT cfDefault =
 	DEFAULT_PITCH | FF_ROMAN, // bPitchAndFamily
 	TEXT("Tahoma") // szFaceName
 };
-
-//-----------------------------------------------------------------------------
-
-// Time funstions
-static void FileTimeToLocalTime(const FILETIME &ft, SYSTEMTIME &st)
-{
-	FILETIME temp;
-	FileTimeToLocalFileTime(&ft, &temp);
-	FileTimeToSystemTime(&temp, &st);
-}
-
-static void CALLBACK GetSystemFileTime(FILETIME& ft)
-{
-	SYSTEMTIME st;
-	GetSystemTime(&st);
-	SystemTimeToFileTime(&st, &ft);
-}
 
 //-----------------------------------------------------------------------------
 
@@ -171,8 +157,8 @@ bool CALLBACK JClient::JPage::Write(HWND hwnd, const TCHAR* str)
 	return StylePrint_Append(hwnd, str, &sf, StyleName, cf, _countof(cf)) != FALSE;
 }
 
-CALLBACK JClient::JPage::JPage()
-: JAttachedDialog<JClient>()
+JClient::JPage::JPage()
+: JDialog()
 {
 	m_alert = eGreen;
 }
@@ -182,14 +168,14 @@ std::tstring JClient::JPage::getSafeName(DWORD idUser) const
 	return pSource->getSafeName(idUser);
 }
 
-void CALLBACK JClient::JPage::activate()
+void JClient::JPage::activate()
 {
 	if (m_alert > eGreen) {
 		setAlert(eGreen);
 	}
 }
 
-void CALLBACK JClient::JPage::setAlert(EAlert a)
+void JClient::JPage::setAlert(EAlert a)
 {
 	ASSERT(pSource);
 	if ((a > m_alert || a == eGreen)
@@ -205,7 +191,7 @@ void CALLBACK JClient::JPage::setAlert(EAlert a)
 	}
 }
 
-void JClient::JPage::OnHook(JEventable* src)
+void JClient::JPage::OnHook(JNode* src)
 {
 	ASSERT(pSource);
 	using namespace fastdelegate;
@@ -216,7 +202,7 @@ void JClient::JPage::OnHook(JEventable* src)
 	pSource->EvLinkClose += MakeDelegate(this, &JClient::JPage::OnLinkClose);
 }
 
-void JClient::JPage::OnUnhook(JEventable* src)
+void JClient::JPage::OnUnhook(JNode* src)
 {
 	ASSERT(pSource);
 	using namespace fastdelegate;
@@ -226,7 +212,7 @@ void JClient::JPage::OnUnhook(JEventable* src)
 
 	__super::OnUnhook(src);
 
-	SetSource(0);
+	//DelNode(pSource);
 }
 
 void JClient::JPage::OnLinkStart(SOCKET sock)
@@ -251,7 +237,7 @@ void JClient::JPage::OnLinkClose(SOCKET sock, UINT err)
 // JPageLog
 //
 
-CALLBACK JClient::JPageLog::JPageLog()
+JClient::JPageLog::JPageLog()
 : JPage()
 {
 	m_Groups.insert(eMessage);
@@ -263,7 +249,7 @@ CALLBACK JClient::JPageLog::JPageLog()
 	etimeFormat = etimeHHMMSS;
 }
 
-void CALLBACK JClient::JPageLog::AppendRtf(std::string& content, bool toascii) const
+void JClient::JPageLog::AppendRtf(std::string& content, bool toascii) const
 {
 	CHARRANGE crMark, crIns; // Selection position
 	int nTextLen; // Length of text in control
@@ -294,7 +280,7 @@ void CALLBACK JClient::JPageLog::AppendRtf(std::string& content, bool toascii) c
 	if (GetFocus() != m_hwndLog) SendMessage(m_hwndLog, WM_VSCROLL, SB_BOTTOM, 0);
 }
 
-void CALLBACK JClient::JPageLog::AppendScript(const std::tstring& content, bool withtime) const
+void JClient::JPageLog::AppendScript(const std::tstring& content, bool withtime) const
 {
 	CHARRANGE crMark; // Selection position
 	int nTextLen; // Length of text in control
@@ -331,7 +317,7 @@ void CALLBACK JClient::JPageLog::AppendScript(const std::tstring& content, bool 
 	if (GetFocus() != m_hwndLog) SendMessage(m_hwndLog, WM_VSCROLL, SB_BOTTOM, 0);
 }
 
-void CALLBACK JClient::JPageLog::Say(DWORD idWho, std::string& content)
+void JClient::JPageLog::Say(DWORD idWho, std::string& content)
 {
 	AppendScript(tformat(TEXT("[color=%s]%s[/color]:"),
 		idWho != pSource->m_idOwn ? TEXT("red") : TEXT("blue"),
@@ -505,12 +491,12 @@ LRESULT WINAPI JClient::JPageLog::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 // JPageServer
 //
 
-CALLBACK JClient::JPageServer::JPageServer()
+JClient::JPageServer::JPageServer()
 : JPageLog()
 {
 }
 
-void CALLBACK JClient::JPageServer::Enable()
+void JClient::JPageServer::Enable()
 {
 	EnableWindow(m_hwndHost, FALSE);
 	EnableWindow(m_hwndPort, FALSE);
@@ -519,7 +505,7 @@ void CALLBACK JClient::JPageServer::Enable()
 	m_fEnabled = true;
 }
 
-void CALLBACK JClient::JPageServer::Disable()
+void JClient::JPageServer::Disable()
 {
 	EnableWindow(m_hwndHost, TRUE);
 	EnableWindow(m_hwndPort, TRUE);
@@ -528,7 +514,7 @@ void CALLBACK JClient::JPageServer::Disable()
 	m_fEnabled = false;
 }
 
-int CALLBACK JClient::JPageServer::ImageIndex() const
+int JClient::JPageServer::ImageIndex() const
 {
 	switch (m_alert)
 	{
@@ -806,7 +792,7 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 	return retval;
 }
 
-void JClient::JPageServer::OnHook(JEventable* src)
+void JClient::JPageServer::OnHook(JNode* src)
 {
 	ASSERT(pSource);
 	using namespace fastdelegate;
@@ -819,7 +805,7 @@ void JClient::JPageServer::OnHook(JEventable* src)
 	pSource->EvMetrics += MakeDelegate(this, &JClient::JPageServer::OnMetrics);
 }
 
-void JClient::JPageServer::OnUnhook(JEventable* src)
+void JClient::JPageServer::OnUnhook(JNode* src)
 {
 	ASSERT(pSource);
 	using namespace fastdelegate;
@@ -902,12 +888,12 @@ void JClient::JPageServer::OnMetrics(const Metrics& metrics)
 // JPageList
 //
 
-CALLBACK JClient::JPageList::JPageList()
+JClient::JPageList::JPageList()
 : JPage()
 {
 }
 
-void CALLBACK JClient::JPageList::Enable()
+void JClient::JPageList::Enable()
 {
 	EnableWindow(m_hwndChan, TRUE);
 	EnableWindow(m_hwndPass, TRUE);
@@ -916,7 +902,7 @@ void CALLBACK JClient::JPageList::Enable()
 	m_fEnabled = true;
 }
 
-void CALLBACK JClient::JPageList::Disable()
+void JClient::JPageList::Disable()
 {
 	EnableWindow(m_hwndChan, FALSE);
 	EnableWindow(m_hwndPass, FALSE);
@@ -1098,8 +1084,14 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 					ASSERT(pSource->m_clientsock);
 					MapChannel::const_iterator ic = getSelChannel();
 					ASSERT(ic != m_mChannel.end());
-					if (ic->second.getStatus(pSource->m_idOwn) >= (ic->second.isOpened(pSource->m_idOwn) ? eMember : eAdmin) || pSource->isGod())
-						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_TOPIC), pSource->hwndPage, (DLGPROC)JDialog::DlgProcStub, (LPARAM)(JDialog*)new JTopic(pSource, ic->first, ic->second.name, ic->second.topic));
+					if (ic->second.getStatus(pSource->m_idOwn) >= (ic->second.isOpened(pSource->m_idOwn) ? eMember : eAdmin) || pSource->isGod()) {
+						CreateDialogParam(
+							JClientApp::jpApp->hinstApp,
+							MAKEINTRESOURCE(IDD_TOPIC),
+							pSource->hwndPage,
+							(DLGPROC)JDialog::DlgProcStub,
+							(LPARAM)(JDialog*)new JTopic(pSource, ic->first, ic->second.name, ic->second.topic));
+					}
 					break;
 				}
 
@@ -1283,18 +1275,18 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 	return retval;
 }
 
-void CALLBACK JClient::JPageList::BuildView()
+void JClient::JPageList::BuildView()
 {
 	for each (MapChannel::value_type const& v in m_mChannel)
 		AddLine(v.first);
 }
 
-void CALLBACK JClient::JPageList::ClearView()
+void JClient::JPageList::ClearView()
 {
 	ListView_DeleteAllItems(m_hwndList);
 }
 
-int CALLBACK JClient::JPageList::AddLine(DWORD id)
+int JClient::JPageList::AddLine(DWORD id)
 {
 	LVITEM lvi;
 	int index = INT_MAX;
@@ -1343,7 +1335,7 @@ int CALLBACK JClient::JPageList::AddLine(DWORD id)
 	return index;
 }
 
-void JClient::JPageList::OnHook(JEventable* src)
+void JClient::JPageList::OnHook(JNode* src)
 {
 	ASSERT(pSource);
 	using namespace fastdelegate;
@@ -1359,7 +1351,7 @@ void JClient::JPageList::OnHook(JEventable* src)
 	pSource->m_mTrnReply[CCPM_LIST] = fastdelegate::MakeDelegate(this, &JClient::JPageList::Recv_Reply_LIST);
 }
 
-void JClient::JPageList::OnUnhook(JEventable* src)
+void JClient::JPageList::OnUnhook(JNode* src)
 {
 	ASSERT(pSource);
 	using namespace fastdelegate;
@@ -1518,13 +1510,13 @@ void JClient::JPageChat::doneclass()
 	s_mapButTips.clear();
 }
 
-CALLBACK JClient::JPageChat::JPageChat(DWORD id)
+JClient::JPageChat::JPageChat(DWORD id)
 : JPageLog(), rtf::Editor()
 {
 	m_ID = id;
 }
 
-void CALLBACK JClient::JPageChat::Say(DWORD idWho, std::string& content)
+void JClient::JPageChat::Say(DWORD idWho, std::string& content)
 {
 	__super::Say(idWho, content);
 
@@ -1892,25 +1884,25 @@ LRESULT WINAPI JClient::JPageChat::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 // JPageUser
 //
 
-CALLBACK JClient::JPageUser::JPageUser(DWORD id, const std::tstring& nick)
+JClient::JPageUser::JPageUser(DWORD id, const std::tstring& nick)
 : JPageChat(id)
 {
 	m_user.name = nick;
 }
 
-void CALLBACK JClient::JPageUser::Enable()
+void JClient::JPageUser::Enable()
 {
 	EnableWindow(m_hwndEdit, TRUE);
 	m_fEnabled = true;
 }
 
-void CALLBACK JClient::JPageUser::Disable()
+void JClient::JPageUser::Disable()
 {
 	EnableWindow(m_hwndEdit, FALSE);
 	m_fEnabled = false;
 }
 
-int CALLBACK JClient::JPageUser::ImageIndex() const
+int JClient::JPageUser::ImageIndex() const
 {
 	switch (m_alert)
 	{
@@ -1924,7 +1916,7 @@ int CALLBACK JClient::JPageUser::ImageIndex() const
 	}
 }
 
-void CALLBACK JClient::JPageUser::OnSheetColor(COLORREF cr)
+void JClient::JPageUser::OnSheetColor(COLORREF cr)
 {
 	__super::OnSheetColor(cr);
 
@@ -1932,7 +1924,7 @@ void CALLBACK JClient::JPageUser::OnSheetColor(COLORREF cr)
 	pSource->PushTrn(pSource->m_clientsock, pSource->Make_Cmd_CHANOPTIONS(m_ID, CHANOP_BACKGROUND, cr));
 }
 
-void CALLBACK JClient::JPageUser::rename(DWORD idNew, const std::tstring& newname)
+void JClient::JPageUser::rename(DWORD idNew, const std::tstring& newname)
 {
 	m_ID = idNew;
 	m_user.name = newname;
@@ -2004,7 +1996,7 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 	return retval;
 }
 
-void JClient::JPageUser::OnHook(JEventable* src)
+void JClient::JPageUser::OnHook(JNode* src)
 {
 	ASSERT(pSource);
 	using namespace fastdelegate;
@@ -2015,7 +2007,7 @@ void JClient::JPageUser::OnHook(JEventable* src)
 	pSource->EvLinkClose += MakeDelegate(this, &JClient::JPageUser::OnLinkClose);
 }
 
-void JClient::JPageUser::OnUnhook(JEventable* src)
+void JClient::JPageUser::OnUnhook(JNode* src)
 {
 	ASSERT(pSource);
 	using namespace fastdelegate;
@@ -2048,7 +2040,7 @@ void JClient::JPageUser::OnLinkClose(SOCKET sock, UINT err)
 // JPageChannel
 //
 
-CALLBACK JClient::JPageChannel::JPageChannel(DWORD id, const std::tstring& nick)
+JClient::JPageChannel::JPageChannel(DWORD id, const std::tstring& nick)
 : JPageChat(id)
 {
 	m_channel.name = nick;
@@ -2060,20 +2052,20 @@ std::tstring JClient::JPageChannel::getSafeName(DWORD idUser) const
 	return pSource->getSafeName(pSource->m_bCheatAnonymous || !m_channel.isAnonymous || pSource->isGod(idUser) ? idUser : CRC_ANONYMOUS);
 }
 
-void CALLBACK JClient::JPageChannel::Enable()
+void JClient::JPageChannel::Enable()
 {
 	EnableWindow(m_hwndEdit, TRUE);
 	m_fEnabled = true;
 }
 
-void CALLBACK JClient::JPageChannel::Disable()
+void JClient::JPageChannel::Disable()
 {
 	ListView_DeleteAllItems(m_hwndList);
 	EnableWindow(m_hwndEdit, FALSE);
 	m_fEnabled = false;
 }
 
-int CALLBACK JClient::JPageChannel::ImageIndex() const
+int JClient::JPageChannel::ImageIndex() const
 {
 	switch (m_alert)
 	{
@@ -2130,7 +2122,7 @@ void CALLBACK JClient::JPageChannel::DisplayMessage(DWORD idUser, const TCHAR* m
 		cr);
 }
 
-void CALLBACK JClient::JPageChannel::OnSheetColor(COLORREF cr)
+void JClient::JPageChannel::OnSheetColor(COLORREF cr)
 {
 	__super::OnSheetColor(cr);
 
@@ -2140,12 +2132,12 @@ void CALLBACK JClient::JPageChannel::OnSheetColor(COLORREF cr)
 	}
 }
 
-bool CALLBACK JClient::JPageChannel::CanSend() const
+bool JClient::JPageChannel::CanSend() const
 {
 	return m_channel.getStatus(pSource->m_idOwn) > eReader || pSource->isCheats();
 }
 
-void CALLBACK JClient::JPageChannel::setchannel(const Channel& val)
+void JClient::JPageChannel::setchannel(const Channel& val)
 {
 	m_channel = val;
 
@@ -2155,13 +2147,13 @@ void CALLBACK JClient::JPageChannel::setchannel(const Channel& val)
 	}
 }
 
-void CALLBACK JClient::JPageChannel::rename(DWORD idNew, const std::tstring& newname)
+void JClient::JPageChannel::rename(DWORD idNew, const std::tstring& newname)
 {
 	m_ID = idNew;
 	m_channel.name = newname;
 }
 
-bool CALLBACK JClient::JPageChannel::replace(DWORD idOld, DWORD idNew)
+bool JClient::JPageChannel::replace(DWORD idOld, DWORD idNew)
 {
 	bool retval = false;
 
@@ -2224,7 +2216,7 @@ bool CALLBACK JClient::JPageChannel::replace(DWORD idOld, DWORD idNew)
 	return retval;
 }
 
-void CALLBACK JClient::JPageChannel::redrawUser(DWORD idUser)
+void JClient::JPageChannel::redrawUser(DWORD idUser)
 {
 	LVFINDINFO lvfi;
 	lvfi.flags = LVFI_PARAM;
@@ -2233,7 +2225,7 @@ void CALLBACK JClient::JPageChannel::redrawUser(DWORD idUser)
 	if (index != -1) VERIFY(ListView_RedrawItems(m_hwndList, index, index));
 }
 
-void CALLBACK JClient::JPageChannel::Join(DWORD idWho)
+void JClient::JPageChannel::Join(DWORD idWho)
 {
 	m_channel.opened.insert(idWho);
 	if (m_channel.getStatus(idWho) == eOutsider)
@@ -2257,7 +2249,7 @@ void CALLBACK JClient::JPageChannel::Join(DWORD idWho)
 	}
 }
 
-void CALLBACK JClient::JPageChannel::Part(DWORD idWho, DWORD idBy)
+void JClient::JPageChannel::Part(DWORD idWho, DWORD idBy)
 {
 	m_channel.opened.erase(idWho);
 	if (m_hwndPage) DelLine(idWho);
@@ -2286,7 +2278,7 @@ void CALLBACK JClient::JPageChannel::Part(DWORD idWho, DWORD idBy)
 	}
 }
 
-int  CALLBACK JClient::JPageChannel::indexIcon(DWORD idUser) const
+int  JClient::JPageChannel::indexIcon(DWORD idUser) const
 {
 	MapUser::const_iterator iu = pSource->m_mUser.find(idUser);
 	if (iu == pSource->m_mUser.end()) return IML_MANVOID;
@@ -2429,8 +2421,14 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			switch (LOWORD(wParam))
 			{
 			case IDC_CHANTOPIC:
-				if (m_channel.getStatus(pSource->m_idOwn) >= (m_channel.isOpened(pSource->m_idOwn) ? eMember : eAdmin) || pSource->isGod())
-					CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_TOPIC), pSource->hwndPage, (DLGPROC)JDialog::DlgProcStub, (LPARAM)(JDialog*)new JTopic(pSource, m_ID, m_channel.name, m_channel.topic));
+				if (m_channel.getStatus(pSource->m_idOwn) >= (m_channel.isOpened(pSource->m_idOwn) ? eMember : eAdmin) || pSource->isGod()) {
+					CreateDialogParam(
+						JClientApp::jpApp->hinstApp,
+						MAKEINTRESOURCE(IDD_TOPIC),
+						pSource->hwndPage,
+						(DLGPROC)JDialog::DlgProcStub,
+						(LPARAM)(JDialog*)new JTopic(pSource, m_ID, m_channel.name, m_channel.topic));
+				}
 				break;
 
 			case IDC_CHANFOUNDER:
@@ -2935,7 +2933,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 	return retval;
 }
 
-void CALLBACK JClient::JPageChannel::BuildView()
+void JClient::JPageChannel::BuildView()
 {
 	SendMessage(m_hwndList, WM_SETREDRAW, FALSE, 0);
 
@@ -2951,14 +2949,14 @@ void CALLBACK JClient::JPageChannel::BuildView()
 	InvalidateRect(m_hwndList, 0, TRUE);
 }
 
-void CALLBACK JClient::JPageChannel::ClearView()
+void JClient::JPageChannel::ClearView()
 {
 	ListView_DeleteAllItems(m_hwndList);
 	SetWindowText(m_hwndLog, TEXT(""));
 	SetWindowText(m_hwndEdit, TEXT(""));
 }
 
-int  CALLBACK JClient::JPageChannel::AddLine(DWORD id)
+int  JClient::JPageChannel::AddLine(DWORD id)
 {
 	LVITEM lvi;
 	int index = INT_MAX;
@@ -2976,7 +2974,7 @@ int  CALLBACK JClient::JPageChannel::AddLine(DWORD id)
 	return index;
 }
 
-void CALLBACK JClient::JPageChannel::DelLine(DWORD id)
+void JClient::JPageChannel::DelLine(DWORD id)
 {
 	LVFINDINFO lvfi;
 	lvfi.flags = LVFI_PARAM;
@@ -2984,7 +2982,7 @@ void CALLBACK JClient::JPageChannel::DelLine(DWORD id)
 	ListView_DeleteItem(m_hwndList, ListView_FindItem(m_hwndList, -1, &lvfi));
 }
 
-void JClient::JPageChannel::OnHook(JEventable* src)
+void JClient::JPageChannel::OnHook(JNode* src)
 {
 	ASSERT(pSource);
 	using namespace fastdelegate;
@@ -2997,7 +2995,7 @@ void JClient::JPageChannel::OnHook(JEventable* src)
 	pSource->EvNick += MakeDelegate(this, &JClient::JPageChannel::OnNick);
 }
 
-void JClient::JPageChannel::OnUnhook(JEventable* src)
+void JClient::JPageChannel::OnUnhook(JNode* src)
 {
 	ASSERT(pSource);
 	using namespace fastdelegate;

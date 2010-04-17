@@ -24,7 +24,6 @@
 #include "LuaGluer.h"
 
 // Common
-#include "patterns.h"
 #include "app.h"
 #include "jrtf.h"
 
@@ -189,6 +188,7 @@ namespace colibrichat
 		class JPageBoard;
 		typedef std::map<DWORD, JPtr<JPageBoard>> MapPageBoard;
 
+		class JPassword;
 		class JTopic;
 		class JSplashRtfEditor;
 		class JSplash;
@@ -205,37 +205,38 @@ namespace colibrichat
 		// Pages
 		//
 
-		class JPage : public JAttachedDialog<JClient>
+		class JPage : public JDialog
 		{
 		public:
 
 			static bool CALLBACK Write(HWND hwnd, const TCHAR* str);
 
-			CALLBACK JPage();
+			GETJATTACH(JClient);
+			JPage();
 
-			virtual int CALLBACK ImageIndex() const = 0;
-			virtual LPCTSTR CALLBACK Template() const = 0;
-			virtual bool CALLBACK IsPermanent() const = 0;
+			virtual int ImageIndex() const = 0;
+			virtual LPCTSTR Template() const = 0;
+			virtual bool IsPermanent() const = 0;
 			virtual std::tstring gettopic() const {return getname();}
 			virtual HWND getDefFocusWnd() const = 0;
 			virtual std::tstring getSafeName(DWORD idUser) const;
 
-			virtual EContact CALLBACK gettype() const = 0;
-			virtual DWORD CALLBACK getID() const = 0;
-			virtual std::tstring CALLBACK getname() const = 0;
+			virtual EContact gettype() const = 0;
+			virtual DWORD getID() const = 0;
+			virtual std::tstring getname() const = 0;
 
-			void CALLBACK activate();
-			virtual void CALLBACK setAlert(EAlert a);
+			void activate();
+			virtual void setAlert(EAlert a);
 
-			virtual void CALLBACK Enable() = 0;
-			virtual void CALLBACK Disable() = 0;
+			virtual void Enable() = 0;
+			virtual void Disable() = 0;
 
 		protected:
 
 			//LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
-			void OnHook(JEventable* src);
-			void OnUnhook(JEventable* src);
+			void OnHook(JNode* src);
+			void OnUnhook(JNode* src);
 
 			void OnLinkStart(SOCKET sock);
 			void OnLinkClose(SOCKET sock, UINT err);
@@ -250,13 +251,13 @@ namespace colibrichat
 		{
 		public:
 
-			CALLBACK JPageLog();
+			JPageLog();
 
 			HWND getDefFocusWnd() const {return m_hwndLog;}
 
-			void CALLBACK AppendRtf(std::string& content, bool toascii = false) const;
-			void CALLBACK AppendScript(const std::tstring& content, bool withtime = true) const;
-			virtual void CALLBACK Say(DWORD idWho, std::string& content);
+			void AppendRtf(std::string& content, bool toascii = false) const;
+			void AppendScript(const std::tstring& content, bool withtime = true) const;
+			virtual void Say(DWORD idWho, std::string& content);
 
 		protected:
 
@@ -276,26 +277,26 @@ namespace colibrichat
 		{
 		public:
 
-			CALLBACK JPageServer();
+			JPageServer();
 
-			int CALLBACK ImageIndex() const;
-			LPCTSTR CALLBACK Template() const {return MAKEINTRESOURCE(IDD_SERVER);}
-			bool CALLBACK IsPermanent() const {return true;}
+			int ImageIndex() const;
+			LPCTSTR Template() const {return MAKEINTRESOURCE(IDD_SERVER);}
+			bool IsPermanent() const {return true;}
 			HWND getDefFocusWnd() const {return m_hwndNick;}
 
-			EContact CALLBACK gettype() const {return eServer;}
-			DWORD CALLBACK getID() const {return CRC_SERVER;}
-			std::tstring CALLBACK getname() const {return NAME_SERVER;}
+			EContact gettype() const {return eServer;}
+			DWORD getID() const {return CRC_SERVER;}
+			std::tstring getname() const {return NAME_SERVER;}
 
-			void CALLBACK Enable();
-			void CALLBACK Disable();
+			void Enable();
+			void Disable();
 
 		protected:
 
 			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
-			void OnHook(JEventable* src);
-			void OnUnhook(JEventable* src);
+			void OnHook(JNode* src);
+			void OnUnhook(JNode* src);
 
 			void OnLinkStart(SOCKET sock);
 			void OnLog(const std::tstring& str, bool withtime = true);
@@ -322,19 +323,19 @@ namespace colibrichat
 		{
 		public:
 
-			CALLBACK JPageList();
+			JPageList();
 
-			int CALLBACK ImageIndex() const {return IML_CHANNELGREEN;}
-			LPCTSTR CALLBACK Template() const {return MAKEINTRESOURCE(IDD_LIST);}
-			bool CALLBACK IsPermanent() const {return true;}
+			int ImageIndex() const {return IML_CHANNELGREEN;}
+			LPCTSTR Template() const {return MAKEINTRESOURCE(IDD_LIST);}
+			bool IsPermanent() const {return true;}
 			HWND getDefFocusWnd() const {return m_hwndChan;}
 
-			EContact CALLBACK gettype() const {return eList;}
-			DWORD CALLBACK getID() const {return CRC_LIST;}
-			std::tstring CALLBACK getname() const {return NAME_LIST;}
+			EContact gettype() const {return eList;}
+			DWORD getID() const {return CRC_LIST;}
+			std::tstring getname() const {return NAME_LIST;}
 
-			void CALLBACK Enable();
-			void CALLBACK Disable();
+			void Enable();
+			void Disable();
 
 			MapChannel::const_iterator getSelChannel() const;
 
@@ -342,9 +343,9 @@ namespace colibrichat
 
 			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
-			void CALLBACK BuildView();
-			void CALLBACK ClearView();
-			int CALLBACK AddLine(DWORD id);
+			void BuildView();
+			void ClearView();
+			int AddLine(DWORD id);
 
 		protected:
 
@@ -354,8 +355,8 @@ namespace colibrichat
 			// Beowolf Network Protocol Messages sending
 			JPtr<JTransaction> Make_Quest_LIST() const;
 
-			void OnHook(JEventable* src);
-			void OnUnhook(JEventable* src);
+			void OnHook(JNode* src);
+			void OnUnhook(JNode* src);
 
 			void OnLinkStart(SOCKET sock);
 			void OnMetrics(const Metrics& metrics);
@@ -381,15 +382,15 @@ namespace colibrichat
 
 			static void initclass();
 			static void doneclass();
-			CALLBACK JPageChat(DWORD id);
+			JPageChat(DWORD id);
 
-			bool CALLBACK IsPermanent() const {return false;}
+			bool IsPermanent() const {return false;}
 			HWND getDefFocusWnd() const {return m_hwndEdit;}
 
-			DWORD CALLBACK getID() const {return m_ID;}
+			DWORD getID() const {return m_ID;}
 
-			void CALLBACK Say(DWORD idWho, std::string& content);
-			virtual bool CALLBACK CanSend() const {return true;}
+			void Say(DWORD idWho, std::string& content);
+			virtual bool CanSend() const {return true;}
 
 		protected:
 
@@ -415,29 +416,29 @@ namespace colibrichat
 
 			friend class JClient;
 
-			CALLBACK JPageUser(DWORD id, const std::tstring& nick);
+			JPageUser(DWORD id, const std::tstring& nick);
 
-			int CALLBACK ImageIndex() const;
-			LPCTSTR CALLBACK Template() const {return MAKEINTRESOURCE(IDD_USER);}
+			int ImageIndex() const;
+			LPCTSTR Template() const {return MAKEINTRESOURCE(IDD_USER);}
 
-			EContact CALLBACK gettype() const {return eUser;}
-			std::tstring CALLBACK getname() const {return m_user.name;}
+			EContact gettype() const {return eUser;}
+			std::tstring getname() const {return m_user.name;}
 
-			void CALLBACK Enable();
-			void CALLBACK Disable();
+			void Enable();
+			void Disable();
 
-			void CALLBACK OnSheetColor(COLORREF cr);
-			bool CALLBACK CanSend() const {return true;}
+			void OnSheetColor(COLORREF cr);
+			bool CanSend() const {return true;}
 
-			void CALLBACK setuser(const User& val) {m_user = val;}
-			void CALLBACK rename(DWORD idNew, const std::tstring& newname);
+			void setuser(const User& val) {m_user = val;}
+			void rename(DWORD idNew, const std::tstring& newname);
 
 		protected:
 
 			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
-			void OnHook(JEventable* src);
-			void OnUnhook(JEventable* src);
+			void OnHook(JNode* src);
+			void OnUnhook(JNode* src);
 
 			void OnLinkStart(SOCKET sock);
 			void OnLinkClose(SOCKET sock, UINT err);
@@ -453,46 +454,46 @@ namespace colibrichat
 
 			friend class JClient;
 
-			CALLBACK JPageChannel(DWORD id, const std::tstring& nick);
+			JPageChannel(DWORD id, const std::tstring& nick);
 
-			int CALLBACK ImageIndex() const;
-			LPCTSTR CALLBACK Template() const {return MAKEINTRESOURCE(IDD_CHANNEL);}
+			int ImageIndex() const;
+			LPCTSTR Template() const {return MAKEINTRESOURCE(IDD_CHANNEL);}
 			std::tstring getSafeName(DWORD idUser) const;
 			std::tstring gettopic() const;
 
-			EContact CALLBACK gettype() const {return eChannel;}
-			std::tstring CALLBACK getname() const {return m_channel.name;}
+			EContact gettype() const {return eChannel;}
+			std::tstring getname() const {return m_channel.name;}
 
-			void CALLBACK Enable();
-			void CALLBACK Disable();
+			void Enable();
+			void Disable();
 
 			void CALLBACK DisplayMessage(DWORD idUser, const TCHAR* msg, HICON hicon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
 
-			void CALLBACK OnSheetColor(COLORREF cr);
-			bool CALLBACK CanSend() const;
+			void OnSheetColor(COLORREF cr);
+			bool CanSend() const;
 
-			void CALLBACK setchannel(const Channel& val);
-			void CALLBACK rename(DWORD idNew, const std::tstring& newname);
-			bool CALLBACK replace(DWORD idOld, DWORD idNew);
-			void CALLBACK redrawUser(DWORD idUser);
+			void setchannel(const Channel& val);
+			void rename(DWORD idNew, const std::tstring& newname);
+			bool replace(DWORD idOld, DWORD idNew);
+			void redrawUser(DWORD idUser);
 
-			void CALLBACK Join(DWORD idWho);
-			void CALLBACK Part(DWORD idWho, DWORD idBy);
+			void Join(DWORD idWho);
+			void Part(DWORD idWho, DWORD idBy);
 
-			int  CALLBACK indexIcon(DWORD idUser) const;
+			int  indexIcon(DWORD idUser) const;
 			MapUser::const_iterator getSelUser() const;
 
 		protected:
 
 			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
-			void CALLBACK BuildView();
-			void CALLBACK ClearView();
-			int  CALLBACK AddLine(DWORD id);
-			void CALLBACK DelLine(DWORD id);
+			void BuildView();
+			void ClearView();
+			int  AddLine(DWORD id);
+			void DelLine(DWORD id);
 
-			void OnHook(JEventable* src);
-			void OnUnhook(JEventable* src);
+			void OnHook(JNode* src);
+			void OnUnhook(JNode* src);
 
 			void OnLinkStart(SOCKET sock);
 			void OnLinkClose(SOCKET sock, UINT err);
@@ -511,10 +512,11 @@ namespace colibrichat
 		// Dialogs
 		//
 
-		class JPassword : public JAttachedDialog<JClient>
+		class JPassword sealed : public JDialog
 		{
 		public:
 
+			GETJATTACH(JClient);
 			JPassword(JClient* p);
 
 		protected:
@@ -526,18 +528,19 @@ namespace colibrichat
 			JPROPERTY_R(HWND, hwndList);
 		};
 
-		class JTopic : public JAttachedDialog<JClient>
+		class JTopic sealed : public JDialog
 		{
 		public:
 
+			GETJATTACH(JClient);
 			JTopic(JClient* p, DWORD id, const std::tstring& n, const std::tstring& t);
 
 		protected:
 
 			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
-			void OnHook(JEventable* src);
-			void OnUnhook(JEventable* src);
+			void OnHook(JNode* src);
+			void OnUnhook(JNode* src);
 
 			void OnLinkEstablished(SOCKET sock);
 			void OnLinkClose(SOCKET sock, UINT err);
@@ -551,20 +554,22 @@ namespace colibrichat
 			JPROPERTY_RREF_CONST(std::tstring, topic);
 		};
 
-		class JSplashRtfEditor : public JDialog, public rtf::Editor, public JAttachment<JClient>, protected initdoneable<JSplashRtfEditor>
+		class JSplashRtfEditor : public JDialog, public rtf::Editor, protected initdoneable<JSplashRtfEditor>
 		{
 		public:
 
 			static void initclass();
 			static void doneclass();
+
+			GETJATTACH(JClient);
 			JSplashRtfEditor(JClient* p, DWORD who);
 
 		protected:
 
 			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
-			void OnHook(JEventable* src);
-			void OnUnhook(JEventable* src);
+			void OnHook(JNode* src);
+			void OnUnhook(JNode* src);
 
 			void OnLinkEstablished(SOCKET sock);
 			void OnLinkClose(SOCKET sock, UINT err);
@@ -577,18 +582,19 @@ namespace colibrichat
 			static std::map<UINT, const TCHAR*> s_mapButTips;
 		};
 
-		class JSplash : public JAttachedDialog<JClient>
+		class JSplash : public JDialog
 		{
 		public:
 
-			CALLBACK JSplash(JClient* p);
+			GETJATTACH(JClient);
+			JSplash(JClient* p);
 
 		protected:
 
 			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
-			void OnHook(JEventable* src);
-			void OnUnhook(JEventable* src);
+			void OnHook(JNode* src);
+			void OnUnhook(JNode* src);
 
 			void OnLinkClose(SOCKET sock, UINT err);
 
@@ -610,11 +616,11 @@ namespace colibrichat
 			DWORD dwStarted;
 		};
 
-		class JSplashRtf : public JSplash
+		class JSplashRtf sealed : public JSplash
 		{
 		public:
 
-			CALLBACK JSplashRtf(JClient* p, const char* text, size_t size);
+			JSplashRtf(JClient* p, const char* text, size_t size);
 
 		protected:
 
@@ -630,20 +636,22 @@ namespace colibrichat
 			std::string content;
 		};
 
-		class JMessageEditor : public JDialog, public rtf::Editor, public JAttachment<JClient>, protected initdoneable<JMessageEditor>
+		class JMessageEditor : public JDialog, public rtf::Editor, protected initdoneable<JMessageEditor>
 		{
 		public:
 
 			static void initclass();
 			static void doneclass();
-			CALLBACK JMessageEditor(JClient* p, const std::tstring& who, bool alert = false);
+
+			GETJATTACH(JClient);
+			JMessageEditor(JClient* p, const std::tstring& who, bool alert = false);
 
 		protected:
 
 			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
-			void OnHook(JEventable* src);
-			void OnUnhook(JEventable* src);
+			void OnHook(JNode* src);
+			void OnUnhook(JNode* src);
 
 			void OnLinkEstablished(SOCKET sock);
 			void OnLinkClose(SOCKET sock, UINT err);
@@ -658,18 +666,19 @@ namespace colibrichat
 			static std::map<UINT, const TCHAR*> s_mapButTips;
 		};
 
-		class JMessage : public JAttachedDialog<JClient>
+		class JMessage sealed : public JDialog
 		{
 		public:
 
-			CALLBACK JMessage(JClient* p);
+			GETJATTACH(JClient);
+			JMessage(JClient* p);
 
 		protected:
 
 			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
-			void OnHook(JEventable* src);
-			void OnUnhook(JEventable* src);
+			void OnHook(JNode* src);
+			void OnUnhook(JNode* src);
 
 			void OnLinkEstablished(SOCKET sock);
 			void OnLinkClose(SOCKET sock, UINT err);
@@ -694,23 +703,24 @@ namespace colibrichat
 		static void doneclass();
 		static const char className[];
 		static CLuaGluer<JClient>::_tRegType methods[];
-		CALLBACK JClient();
-		DWORD CALLBACK getMinVersion() const {return BNP_ENGINEVERSMIN;}
-		DWORD CALLBACK getCurVersion() const {return BNP_ENGINEVERSNUM;}
+		JClient();
+		void beforeDestruct() { JEngine::beforeDestruct(); }
+		DWORD getMinVersion() const {return BNP_ENGINEVERSMIN;}
+		DWORD getCurVersion() const {return BNP_ENGINEVERSNUM;}
 
-		void CALLBACK Init();
-		void CALLBACK Done();
-		int  CALLBACK Run();
+		void Init();
+		void Done();
+		int  Run();
 
-		void CALLBACK JobQuantum() {}
+		void JobQuantum() {}
 
-		void CALLBACK DoHelper();
+		void DoHelper();
 
 	protected:
 
-		void CALLBACK LoadState(); // can be only one call for object
-		void CALLBACK SaveState(); // can be multiply calls for object
-		void CALLBACK InitLogs() {}
+		void LoadState(); // can be only one call for object
+		void SaveState(); // can be multiply calls for object
+		void InitLogs() {}
 
 		// encryption cipher name
 		const char* getEncryptorName() const {return m_encryptorname.c_str();}
@@ -718,11 +728,11 @@ namespace colibrichat
 		LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
 		// Connecting/disconecting to server
-		void CALLBACK Connect(bool getsetting = false);
+		void Connect(bool getsetting = false);
 
 		// Autoopen
-		void CALLBACK saveAutoopen() const;
-		void CALLBACK openAutoopen();
+		void saveAutoopen() const;
+		void openAutoopen();
 		bool m_fAutoopen;
 
 		// Contacts
@@ -745,12 +755,12 @@ namespace colibrichat
 
 		// Users managment
 		std::tstring getSafeName(DWORD idUser) const;
-		bool CALLBACK isGod(DWORD idUser = CRC_NONAME) const;
-		bool CALLBACK isDevil(DWORD idUser = CRC_NONAME) const;
-		bool CALLBACK isCheats(DWORD idUser = CRC_NONAME) const;
-		void CALLBACK InsertUser(DWORD idUser, const User& user);
-		void CALLBACK LinkUser(DWORD idUser, DWORD idLink);
-		void CALLBACK UnlinkUser(DWORD idUser, DWORD idLink);
+		bool isGod(DWORD idUser = CRC_NONAME) const;
+		bool isDevil(DWORD idUser = CRC_NONAME) const;
+		bool isCheats(DWORD idUser = CRC_NONAME) const;
+		void InsertUser(DWORD idUser, const User& user);
+		void LinkUser(DWORD idUser, DWORD idLink);
+		void UnlinkUser(DWORD idUser, DWORD idLink);
 
 	protected:
 
@@ -794,8 +804,8 @@ namespace colibrichat
 			const RECT& rcPos, bool bCloseOnDisconnect = true, DWORD dwCanclose = 2500, DWORD dwAutoclose = 30000,
 			bool fTransparent = true, COLORREF crSheet = RGB(255, 255, 255)) const;
 
-		void OnHook(JEventable* src);
-		void OnUnhook(JEventable* src);
+		void OnHook(JNode* src);
+		void OnUnhook(JNode* src);
 
 		void OnLinkConnect(SOCKET sock);
 		void OnLinkClose(SOCKET sock, UINT err);
@@ -899,13 +909,13 @@ namespace colibrichat
 	{
 	public:
 
-		virtual void CALLBACK Init();
-		virtual bool CALLBACK InitInstance();
-		virtual void CALLBACK Done();
+		virtual void Init();
+		virtual bool InitInstance();
+		virtual void Done();
 
 	protected:
 
-		CALLBACK JClientApp(HINSTANCE hInstance = 0, HINSTANCE hPrevInstance = 0, LPTSTR szcl = 0, int ncs = SW_SHOWDEFAULT);
+		JClientApp(HINSTANCE hInstance = 0, HINSTANCE hPrevInstance = 0, LPTSTR szcl = 0, int ncs = SW_SHOWDEFAULT);
 
 	public:
 

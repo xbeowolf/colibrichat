@@ -20,7 +20,10 @@
 
 #pragma endregion
 
+//-----------------------------------------------------------------------------
+
 using namespace colibrichat;
+using namespace attachment;
 
 //-----------------------------------------------------------------------------
 
@@ -33,7 +36,7 @@ static TCHAR szHelpFile[MAX_PATH];
 // class JServer
 //
 
-CALLBACK JServer::JServer()
+JServer::JServer()
 : JEngine(), JWindow()
 {
 	// Dialogs
@@ -56,12 +59,10 @@ CALLBACK JServer::JServer()
 	m_encryptorname = ECRYPT_DEFAULT;
 }
 
-void CALLBACK JServer::Init()
+void JServer::Init()
 {
-	jpConnections->SetSource(this);
-	jpConnections->SetupHooks();
-	jpPasswords->SetSource(this);
-	jpPasswords->SetupHooks();
+	jpConnections->SetNode(this, false, true);
+	jpPasswords->SetNode(this, false, true);
 
 	__super::Init();
 
@@ -91,14 +92,14 @@ void CALLBACK JServer::Init()
 	}
 }
 
-void CALLBACK JServer::Done()
+void JServer::Done()
 {
 	__super::Done();
 
 	DestroyMsgWindow();
 }
 
-HWND CALLBACK JServer::CreateMsgWindow()
+HWND JServer::CreateMsgWindow()
 {
 	if (!IsWindow(m_hwndPage)) m_hwndPage = CreateWindow(WC_MSG, WT_MSG,
 		WS_OVERLAPPEDWINDOW,
@@ -108,12 +109,12 @@ HWND CALLBACK JServer::CreateMsgWindow()
 	return m_hwndPage;
 }
 
-BOOL CALLBACK JServer::DestroyMsgWindow()
+BOOL JServer::DestroyMsgWindow()
 {
 	return DestroyWindow(m_hwndPage);
 }
 
-void CALLBACK JServer::LoadState()
+void JServer::LoadState()
 {
 	m_passwordNet = profile::getString(RF_SERVER, RK_PASSWORDNET, TEXT("beowolf"));
 	m_passwordGod = profile::getString(RF_SERVER, RK_PASSWORDGOD, TEXT("godpassword"));
@@ -133,7 +134,7 @@ void CALLBACK JServer::LoadState()
 	m_metrics.flags.bTransmitClipboard = profile::getInt(RF_METRICS, RK_TransmitClipboard, true) != 0;
 }
 
-void CALLBACK JServer::SaveState()
+void JServer::SaveState()
 {
 	profile::setString(RF_SERVER, RK_PASSWORDNET, m_passwordNet);
 	profile::setString(RF_SERVER, RK_PASSWORDGOD, m_passwordGod);
@@ -279,7 +280,7 @@ LRESULT WINAPI JServer::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	return retval;
 }
 
-bool CALLBACK JServer::hasCRC(DWORD crc) const
+bool JServer::hasCRC(DWORD crc) const
 {
 	return
 		crc == CRC_SERVER ||
@@ -292,7 +293,7 @@ bool CALLBACK JServer::hasCRC(DWORD crc) const
 		m_mChannel.find(crc) != m_mChannel.end();
 }
 
-bool CALLBACK JServer::linkCRC(DWORD crc1, DWORD crc2)
+bool JServer::linkCRC(DWORD crc1, DWORD crc2)
 {
 	Contact *cont1, *cont2;
 	MapUser::iterator iu;
@@ -314,7 +315,7 @@ bool CALLBACK JServer::linkCRC(DWORD crc1, DWORD crc2)
 	return true;
 }
 
-void CALLBACK JServer::unlinkCRC(DWORD crc1, DWORD crc2)
+void JServer::unlinkCRC(DWORD crc1, DWORD crc2)
 {
 	MapUser::iterator iu;
 	MapChannel::iterator ic;
@@ -340,7 +341,7 @@ void CALLBACK JServer::unlinkCRC(DWORD crc1, DWORD crc2)
 	}
 }
 
-bool CALLBACK JServer::CheckNick(std::tstring& nick, const TCHAR*& msg)
+bool JServer::CheckNick(std::tstring& nick, const TCHAR*& msg)
 {
 	for each (std::tstring::value_type const& v in nick) {
 		if (v < TEXT(' ')) {
@@ -358,7 +359,7 @@ bool CALLBACK JServer::CheckNick(std::tstring& nick, const TCHAR*& msg)
 	return true;
 }
 
-std::tstring CALLBACK JServer::getNearestName(const std::tstring& nick) const
+std::tstring JServer::getNearestName(const std::tstring& nick) const
 {
 	std::tstring buffer = nick;
 	TCHAR digits[16];
@@ -371,7 +372,7 @@ std::tstring CALLBACK JServer::getNearestName(const std::tstring& nick) const
 	return buffer;
 }
 
-void CALLBACK JServer::RenameContact(DWORD idByOrSock, DWORD idOld, std::tstring newname)
+void JServer::RenameContact(DWORD idByOrSock, DWORD idOld, std::tstring newname)
 {
 	DWORD idNew = tCRCJJ(newname.c_str());
 	if (idNew == idOld && idOld != CRC_NONAME) return;
@@ -450,25 +451,25 @@ void CALLBACK JServer::RenameContact(DWORD idByOrSock, DWORD idOld, std::tstring
 	BroadcastTrn(opened, true, Make_Notify_NICK(result, idOld, idNew, newname));
 }
 
-bool CALLBACK JServer::isGod(DWORD idUser) const
+bool JServer::isGod(DWORD idUser) const
 {
 	MapUser::const_iterator iu = m_mUser.find(idUser);
 	return iu != m_mUser.end() && iu->second.cheat.isGod;
 }
 
-bool CALLBACK JServer::isDevil(DWORD idUser) const
+bool JServer::isDevil(DWORD idUser) const
 {
 	MapUser::const_iterator iu = m_mUser.find(idUser);
 	return iu != m_mUser.end() && iu->second.cheat.isDevil;
 }
 
-bool CALLBACK JServer::isCheats(DWORD idUser) const
+bool JServer::isCheats(DWORD idUser) const
 {
 	MapUser::const_iterator iu = m_mUser.find(idUser);
 	return iu != m_mUser.end() && (iu->second.cheat.isGod || iu->second.cheat.isDevil);
 }
 
-void JServer::OnHook(JEventable* src)
+void JServer::OnHook(JNode* src)
 {
 	using namespace fastdelegate;
 
@@ -492,7 +493,7 @@ void JServer::OnHook(JEventable* src)
 	__super::OnHook(src);
 }
 
-void JServer::OnUnhook(JEventable* src)
+void JServer::OnUnhook(JNode* src)
 {
 	using namespace fastdelegate;
 
@@ -586,7 +587,7 @@ void JServer::OnLinkClose(SOCKET sock, UINT err)
 	}
 }
 
-int  CALLBACK JServer::BroadcastTrn(const SetId& set, bool nested, JTransaction* jpTrn, size_t ssi) throw()
+int  JServer::BroadcastTrn(const SetId& set, bool nested, JTransaction* jpTrn, size_t ssi) throw()
 {
 	// Count users to prevent duplicate sents
 	SetSocket broadcast;
@@ -614,7 +615,7 @@ int  CALLBACK JServer::BroadcastTrn(const SetId& set, bool nested, JTransaction*
 	return __super::BroadcastTrn(broadcast, jpTrn, ssi);
 }
 
-int  CALLBACK JServer::BroadcastTrn(const SetId& set, bool nested, WORD message, const std::string& str, size_t ssi) throw()
+int  JServer::BroadcastTrn(const SetId& set, bool nested, WORD message, const std::string& str, size_t ssi) throw()
 {
 	return BroadcastTrn(set, nested, MakeTrn(message, 0, str), ssi);
 }
@@ -1610,7 +1611,7 @@ JPtr<JTransaction> JServer::Make_Notify_SPLASHRTF(DWORD idBy, const char* ptr, s
 	return MakeTrn(NOTIFY(CCPM_SPLASHRTF), 0, os.str());
 }
 
-void CALLBACK JServer::Connections()
+void JServer::Connections()
 {
 	if (m_hwndPage)
 	{
@@ -1621,7 +1622,7 @@ void CALLBACK JServer::Connections()
 	}
 }
 
-void CALLBACK JServer::Passwords()
+void JServer::Passwords()
 {
 	if (m_hwndPage)
 	{
@@ -1632,7 +1633,7 @@ void CALLBACK JServer::Passwords()
 	}
 }
 
-void CALLBACK JServer::About()
+void JServer::About()
 {
 	if (m_hwndPage && m_bShowIcon)
 	{
@@ -1654,14 +1655,14 @@ void CALLBACK JServer::About()
 
 JPtr<JServerApp> JServerApp::jpApp = new JServerApp();
 
-CALLBACK JServerApp::JServerApp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szcl, int ncs)
+JServerApp::JServerApp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szcl, int ncs)
 : ::JApplication(hInstance, hPrevInstance, szcl, ncs),
 jpServer(0)
 {
 	sAppName = APPNAME;
 }
 
-void CALLBACK JServerApp::Init()
+void JServerApp::Init()
 {
 	static WNDCLASS MsgClass =
 	{
@@ -1691,12 +1692,12 @@ void CALLBACK JServerApp::Init()
 	jpServer->Init();
 }
 
-bool CALLBACK JServerApp::InitInstance()
+bool JServerApp::InitInstance()
 {
 	return true;
 }
 
-void CALLBACK JServerApp::Done()
+void JServerApp::Done()
 {
 	if (jpServer->State != JService::eStopped) jpServer->Stop();
 	jpServer->Done();

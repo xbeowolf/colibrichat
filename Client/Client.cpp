@@ -21,7 +21,10 @@
 
 #pragma endregion
 
+//-----------------------------------------------------------------------------
+
 using namespace colibrichat;
+using namespace attachment;
 
 //-----------------------------------------------------------------------------
 
@@ -93,7 +96,7 @@ void JClient::doneclass()
 	JClient::s_mapWsaErr.clear();
 }
 
-CALLBACK JClient::JClient()
+JClient::JClient()
 : JEngine(), JDialog(),
 jpOnline(0)
 {
@@ -155,7 +158,7 @@ jpOnline(0)
 	m_encryptorname = ECRYPT_DEFAULT;
 }
 
-void CALLBACK JClient::Init()
+void JClient::Init()
 {
 	__super::Init();
 
@@ -177,7 +180,7 @@ void CALLBACK JClient::Init()
 	mPageChannel.clear();
 }
 
-void CALLBACK JClient::Done()
+void JClient::Done()
 {
 	if (m_luaEvents) {
 		ASSERT(lua_gettop(m_luaEvents) == 0);
@@ -189,7 +192,7 @@ void CALLBACK JClient::Done()
 	__super::Done();
 }
 
-int  CALLBACK JClient::Run()
+int  JClient::Run()
 {
 	__super::Run();
 
@@ -209,7 +212,7 @@ int  CALLBACK JClient::Run()
 	return m_State;
 }
 
-void CALLBACK JClient::LoadState()
+void JClient::LoadState()
 {
 	m_idOwn = CRC_NONAME;
 
@@ -236,7 +239,7 @@ void CALLBACK JClient::LoadState()
 	m_bCheatAnonymous = profile::getInt(RF_CLIENT, RK_CHEATANONYMOUS, false) != 0;
 }
 
-void CALLBACK JClient::SaveState()
+void JClient::SaveState()
 {
 	profile::setString(RF_CLIENT, RK_HOST, ANSIToTstr(m_hostname));
 	profile::setInt(RF_CLIENT, RK_PORT, m_port);
@@ -662,7 +665,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	return retval;
 }
 
-void CALLBACK JClient::Connect(bool getsetting)
+void JClient::Connect(bool getsetting)
 {
 	if (getsetting && jpPageServer) {
 		char host[128];
@@ -714,7 +717,7 @@ void CALLBACK JClient::Connect(bool getsetting)
 	}
 }
 
-void CALLBACK JClient::saveAutoopen() const
+void JClient::saveAutoopen() const
 {
 	int i = 0;
 	for each (MapPageChannel::value_type const& v in mPageChannel) {
@@ -726,7 +729,7 @@ void CALLBACK JClient::saveAutoopen() const
 	profile::setInt(RF_AUTOOPEN, RK_CHANCOUNT, i);
 }
 
-void CALLBACK JClient::openAutoopen()
+void JClient::openAutoopen()
 {
 	if (profile::getInt(RF_AUTOOPEN, RK_USEAUTOOPEN, FALSE)) {
 		int count = profile::getInt(RF_AUTOOPEN, RK_CHANCOUNT, 0);
@@ -788,8 +791,7 @@ int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 		}
 
 		ASSERT(jp);
-		jp->SetSource(this);
-		jp->SetupHooks();
+		jp->SetNode(this, false, true);
 		CreateDialogParam(JClientApp::jpApp->hinstApp, jp->Template(), m_hwndPage, (DLGPROC)JDialog::DlgProcStub, (LPARAM)(JDialog*)jp);
 
 		RECT rcMain;
@@ -1089,25 +1091,25 @@ std::tstring JClient::getSafeName(DWORD idUser) const
 	}
 }
 
-bool CALLBACK JClient::isGod(DWORD idUser) const
+bool JClient::isGod(DWORD idUser) const
 {
 	MapUser::const_iterator iu = m_mUser.find(idUser != CRC_NONAME ? idUser : m_idOwn);
 	return iu != m_mUser.end() && iu->second.cheat.isGod;
 }
 
-bool CALLBACK JClient::isDevil(DWORD idUser) const
+bool JClient::isDevil(DWORD idUser) const
 {
 	MapUser::const_iterator iu = m_mUser.find(idUser != CRC_NONAME ? idUser : m_idOwn);
 	return iu != m_mUser.end() && iu->second.cheat.isDevil;
 }
 
-bool CALLBACK JClient::isCheats(DWORD idUser) const
+bool JClient::isCheats(DWORD idUser) const
 {
 	MapUser::const_iterator iu = m_mUser.find(idUser != CRC_NONAME ? idUser : m_idOwn);
 	return iu != m_mUser.end() && (iu->second.cheat.isGod || iu->second.cheat.isDevil);
 }
 
-void CALLBACK JClient::InsertUser(DWORD idUser, const User& user)
+void JClient::InsertUser(DWORD idUser, const User& user)
 {
 	SetId set;
 	if (m_mUser.find(idUser) != m_mUser.end()) {
@@ -1117,12 +1119,12 @@ void CALLBACK JClient::InsertUser(DWORD idUser, const User& user)
 	m_mUser[idUser].opened = set;
 }
 
-void CALLBACK JClient::LinkUser(DWORD idUser, DWORD idLink)
+void JClient::LinkUser(DWORD idUser, DWORD idLink)
 {
 	m_mUser[idUser].opened.insert(idLink);
 }
 
-void CALLBACK JClient::UnlinkUser(DWORD idUser, DWORD idLink)
+void JClient::UnlinkUser(DWORD idUser, DWORD idLink)
 {
 	MapUser::iterator iu = m_mUser.find(idUser);
 	if (iu != m_mUser.end()) {
@@ -1132,7 +1134,7 @@ void CALLBACK JClient::UnlinkUser(DWORD idUser, DWORD idLink)
 	}
 }
 
-void JClient::OnHook(JEventable* src)
+void JClient::OnHook(JNode* src)
 {
 	using namespace fastdelegate;
 
@@ -1160,7 +1162,7 @@ void JClient::OnHook(JEventable* src)
 	m_mTrnNotify[CCPM_SPLASHRTF] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_SPLASHRTF);
 }
 
-void JClient::OnUnhook(JEventable* src)
+void JClient::OnUnhook(JNode* src)
 {
 	using namespace fastdelegate;
 
@@ -2636,7 +2638,7 @@ JPtr<JTransaction> JClient::Make_Cmd_SPLASHRTF(DWORD idWho, const std::string& t
 
 JPtr<JClientApp> JClientApp::jpApp = new JClientApp();
 
-CALLBACK JClientApp::JClientApp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szcl, int ncs)
+JClientApp::JClientApp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szcl, int ncs)
 : JApplication(hInstance, hPrevInstance, szcl, ncs),
 jpClient(0)
 {
@@ -2653,7 +2655,7 @@ jpClient(0)
 	m_himgSend = 0;
 }
 
-void CALLBACK JClientApp::Init()
+void JClientApp::Init()
 {
 	INITCOMMONCONTROLSEX InitCtrls = {
 		sizeof(INITCOMMONCONTROLSEX),
@@ -2715,7 +2717,7 @@ void CALLBACK JClientApp::Init()
 	jpClient = new JClient;
 }
 
-bool CALLBACK JClientApp::InitInstance()
+bool JClientApp::InitInstance()
 {
 	ASSERT(jpClient);
 #ifdef _DEBUG
@@ -2734,7 +2736,7 @@ bool CALLBACK JClientApp::InitInstance()
 	}
 }
 
-void CALLBACK JClientApp::Done()
+void JClientApp::Done()
 {
 	if (jpClient->State != JService::eStopped) jpClient->Stop();
 	jpClient->Done();

@@ -113,7 +113,7 @@ void CALLBACK io::unpack(io::mem& is, colibrichat::Channel& data)
 //-----------------------------------------------------------------------------
 
 // Time funstions
-void FileTimeToLocalTime(const FILETIME &ft, SYSTEMTIME &st)
+void CALLBACK FileTimeToLocalTime(const FILETIME &ft, SYSTEMTIME &st)
 {
 	FILETIME temp;
 	FileTimeToLocalFileTime(&ft, &temp);

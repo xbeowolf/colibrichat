@@ -83,24 +83,25 @@ namespace colibrichat
 		// Dialogs
 		//
 
-		class JConnections : public JAttachedDialog<JServer>
+		class JConnections sealed : public JDialog
 		{
 		public:
 
-			CALLBACK JConnections();
+			GETJATTACH(JServer);
+			JConnections();
 
 		protected:
 
 			LRESULT WINAPI DlgProc(HWND, UINT, WPARAM, LPARAM);
 
-			int CALLBACK AddLine(SOCKET sock);
-			void CALLBACK DelLine(SOCKET sock);
-			void CALLBACK BuildView();
+			int AddLine(SOCKET sock);
+			void DelLine(SOCKET sock);
+			void BuildView();
 
 			MapUser::iterator getSelUser(int& index);
 
-			void OnHook(JEventable* src);
-			void OnUnhook(JEventable* src);
+			void OnHook(JNode* src);
+			void OnUnhook(JNode* src);
 
 			void OnLinkEstablished(SOCKET sock);
 			void OnLinkClose(SOCKET sock, UINT err);
@@ -111,11 +112,12 @@ namespace colibrichat
 			RECT rcList;
 		};
 
-		class JPasswords : public JAttachedDialog<JServer>
+		class JPasswords sealed : public JDialog
 		{
 		public:
 
-			CALLBACK JPasswords();
+			GETJATTACH(JServer);
+			JPasswords();
 
 		protected:
 
@@ -127,24 +129,25 @@ namespace colibrichat
 	public:
 
 		// Constructor
-		CALLBACK JServer();
-		DWORD CALLBACK getMinVersion() const {return BNP_ENGINEVERSMIN;}
-		DWORD CALLBACK getCurVersion() const {return BNP_ENGINEVERSNUM;}
+		JServer();
+		void beforeDestruct() { JEngine::beforeDestruct(); }
+		DWORD getMinVersion() const {return BNP_ENGINEVERSMIN;}
+		DWORD getCurVersion() const {return BNP_ENGINEVERSNUM;}
 
-		void CALLBACK Init();
-		void CALLBACK Done();
+		void Init();
+		void Done();
 
-		void CALLBACK JobQuantum() {}
+		void JobQuantum() {}
 
 		// Create or destroy message window
-		HWND CALLBACK CreateMsgWindow();
-		BOOL CALLBACK DestroyMsgWindow();
+		HWND CreateMsgWindow();
+		BOOL DestroyMsgWindow();
 
 	protected:
 
-		void CALLBACK LoadState(); // can be only one call for object
-		void CALLBACK SaveState(); // can be multiply calls for object
-		void CALLBACK InitLogs() {}
+		void LoadState(); // can be only one call for object
+		void SaveState(); // can be multiply calls for object
+		void InitLogs() {}
 
 		// encryption cipher name
 		const char* getEncryptorName() const {return m_encryptorname.c_str();}
@@ -153,23 +156,23 @@ namespace colibrichat
 
 		// --- CRC work ---
 
-		bool CALLBACK hasCRC(DWORD crc) const;
-		bool CALLBACK linkCRC(DWORD crc1, DWORD crc2);
-		void CALLBACK unlinkCRC(DWORD crc1, DWORD crc2);
+		bool hasCRC(DWORD crc) const;
+		bool linkCRC(DWORD crc1, DWORD crc2);
+		void unlinkCRC(DWORD crc1, DWORD crc2);
 
 		// --- Support ---
 
-		static bool CALLBACK CheckNick(std::tstring& nick, const TCHAR*& msg);
-		std::tstring CALLBACK getNearestName(const std::tstring& nick) const;
-		void CALLBACK RenameContact(DWORD idByOrSock, DWORD idOld, std::tstring newname);
-		bool CALLBACK isGod(DWORD idUser) const;
-		bool CALLBACK isDevil(DWORD idUser) const;
-		bool CALLBACK isCheats(DWORD idUser) const;
+		static bool CheckNick(std::tstring& nick, const TCHAR*& msg);
+		std::tstring getNearestName(const std::tstring& nick) const;
+		void RenameContact(DWORD idByOrSock, DWORD idOld, std::tstring newname);
+		bool isGod(DWORD idUser) const;
+		bool isDevil(DWORD idUser) const;
+		bool isCheats(DWORD idUser) const;
 
 	protected:
 
-		int  CALLBACK BroadcastTrn(const SetId& set, bool nested, JTransaction* jpTrn, size_t ssi = 0) throw();
-		int  CALLBACK BroadcastTrn(const SetId& set, bool nested, WORD message, const std::string& str, size_t ssi = 0) throw();
+		int  BroadcastTrn(const SetId& set, bool nested, JTransaction* jpTrn, size_t ssi = 0) throw();
+		int  BroadcastTrn(const SetId& set, bool nested, WORD message, const std::string& str, size_t ssi = 0) throw();
 
 		// Beowolf Network Protocol Messages reciving
 		void Recv_Cmd_NICK(SOCKET sock, io::mem& is);
@@ -212,8 +215,8 @@ namespace colibrichat
 		void Form_Reply_MESSAGE(std::ostream& os, DWORD idWho, UINT type) const;
 		JPtr<JTransaction> Make_Notify_SPLASHRTF(DWORD idBy, const char* ptr, size_t size) const;
 
-		void OnHook(JEventable* src);
-		void OnUnhook(JEventable* src);
+		void OnHook(JNode* src);
+		void OnUnhook(JNode* src);
 
 		void OnLinkEstablished(SOCKET sock);
 		void OnLinkAccess(SOCKET sock, huge::number* K, SetAccess& access);
@@ -222,9 +225,9 @@ namespace colibrichat
 
 		// --- Commands ---
 
-		void CALLBACK Connections();
-		void CALLBACK Passwords();
-		void CALLBACK About();
+		void Connections();
+		void Passwords();
+		void About();
 
 	public:
 
@@ -235,7 +238,7 @@ namespace colibrichat
 		JPROPERTY_R(u_short, port);
 
 		// Connections dialog
-		JPtr<JAttachedDialog<JServer>> jpConnections, jpPasswords;
+		JPtr<JDialog> jpConnections, jpPasswords;
 		// Tray icon
 		JPROPERTY_R(bool, bShowIcon);
 
@@ -255,13 +258,13 @@ namespace colibrichat
 	{
 	public:
 
-		virtual void CALLBACK Init();
-		virtual bool CALLBACK InitInstance();
-		virtual void CALLBACK Done();
+		virtual void Init();
+		virtual bool InitInstance();
+		virtual void Done();
 
 	protected:
 
-		CALLBACK JServerApp(HINSTANCE hInstance = 0, HINSTANCE hPrevInstance = 0, LPTSTR szcl = 0, int ncs = SW_SHOWDEFAULT);
+		JServerApp(HINSTANCE hInstance = 0, HINSTANCE hPrevInstance = 0, LPTSTR szcl = 0, int ncs = SW_SHOWDEFAULT);
 
 	public:
 
