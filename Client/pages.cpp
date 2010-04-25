@@ -2321,10 +2321,127 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 		{
 			__super::DlgProc(hWnd, message, wParam, lParam);
 
+			m_hwndReBar1 = GetDlgItem(hWnd, IDC_REBAR1);
+			m_hwndReBar2 = GetDlgItem(hWnd, IDC_REBAR2);
 			m_hwndList = GetDlgItem(hWnd, IDC_USERLIST);
 
 			// Get initial windows sizes
 			MapControl(m_hwndList, rcList);
+
+			// Inits ReBars
+			REBARINFO rbi = {sizeof(REBARINFO), 0, 0};
+			int h = rcLog.bottom - rcLog.top;
+			/*int l = rcList.right - rcLog.left;
+
+			REBARBANDINFO rbb1[] = {
+				{
+					sizeof(REBARBANDINFO), // cbSize
+						RBBIM_CHILD | RBBIM_CHILDSIZE | RBBIM_COLORS | RBBIM_STYLE | RBBIM_SIZE, // fMask
+						RBBS_CHILDEDGE | RBBS_NOGRIPPER | RBBS_VARIABLEHEIGHT, // fStyle
+						GetSysColor(COLOR_BTNTEXT), // clrFore
+						GetSysColor(COLOR_BTNFACE), // clrBack
+						TEXT("Toolbar"), // lpText
+						-1, // cch
+						0, // iImage
+						m_hwndTB, // hwndChild
+						16, // cxMinChild
+						l, // cyMinChild
+						16, // cx
+						0, // hbmBack
+						0, // wID
+#if (_WIN32_IE >= 0x0400)
+						l, // cyChild
+						l, // cyMaxChild
+						8, // cyIntegral
+						16, // cxIdeal
+						0, // lParam
+						0, // cxHeader
+#endif
+				},
+				{
+					sizeof(REBARBANDINFO), // cbSize
+						RBBIM_CHILD | RBBIM_CHILDSIZE | RBBIM_COLORS | RBBIM_IDEALSIZE | RBBIM_STYLE | RBBIM_SIZE, // fMask
+						RBBS_CHILDEDGE | RBBS_VARIABLEHEIGHT, // fStyle
+						GetSysColor(COLOR_BTNTEXT), // clrFore
+						GetSysColor(COLOR_BTNFACE), // clrBack
+						TEXT("Users list"), // lpText
+						-1, // cch
+						0, // iImage
+						m_hwndReBar2, // hwndChild
+						250, // cxMinChild
+						l, // cyMinChild
+						300, // cx
+						0, // hbmBack
+						1, // wID
+#if (_WIN32_IE >= 0x0400)
+						l, // cyChild
+						l, // cyMaxChild
+						8, // cyIntegral
+						300, // cxIdeal
+						0, // lParam
+						0, // cxHeader
+#endif
+				},
+			};
+			VERIFY(SendMessage(m_hwndReBar1, RB_SETBARINFO, 0, (LPARAM)&rbi));
+			for (int i = 0; i < _countof(rbb1); i++) {
+				VERIFY(SendMessage(m_hwndReBar1, RB_INSERTBAND, i, (LPARAM)&rbb1[i]));
+			}*/
+
+			REBARBANDINFO rbb2[] = {
+				{
+					sizeof(REBARBANDINFO), // cbSize
+						RBBIM_CHILD | RBBIM_CHILDSIZE | RBBIM_COLORS | RBBIM_STYLE | RBBIM_SIZE, // fMask
+						RBBS_CHILDEDGE | RBBS_NOGRIPPER | RBBS_VARIABLEHEIGHT, // fStyle
+						GetSysColor(COLOR_BTNTEXT), // clrFore
+						GetSysColor(COLOR_BTNFACE), // clrBack
+						TEXT("Log"), // lpText
+						-1, // cch
+						0, // iImage
+						m_hwndLog, // hwndChild
+						200, // cxMinChild
+						h, // cyMinChild
+						200, // cx
+						0, // hbmBack
+						0, // wID
+#if (_WIN32_IE >= 0x0400)
+						h, // cyChild
+						h, // cyMaxChild
+						8, // cyIntegral
+						200, // cxIdeal
+						0, // lParam
+						0, // cxHeader
+#endif
+				},
+				{
+					sizeof(REBARBANDINFO), // cbSize
+						RBBIM_CHILD | RBBIM_CHILDSIZE | RBBIM_COLORS | RBBIM_IDEALSIZE | RBBIM_STYLE | RBBIM_SIZE, // fMask
+						RBBS_CHILDEDGE | RBBS_VARIABLEHEIGHT, // fStyle
+						GetSysColor(COLOR_BTNTEXT), // clrFore
+						GetSysColor(COLOR_BTNFACE), // clrBack
+						TEXT("Users list"), // lpText
+						-1, // cch
+						0, // iImage
+						m_hwndList, // hwndChild
+						0, // cxMinChild
+						h, // cyMinChild
+						120, // cx
+						0, // hbmBack
+						1, // wID
+#if (_WIN32_IE >= 0x0400)
+						h, // cyChild
+						h, // cyMaxChild
+						8, // cyIntegral
+						120, // cxIdeal
+						0, // lParam
+						0, // cxHeader
+#endif
+				},
+			};
+			VERIFY(SendMessage(m_hwndReBar2, RB_SETBARINFO, 0, (LPARAM)&rbi));
+			for (int i = 0; i < _countof(rbb2); i++) {
+				VERIFY(SendMessage(m_hwndReBar2, RB_INSERTBAND, i, (LPARAM)&rbb2[i]));
+			}
 
 			// Inits Users list
 			ListView_SetExtendedListViewStyle(m_hwndList,
@@ -2370,13 +2487,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 		{
 			RECT rc;
 			int cx = LOWORD(lParam), cy = HIWORD(lParam);
-			HDWP hdwp = BeginDeferWindowPos(6);
-			SetRect(&rc,
-				rcLog.left,
-				rcLog.top,
-				cx - rcPage.right + rcLog.right,
-				cy - rcPage.bottom + rcLog.bottom);
-			DeferWindowPos(hdwp, m_hwndLog, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER);
+			HDWP hdwp = BeginDeferWindowPos(5);
 			SetRect(&rc,
 				rcEdit.left,
 				cy - rcPage.bottom + rcEdit.top,
@@ -2384,11 +2495,65 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				cy - rcPage.bottom + rcEdit.bottom);
 			DeferWindowPos(hdwp, m_hwndEdit, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOREPOSITION | SWP_NOZORDER);
 			SetRect(&rc,
-				cx - rcPage.right + rcList.left,
-				rcList.top,
+				rcLog.left,
+				rcLog.top,
 				cx - rcPage.right + rcList.right,
-				cy - rcPage.bottom + rcList.bottom);
-			DeferWindowPos(hdwp, m_hwndList, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOREPOSITION | SWP_NOZORDER);
+				cy - rcPage.bottom + rcLog.bottom);
+			DeferWindowPos(hdwp, m_hwndReBar2, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOREPOSITION | SWP_NOZORDER);
+			int h = rc.bottom - rc.top;
+			REBARBANDINFO rbb2[] = {
+				{
+					sizeof(REBARBANDINFO), // cbSize
+						RBBIM_CHILDSIZE, // fMask
+						0, // fStyle
+						0, // clrFore
+						0, // clrBack
+						TEXT("Log"), // lpText
+						-1, // cch
+						0, // iImage
+						0, // hwndChild
+						200, // cxMinChild
+						h, // cyMinChild
+						200, // cx
+						0, // hbmBack
+						0, // wID
+#if (_WIN32_IE >= 0x0400)
+						h, // cyChild
+						h, // cyMaxChild
+						8, // cyIntegral
+						200, // cxIdeal
+						0, // lParam
+						0, // cxHeader
+#endif
+				},
+				{
+					sizeof(REBARBANDINFO), // cbSize
+						RBBIM_CHILDSIZE, // fMask
+						0, // fStyle
+						0, // clrFore
+						0, // clrBack
+						TEXT("Users list"), // lpText
+						-1, // cch
+						0, // iImage
+						0, // hwndChild
+						0, // cxMinChild
+						h, // cyMinChild
+						120, // cx
+						0, // hbmBack
+						1, // wID
+#if (_WIN32_IE >= 0x0400)
+						h, // cyChild
+						h, // cyMaxChild
+						8, // cyIntegral
+						120, // cxIdeal
+						0, // lParam
+						0, // cxHeader
+#endif
+				},
+			};
+			for (int i = 0; i < _countof(rbb2); i++) {
+				VERIFY(SendMessage(hwndReBar2, RB_SETBANDINFO, i, (LPARAM)&rbb2[i]));
+			}
 			SetRect(&rc,
 				cx - rcPage.right + rcMsgSpinBlue.left,
 				cy - rcPage.bottom + rcMsgSpinBlue.top,

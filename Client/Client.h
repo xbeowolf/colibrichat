@@ -504,6 +504,8 @@ namespace colibrichat
 
 			JPROPERTY_RREF_CONST(Channel, channel);
 
+			JPROPERTY_R(HWND, hwndReBar1);
+			JPROPERTY_R(HWND, hwndReBar2);
 			JPROPERTY_R(HWND, hwndList);
 			RECT rcList;
 		};
@@ -923,6 +925,8 @@ namespace colibrichat
 		JPtr<JClient> jpClient;
 
 	protected:
+
+		static WSADATA wsaData;
 
 		HINSTANCE hinstRichEdit;
 

@@ -2636,6 +2636,7 @@ JPtr<JTransaction> JClient::Make_Cmd_SPLASHRTF(DWORD idWho, const std::string& t
 //-----------------------------------------------------------------------------
 
 JPtr<JClientApp> JClientApp::jpApp = new JClientApp();
+WSADATA JClientApp::wsaData;
 
 JClientApp::JClientApp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szcl, int ncs)
 : JApplication(hInstance, hPrevInstance, szcl, ncs),
@@ -2660,6 +2661,7 @@ void JClientApp::Init()
 		sizeof(INITCOMMONCONTROLSEX),
 		ICC_WIN95_CLASSES |
 		ICC_STANDARD_CLASSES |
+		ICC_COOL_CLASSES |
 		ICC_LINK_CLASS
 	};
 	VERIFY(InitCommonControlsEx(&InitCtrls));
@@ -2669,6 +2671,7 @@ void JClientApp::Init()
 		|| (hinstRichEdit = LoadLibrary(TEXT("Riched20.dll"))) != 0 // version 2.0 or 3.0
 		|| (hinstRichEdit = LoadLibrary(TEXT("Riched32.dll"))) != 0 // version 1.0
 		);
+	VERIFY(!WSAStartup(MAKEWORD(2, 2), &wsaData));
 
 	profile::setKey(TEXT("BEOWOLF"), APPNAME);
 
@@ -2762,6 +2765,8 @@ void JClientApp::Done()
 	VERIFY(!mciSendCommand(MCI_ALL_DEVICE_ID, MCI_CLOSE, MCI_WAIT, NULL));
 	// Free RichEdit library
 	VERIFY(FreeLibrary(hinstRichEdit));
+
+	VERIFY(!WSACleanup());
 }
 
 //-----------------------------------------------------------------------------
