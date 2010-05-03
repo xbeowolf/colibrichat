@@ -2392,7 +2392,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				{
 					sizeof(REBARBANDINFO), // cbSize
 						RBBIM_CHILD | RBBIM_CHILDSIZE | RBBIM_COLORS | RBBIM_STYLE | RBBIM_SIZE, // fMask
-						RBBS_CHILDEDGE | RBBS_NOGRIPPER | RBBS_VARIABLEHEIGHT, // fStyle
+						RBBS_CHILDEDGE | RBBS_VARIABLEHEIGHT, // fStyle
 						GetSysColor(COLOR_BTNTEXT), // clrFore
 						GetSysColor(COLOR_BTNFACE), // clrBack
 						TEXT("Log"), // lpText
@@ -2733,24 +2733,16 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					ASSERT(iu != pNode->m_mUser.end());
 
 					EChanStatus statOwn = m_channel.getStatus(pNode->m_idOwn), statUser = m_channel.getStatus(iu->first);
-					static const struct {UINT idc; EChanStatus stat;} cmp[] = {
-						{IDC_OUTSIDER, eOutsider},
-						{IDC_READER, eReader},
-						{IDC_WRITER, eWriter},
-						{IDC_MEMBER, eMember},
-						{IDC_MODERATOR, eModerator},
-						{IDC_ADMIN, eAdmin},
-						{IDC_FOUNDER, eFounder},
+					static const UINT idc[] = {
+						IDC_OUTSIDER, IDC_READER, IDC_WRITER, IDC_MEMBER, IDC_MODERATOR, IDC_ADMIN, IDC_FOUNDER,
 					};
 					int i;
-					for (i = 0; cmp[i].idc != LOWORD(wParam); i++) {}
-					ASSERT(i < _countof(cmp));
-					bool canModer =
-						(statOwn > statUser || statOwn >= eModerator || iu->first == pNode->m_idOwn) &&
-						(statOwn > cmp[i].stat || statOwn == eFounder);
-					if (canModer || pNode->isGod()) {
+					for (i = eOutsider; idc[i] != LOWORD(wParam); i++) {}
+					ASSERT(i <= eFounder);
+					bool canModer = (statOwn == eFounder) || ((pNode->m_idOwn == iu->first || statOwn > statUser) && statOwn > i);
+					if ((canModer || pNode->isGod()) && statUser != i) {
 						ASSERT(pNode->m_clientsock);
-						pNode->PushTrn(pNode->m_clientsock, pNode->Make_Cmd_ACCESS(iu->first, m_ID, cmp[i].stat));
+						pNode->PushTrn(pNode->m_clientsock, pNode->Make_Cmd_ACCESS(iu->first, m_ID, (EChanStatus)i));
 					}
 					break;
 				}
@@ -2905,16 +2897,6 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					break;
 				}
 
-			case NM_DBLCLK:
-				{
-					if (pnmh->idFrom == IDC_USERLIST) {
-						if (pNode->m_clientsock) {
-							SendMessage(hWnd, WM_COMMAND, IDC_PRIVATETALK, 0);
-						}
-					}
-					break;
-				}
-
 			case LVN_ITEMCHANGED:
 				{
 					LPNMLISTVIEW pnmv = (LPNMLISTVIEW)lParam;
@@ -2957,6 +2939,24 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					break;
 				}
 
+			case NM_DBLCLK:
+				{
+					if (pnmh->idFrom == IDC_USERLIST) {
+						if (pNode->m_clientsock) {
+							SendMessage(hWnd, WM_COMMAND, IDC_PRIVATETALK, 0);
+						}
+					}
+					break;
+				}
+
+			case NM_KILLFOCUS:
+				{
+					if (pnmh->idFrom == IDC_USERLIST) {
+						pNode->HideBaloon(m_hwndList);
+					}
+					break;
+				}
+
 			case EN_MSGFILTER:
 				{
 					MSGFILTER* pmf = (MSGFILTER*)lParam;
@@ -2982,13 +2982,26 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				TrackPopupMenu(GetSubMenu(JClientApp::jpApp->hmenuChannel, 0), TPM_LEFTALIGN | TPM_RIGHTBUTTON,
 					min(max(GET_X_LPARAM(lParam), r.left), r.right),
 					min(max(GET_Y_LPARAM(lParam), r.top), r.bottom), 0, hWnd, 0);
-			} else if ((HWND)wParam == m_hwndList
-				&& ListView_GetSelectedCount(m_hwndList)) {
-				RECT r;
-				GetWindowRect((HWND)wParam, &r);
-				TrackPopupMenu(GetSubMenu(pNode->isGod() ? JClientApp::jpApp->hmenuUserGod : JClientApp::jpApp->hmenuUser, 0), TPM_LEFTALIGN | TPM_RIGHTBUTTON,
-					min(max(GET_X_LPARAM(lParam), r.left), r.right),
-					min(max(GET_Y_LPARAM(lParam), r.top), r.bottom), 0, hWnd, 0);
+			} else if ((HWND)wParam == GetDlgItem(hWnd, IDC_REBAR2)) {
+				RBHITTESTINFO rbht;
+				rbht.pt.x = GET_X_LPARAM(lParam);
+				rbht.pt.y = GET_Y_LPARAM(lParam);
+				SendMessage(m_hwndReBar2, RB_HITTEST, 0, (LPARAM)&rbht);
+				if (rbht.iBand != -1) {
+					if (rbht.iBand == 0) {
+						wParam = (WPARAM)m_hwndLog;
+						retval = __super::DlgProc(hWnd, message, wParam, lParam);
+					} else if (rbht.iBand == 1) {
+						wParam = (WPARAM)m_hwndList;
+						if (ListView_GetSelectedCount(m_hwndList)) {
+							RECT r;
+							GetWindowRect((HWND)wParam, &r);
+							TrackPopupMenu(GetSubMenu(pNode->isGod() ? JClientApp::jpApp->hmenuUserGod : JClientApp::jpApp->hmenuUser, 0), TPM_LEFTALIGN | TPM_RIGHTBUTTON,
+								min(max(GET_X_LPARAM(lParam), r.left), r.right),
+								min(max(GET_Y_LPARAM(lParam), r.top), r.bottom), 0, hWnd, 0);
+						}
+					}
+				}
 			} else {
 				retval = __super::DlgProc(hWnd, message, wParam, lParam);
 			}
@@ -3065,18 +3078,18 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					MF_BYCOMMAND | (valid && (iu->first == pNode->m_idOwn || (isModer && canKick && !pNode->isDevil(iu->first)) || pNode->isDevil()) ? MF_ENABLED : MF_GRAYED));
 			} else if ((HMENU)wParam == GetSubMenu(GetSubMenu(JClientApp::jpApp->hmenuUser, 0), 8)) {
 				MapUser::const_iterator iu = getSelUser();
-				bool valid = iu != pNode->m_mUser.end();
-
-				if (valid) {
-					for (int i = eOutsider; i <= eFounder; i++) {
-						EChanStatus statOwn = m_channel.getStatus(pNode->m_idOwn), statUser = m_channel.getStatus(iu->first);
-						bool canModer =
-							(statOwn > statUser || statOwn >= eModerator || iu->first == pNode->m_idOwn) &&
-							(statOwn > eFounder - i || statOwn == eFounder);
-						CheckMenuRadioItem((HMENU)wParam, eOutsider, eFounder, eFounder - statUser, MF_BYPOSITION);
-						EnableMenuItem((HMENU)wParam, IDC_FOUNDER + i,
-							MF_BYCOMMAND | (canModer || pNode->isGod()? MF_ENABLED : MF_GRAYED));
+				if (iu != pNode->m_mUser.end()) {
+					EChanStatus statOwn = m_channel.getStatus(pNode->m_idOwn), statUser = m_channel.getStatus(iu->first);
+					static const UINT idc[] = {
+						IDC_OUTSIDER, IDC_READER, IDC_WRITER, IDC_MEMBER, IDC_MODERATOR, IDC_ADMIN, IDC_FOUNDER,
+					};
+					int i;
+					for (i = eOutsider; i <= eFounder; i++) {
+						bool canModer = (statOwn == eFounder) || ((pNode->m_idOwn == iu->first || statOwn > statUser) && statOwn > i);
+						EnableMenuItem((HMENU)wParam, idc[i],
+							MF_BYCOMMAND | (canModer || pNode->isGod() ? MF_ENABLED : MF_GRAYED));
 					}
+					CheckMenuRadioItem((HMENU)wParam, idc[eFounder], idc[eOutsider], idc[statUser], MF_BYCOMMAND);
 				} else {
 					for (int i = eOutsider; i <= eFounder; i++) {
 						EnableMenuItem((HMENU)wParam, IDC_FOUNDER + eFounder - i, MF_BYCOMMAND | MF_GRAYED);

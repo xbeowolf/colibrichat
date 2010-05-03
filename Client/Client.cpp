@@ -439,7 +439,11 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_ACTIVATEAPP2:
 		{
-			if (jpOnline) jpOnline->activate();
+			if (wParam != 0 && jpOnline) {
+				jpOnline->activate();
+				HWND focus = jpOnline->getDefFocusWnd();
+				if (focus) SetFocus(focus);
+			}
 			if (m_clientsock) PushTrn(m_clientsock, Make_Cmd_ONLINE(wParam != 0 ? eOnline : eOffline, jpOnline ? jpOnline->getID() : 0));
 
 			// Lua response

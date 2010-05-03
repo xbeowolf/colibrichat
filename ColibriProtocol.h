@@ -27,9 +27,9 @@
 #define CCP_PORT                       7531
 
 // Current engine version
-#define BNP_ENGINEVERSSTRW             MAKEVERSIONSTR(1, 2, 4, 1)
-#define BNP_ENGINEVERSSTRA             MAKEVERSIONSTR(1, 2, 4, 1)
-#define BNP_ENGINEVERSNUM              MAKEVERSIONNUM(1, 2, 4, 1)
+#define BNP_ENGINEVERSSTRW             MAKEVERSIONSTR(1, 2, 4, 2)
+#define BNP_ENGINEVERSSTRA             MAKEVERSIONSTR(1, 2, 4, 2)
+#define BNP_ENGINEVERSNUM              MAKEVERSIONNUM(1, 2, 4, 2)
 #define BNP_ENGINEVERSMIN              MAKEVERSIONNUM(1, 2, 3, 2)
 #ifdef UNICODE
 #define BNP_ENGINEVERSSTR              BNP_ENGINEVERSSTRW
