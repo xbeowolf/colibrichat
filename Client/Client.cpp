@@ -168,7 +168,7 @@ void JClient::Init()
 	// register Lua data
 	CLuaGluer<JClient>::Register(m_luaEvents);
 	// insert itself to script
-	setglobal(m_luaEvents, this, "chat");
+	CLuaGluer<JClient>::setglobal(m_luaEvents, this, "chat");
 	ASSERT(lua_gettop(m_luaEvents) == 0);
 
 	jpOnline = 0;
@@ -2783,6 +2783,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance,
 	try
 	{
 		// Set current directory to executable location
+#ifndef _DEBUG
 		{
 			TCHAR mpath[_MAX_PATH];
 			TCHAR drive[_MAX_DRIVE];
@@ -2791,6 +2792,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance,
 			_tsplitpath_s(mpath, drive, _countof(drive), dir, _countof(dir), NULL, 0, NULL, 0);
 			SetCurrentDirectory((std::tstring(drive)+dir).c_str());
 		}
+#endif
 
 		JClientApp::jpApp->hinstApp = hInstance;
 		JClientApp::jpApp->hinstPrev = hPrevInstance;

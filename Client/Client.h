@@ -167,7 +167,7 @@ namespace colibrichat
 	enum ETimeFormat {etimeNone, etimeHHMM, etimeHHMMSS};
 	enum EAlert {eGreen, eBlue, eYellow, eRed};
 
-	class JClient : public JEngine, public JDialog, protected initdoneable<JClient>, protected CLuaGluer<JClient>
+	class JClient : public JEngine, public JDialog, protected initdoneable<JClient>
 	{
 	public:
 
@@ -816,36 +816,36 @@ namespace colibrichat
 		void OnNick(DWORD idOld, const std::tstring& oldname, DWORD idNew, const std::tstring& newname);
 
 		// Lua gluer
-		int lua_regFuncs(lua_State *luaVM);
-		int lua_getGlobal(lua_State *luaVM);
-		int lua_getVars(lua_State *luaVM);
-		int lua_setVars(lua_State *luaVM);
-		int lua_PlaySound(lua_State *luaVM);
-		int lua_ShowTopic(lua_State *luaVM);
-		int lua_saveAutoopen(lua_State *luaVM);
-		int lua_openAutoopen(lua_State *luaVM);
-		int lua_Log(lua_State *luaVM);
-		int lua_HideBaloon(lua_State *luaVM);
-		int lua_Connect(lua_State *luaVM);
-		int lua_Disconnect(lua_State *luaVM);
-		int lua_getConnectCount(lua_State *luaVM);
-		int lua_setConnectCount(lua_State *luaVM);
-		int lua_getSocket(lua_State *luaVM);
-		int lua_checkConnectionButton(lua_State *luaVM);
-		int lua_WaitConnectStart(lua_State *luaVM);
-		int lua_WaitConnectStop(lua_State *luaVM);
-		int lua_MinimizeWindow(lua_State *luaVM);
-		int lua_MaximizeWindow(lua_State *luaVM);
-		int lua_RestoreWindow(lua_State *luaVM);
-		int lua_FlashWindow(lua_State *luaVM);
-		int lua_DestroyWindow(lua_State *luaVM);
-		int lua_PageEnable(lua_State *luaVM);
-		int lua_PageDisable(lua_State *luaVM);
-		int lua_PageAppendScript(lua_State *luaVM);
-		int lua_Say(lua_State *luaVM);
-		int lua_Message(lua_State *luaVM);
-		int lua_Alert(lua_State *luaVM);
-		int lua_Beep(lua_State *luaVM);
+		int lua_regFuncs(lua_State *L);
+		DECLARE_LUAMETHOD(getGlobal);
+		DECLARE_LUAMETHOD(getVars);
+		DECLARE_LUAMETHOD(setVars);
+		DECLARE_LUAMETHOD(PlaySound);
+		DECLARE_LUAMETHOD(ShowTopic);
+		DECLARE_LUAMETHOD(saveAutoopen);
+		DECLARE_LUAMETHOD(openAutoopen);
+		DECLARE_LUAMETHOD(Log);
+		DECLARE_LUAMETHOD(HideBaloon);
+		DECLARE_LUAMETHOD(Connect);
+		DECLARE_LUAMETHOD(Disconnect);
+		DECLARE_LUAMETHOD(getConnectCount);
+		DECLARE_LUAMETHOD(setConnectCount);
+		DECLARE_LUAMETHOD(getSocket);
+		DECLARE_LUAMETHOD(checkConnectionButton);
+		DECLARE_LUAMETHOD(WaitConnectStart);
+		DECLARE_LUAMETHOD(WaitConnectStop);
+		DECLARE_LUAMETHOD(MinimizeWindow);
+		DECLARE_LUAMETHOD(MaximizeWindow);
+		DECLARE_LUAMETHOD(RestoreWindow);
+		DECLARE_LUAMETHOD(FlashWindow);
+		DECLARE_LUAMETHOD(DestroyWindow);
+		DECLARE_LUAMETHOD(PageEnable);
+		DECLARE_LUAMETHOD(PageDisable);
+		DECLARE_LUAMETHOD(PageAppendScript);
+		DECLARE_LUAMETHOD(Say);
+		DECLARE_LUAMETHOD(Message);
+		DECLARE_LUAMETHOD(Alert);
+		DECLARE_LUAMETHOD(Beep);
 
 	public:
 

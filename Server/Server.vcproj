@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\SDK;..\..\Common"
+				AdditionalIncludeDirectories="..\..\Common"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;CHEATS"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -123,7 +123,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="..\..\SDK;..\..\Common"
+				AdditionalIncludeDirectories="..\..\Common"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;CHEATS"
 				StringPooling="true"
 				RuntimeLibrary="0"

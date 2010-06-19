@@ -1716,6 +1716,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance,
 	try
 	{
 		// Set current directory to executable location
+#ifndef _DEBUG
 		{
 			TCHAR mpath[_MAX_PATH];
 			TCHAR drive[_MAX_DRIVE];
@@ -1724,6 +1725,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance,
 			_tsplitpath_s(mpath, drive, _countof(drive), dir, _countof(dir), NULL, 0, NULL, 0);
 			SetCurrentDirectory((std::tstring(drive)+dir).c_str());
 		}
+#endif
 
 		JServerApp::jpApp->hinstApp = hInstance;
 		JServerApp::jpApp->hinstPrev = hPrevInstance;
