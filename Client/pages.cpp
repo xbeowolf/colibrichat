@@ -325,13 +325,13 @@ void JClient::JPageLog::Say(DWORD idWho, std::string& content)
 	AppendRtf(content, true);
 
 	// Lua response
-	if (pNode->m_luaEvents) {
-		lua_getglobal(pNode->m_luaEvents, "onSay");
-		lua_pushstring(pNode->m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
-		lua_pushstring(pNode->m_luaEvents, tstrToANSI(getname()).c_str());
-		lua_pushstring(pNode->m_luaEvents, content.c_str());
-		ASSERT(lua_gettop(pNode->m_luaEvents) == 4);
-		lua_call(pNode->m_luaEvents, 3, 0);
+	if (pNode->m_luaVM) {
+		lua_getglobal(pNode->m_luaVM, "onSay");
+		lua_pushstring(pNode->m_luaVM, tstrToANSI(getSafeName(idWho)).c_str());
+		lua_pushstring(pNode->m_luaVM, tstrToANSI(getname()).c_str());
+		lua_pushstring(pNode->m_luaVM, content.c_str());
+		ASSERT(lua_gettop(pNode->m_luaVM) == 4);
+		lua_call(pNode->m_luaVM, 3, 0);
 	}
 }
 
@@ -728,10 +728,10 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 			case IDC_CONNECT:
 				{
 					// Lua response
-					if (pNode->m_luaEvents) {
-						lua_getglobal(pNode->m_luaEvents, "idcConnect");
-						ASSERT(lua_gettop(pNode->m_luaEvents) == 1);
-						lua_call(pNode->m_luaEvents, 0, 0);
+					if (pNode->m_luaVM) {
+						lua_getglobal(pNode->m_luaVM, "idcConnect");
+						ASSERT(lua_gettop(pNode->m_luaVM) == 1);
+						lua_call(pNode->m_luaVM, 0, 0);
 					} else if (pNode->m_clientsock) {
 						pNode->DeleteLink(pNode->m_clientsock);
 					} else if (pNode->m_nConnectCount) {
@@ -2232,12 +2232,12 @@ void JClient::JPageChannel::Join(DWORD idWho)
 	MapUser::const_iterator iu = pNode->m_mUser.find(idWho);
 	if (iu != pNode->m_mUser.end() && iu->second.name.length()) {
 		// Lua response
-		if (pNode->m_luaEvents) {
-			lua_getglobal(pNode->m_luaEvents, "onJoinChannel");
-			lua_pushstring(pNode->m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
-			lua_pushstring(pNode->m_luaEvents, tstrToANSI(m_channel.name).c_str());
-			ASSERT(lua_gettop(pNode->m_luaEvents) == 3);
-			lua_call(pNode->m_luaEvents, 2, 0);
+		if (pNode->m_luaVM) {
+			lua_getglobal(pNode->m_luaVM, "onJoinChannel");
+			lua_pushstring(pNode->m_luaVM, tstrToANSI(getSafeName(idWho)).c_str());
+			lua_pushstring(pNode->m_luaVM, tstrToANSI(m_channel.name).c_str());
+			ASSERT(lua_gettop(pNode->m_luaVM) == 3);
+			lua_call(pNode->m_luaVM, 2, 0);
 		} else {
 			AppendScript(tformat(TEXT("[style=Info]joins: [b]%s[/b][/style]"), getSafeName(idWho).c_str()));
 		}
@@ -2250,13 +2250,13 @@ void JClient::JPageChannel::Part(DWORD idWho, DWORD idBy)
 	if (m_hwndPage) DelLine(idWho);
 
 	// Lua response
-	if (pNode->m_luaEvents) {
-		lua_getglobal(pNode->m_luaEvents, "onPartChannel");
-		lua_pushstring(pNode->m_luaEvents, tstrToANSI(getSafeName(idWho)).c_str());
-		lua_pushstring(pNode->m_luaEvents, tstrToANSI(getSafeName(idBy)).c_str());
-		lua_pushstring(pNode->m_luaEvents, tstrToANSI(m_channel.name).c_str());
-		ASSERT(lua_gettop(pNode->m_luaEvents) == 4);
-		lua_call(pNode->m_luaEvents, 3, 0);
+	if (pNode->m_luaVM) {
+		lua_getglobal(pNode->m_luaVM, "onPartChannel");
+		lua_pushstring(pNode->m_luaVM, tstrToANSI(getSafeName(idWho)).c_str());
+		lua_pushstring(pNode->m_luaVM, tstrToANSI(getSafeName(idBy)).c_str());
+		lua_pushstring(pNode->m_luaVM, tstrToANSI(m_channel.name).c_str());
+		ASSERT(lua_gettop(pNode->m_luaVM) == 4);
+		lua_call(pNode->m_luaVM, 3, 0);
 	} else {
 		// Parting message
 		std::tstring msg;

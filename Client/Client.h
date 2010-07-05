@@ -706,9 +706,12 @@ namespace colibrichat
 		static const char className[];
 		static CLuaGluer<JClient>::_tRegType methods[];
 		JClient();
-		void beforeDestruct() { JEngine::beforeDestruct(); }
+		void beforeDestruct();
 		DWORD getMinVersion() const {return BNP_ENGINEVERSMIN;}
 		DWORD getCurVersion() const {return BNP_ENGINEVERSNUM;}
+
+		virtual void lua_openVM();
+		virtual void lua_closeVM();
 
 		void Init();
 		void Done();
@@ -903,8 +906,7 @@ namespace colibrichat
 		JPROPERTY_RREF_CONST(Metrics, metrics);
 		JPROPERTY_RREF_CONST(std::string, encryptorname);
 
-		// Lua managment
-		JPROPERTY_R(lua_State*, luaEvents);
+		JPROPERTY_R( lua_State*, luaVM ); // Lua virtual machine
 	};
 
 	class JClientApp : public JApplication // Singleton

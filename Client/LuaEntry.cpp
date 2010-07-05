@@ -96,7 +96,7 @@ int JClient::lua_regFuncs(lua_State *L)
 
 //-----------------------------------------------------------------------------
 
-const char JClient::className[] = "Client";
+const char JClient::className[] = "JClient";
 
 CLuaGluer<JClient>::_tRegType JClient::methods[] =
 {
