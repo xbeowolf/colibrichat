@@ -246,7 +246,6 @@ JClient::JPageLog::JPageLog()
 	m_Groups.insert(eWarning);
 	m_Groups.insert(eError);
 	m_Priority = eNormal;
-	etimeFormat = etimeHHMMSS;
 }
 
 void JClient::JPageLog::AppendRtf(std::string& content, bool toascii) const
@@ -295,18 +294,7 @@ void JClient::JPageLog::AppendScript(const std::tstring& content, bool withtime)
 	{
 		static SYSTEMTIME st;
 		GetLocalTime(&st);
-		switch (etimeFormat)
-		{
-		case etimeHHMM:
-			_stprintf_s(time, _countof(time), TEXT("[style=time][%02u:%02u][/style] "), st.wHour, st.wMinute);
-			break;
-		case etimeHHMMSS:
-			_stprintf_s(time, _countof(time), TEXT("[style=time][%02u:%02u:%02u][/style] "), st.wHour, st.wMinute, st.wSecond);
-			break;
-		default:
-			_stprintf_s(time, _countof(time), TEXT(""));
-			break;
-		}
+		_stprintf_s(time, _countof(time), pNode->m_timeFormat.c_str(), st.wHour, st.wMinute, st.wSecond);
 	}
 	// Write whole string to log
 	Write(m_hwndLog, time) && Write(m_hwndLog, content.c_str()) && Write(m_hwndLog, TEXT("\r\n"));
@@ -1461,7 +1449,7 @@ void JClient::JPageList::Recv_Reply_LIST(SOCKET sock, WORD trnid, io::mem& is)
 	pNode->EvReport(tformat(TEXT("listed [b]%u[/b] channels"), m_mChannel.size()), eInformation, eNormal);
 }
 
-JPtr<JTransaction> JClient::JPageList::Make_Quest_LIST() const
+JPtr<JBTransaction> JClient::JPageList::Make_Quest_LIST() const
 {
 	std::ostringstream os;
 	return pNode->MakeTrn(QUEST(CCPM_LIST), 0, os.str());

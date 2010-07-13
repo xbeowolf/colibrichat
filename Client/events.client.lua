@@ -28,19 +28,20 @@ fAutoopen = true
 nickOwn = NAME_NONAME
 
 -- WSA error codes
-wsaErr = {}
--- on FD_CONNECT
-wsaErr[10061] = "The attempt to connect was rejected." -- WSAECONNREFUSED
-wsaErr[10051] = "The network cannot be reached from this host at this time." -- WSAENETUNREACH
-wsaErr[10024] = "No more file descriptors are available." -- WSAEMFILE
-wsaErr[10055] = "No buffer space is available. The socket cannot be connected." -- WSAENOBUFS
-wsaErr[10057] = "The socket is not connected." -- WSAENOTCONN
-wsaErr[10060] = "Attempt to connect timed out without establishing a connection." -- WSAETIMEDOUT
--- on FD_CLOSE
-wsaErr[0] = "The connection was reset by software itself."
-wsaErr[10050] = "The network subsystem failed." -- WSAENETDOWN
-wsaErr[10054] = "The connection was reset by the remote side." -- WSAECONNRESET
-wsaErr[10053] = "The connection was terminated due to a time-out or other failure." -- WSAECONNABORTED
+wsaErr = {
+	-- on FD_CONNECT
+	[10061] = "The attempt to connect was rejected.", -- WSAECONNREFUSED
+	[10051] = "The network cannot be reached from this host at this time.", -- WSAENETUNREACH
+	[10024] = "No more file descriptors are available.", -- WSAEMFILE
+	[10055] = "No buffer space is available. The socket cannot be connected.", -- WSAENOBUFS
+	[10057] = "The socket is not connected.", -- WSAENOTCONN
+	[10060] = "Attempt to connect timed out without establishing a connection.", -- WSAETIMEDOUT
+	-- on FD_CLOSE
+	[0] = "The connection was reset by software itself.",
+	[10050] = "The network subsystem failed.", -- WSAENETDOWN
+	[10054] = "The connection was reset by the remote side.", -- WSAECONNRESET
+	[10053] = "The connection was terminated due to a time-out or other failure.", -- WSAECONNABORTED
+}
 
 -- Channels access status descriptions
 chanStatName = {}

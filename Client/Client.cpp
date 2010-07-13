@@ -96,7 +96,7 @@ void JClient::doneclass()
 }
 
 JClient::JClient()
-: JEngine(), JDialog(),
+: JBNB(), JDialog(),
 jpOnline(0)
 {
 	m_clientsock = 0;
@@ -154,7 +154,7 @@ jpOnline(0)
 	m_metrics.uChatLineMaxVolume = 80*1024;
 	m_metrics.flags.bTransmitClipboard = true;
 
-	m_encryptorname = ECRYPT_DEFAULT;
+	m_encryptorname = ECRYPT_BINDEFAULT;
 
 	m_luaVM = 0; // no other Lua registration here!
 }
@@ -263,13 +263,14 @@ void JClient::LoadState()
 	user.strStatus = profile::getString(RF_CLIENT, RK_STATUSMSG, TEXT("ready to talk"));
 
 	m_nCompression = profile::getInt(RF_CLIENT, RK_COMPRESSION, -1);
-	m_encryptorname = tstrToANSI(profile::getString(RF_CLIENT, RK_ENCRYPTALG, ANSIToTstr(ECRYPT_DEFAULT)));
+	m_encryptorname = tstrToANSI(profile::getString(RF_CLIENT, RK_ENCRYPTALG, ANSIToTstr(ECRYPT_BINDEFAULT)));
 
 	m_hostname = tstrToANSI(profile::getString(RF_CLIENT, RK_HOST, TEXT("127.0.0.1")));
 	m_port = (u_short)profile::getInt(RF_CLIENT, RK_PORT, CCP_PORT);
 	m_passwordNet = profile::getString(RF_CLIENT, RK_PASSWORDNET, TEXT("beowolf"));
 	m_bSendByEnter = profile::getInt(RF_CLIENT, RK_SENDBYENTER, true) != 0;
 	m_bCheatAnonymous = profile::getInt(RF_CLIENT, RK_CHEATANONYMOUS, false) != 0;
+	m_timeFormat = TEXT("[style=time][%02u:%02u:%02u][/style] ");
 }
 
 void JClient::SaveState()
@@ -2496,7 +2497,7 @@ void JClient::Recv_Notify_SPLASHRTF(SOCKET sock, io::mem& is)
 // Beowolf Network Protocol Messages sending
 //
 
-JPtr<JTransaction> JClient::Make_Cmd_NICK(DWORD idWho, const std::tstring& nick) const
+JPtr<JBTransaction> JClient::Make_Cmd_NICK(DWORD idWho, const std::tstring& nick) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -2504,7 +2505,7 @@ JPtr<JTransaction> JClient::Make_Cmd_NICK(DWORD idWho, const std::tstring& nick)
 	return MakeTrn(COMMAND(CCPM_NICK), 0, os.str());
 }
 
-JPtr<JTransaction> JClient::Make_Quest_JOIN(const std::tstring& name, const std::tstring& pass, int type) const
+JPtr<JBTransaction> JClient::Make_Quest_JOIN(const std::tstring& name, const std::tstring& pass, int type) const
 {
 	std::ostringstream os;
 	io::pack(os, name);
@@ -2513,7 +2514,7 @@ JPtr<JTransaction> JClient::Make_Quest_JOIN(const std::tstring& name, const std:
 	return MakeTrn(QUEST(CCPM_JOIN), 0, os.str());
 }
 
-JPtr<JTransaction> JClient::Make_Cmd_PART(DWORD idWho, DWORD idWhere) const
+JPtr<JBTransaction> JClient::Make_Cmd_PART(DWORD idWho, DWORD idWhere) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -2521,14 +2522,14 @@ JPtr<JTransaction> JClient::Make_Cmd_PART(DWORD idWho, DWORD idWhere) const
 	return MakeTrn(COMMAND(CCPM_PART), 0, os.str());
 }
 
-JPtr<JTransaction> JClient::Make_Quest_USERINFO(const SetId& set) const
+JPtr<JBTransaction> JClient::Make_Quest_USERINFO(const SetId& set) const
 {
 	std::ostringstream os;
 	io::pack(os, set);
 	return MakeTrn(QUEST(CCPM_USERINFO), 0, os.str());
 }
 
-JPtr<JTransaction> JClient::Make_Cmd_ONLINE(EOnline online, DWORD id) const
+JPtr<JBTransaction> JClient::Make_Cmd_ONLINE(EOnline online, DWORD id) const
 {
 	std::ostringstream os;
 	io::pack(os, online);
@@ -2536,7 +2537,7 @@ JPtr<JTransaction> JClient::Make_Cmd_ONLINE(EOnline online, DWORD id) const
 	return MakeTrn(COMMAND(CCPM_ONLINE), 0, os.str());
 }
 
-JPtr<JTransaction> JClient::Make_Cmd_STATUS_Mode(EUserStatus stat, const Alert& a) const
+JPtr<JBTransaction> JClient::Make_Cmd_STATUS_Mode(EUserStatus stat, const Alert& a) const
 {
 	std::ostringstream os;
 	io::pack(os, (WORD)STATUS_MODE);
@@ -2545,7 +2546,7 @@ JPtr<JTransaction> JClient::Make_Cmd_STATUS_Mode(EUserStatus stat, const Alert& 
 	return MakeTrn(COMMAND(CCPM_STATUS), 0, os.str());
 }
 
-JPtr<JTransaction> JClient::Make_Cmd_STATUS_Img(int img) const
+JPtr<JBTransaction> JClient::Make_Cmd_STATUS_Img(int img) const
 {
 	std::ostringstream os;
 	io::pack(os, (WORD)STATUS_IMG);
@@ -2553,7 +2554,7 @@ JPtr<JTransaction> JClient::Make_Cmd_STATUS_Img(int img) const
 	return MakeTrn(COMMAND(CCPM_STATUS), 0, os.str());
 }
 
-JPtr<JTransaction> JClient::Make_Cmd_STATUS_Msg(const std::tstring& msg) const
+JPtr<JBTransaction> JClient::Make_Cmd_STATUS_Msg(const std::tstring& msg) const
 {
 	std::ostringstream os;
 	io::pack(os, (WORD)STATUS_MSG);
@@ -2561,7 +2562,7 @@ JPtr<JTransaction> JClient::Make_Cmd_STATUS_Msg(const std::tstring& msg) const
 	return MakeTrn(COMMAND(CCPM_STATUS), 0, os.str());
 }
 
-JPtr<JTransaction> JClient::Make_Cmd_STATUS(EUserStatus stat, const Alert& a, int img, const std::tstring& msg) const
+JPtr<JBTransaction> JClient::Make_Cmd_STATUS(EUserStatus stat, const Alert& a, int img, const std::tstring& msg) const
 {
 	std::ostringstream os;
 	io::pack(os, (WORD)(STATUS_MODE | STATUS_IMG | STATUS_MSG));
@@ -2572,7 +2573,7 @@ JPtr<JTransaction> JClient::Make_Cmd_STATUS(EUserStatus stat, const Alert& a, in
 	return MakeTrn(COMMAND(CCPM_STATUS), 0, os.str());
 }
 
-JPtr<JTransaction> JClient::Make_Cmd_SAY(DWORD idWhere, UINT type, const std::string& content) const
+JPtr<JBTransaction> JClient::Make_Cmd_SAY(DWORD idWhere, UINT type, const std::string& content) const
 {
 	std::ostringstream os;
 	io::pack(os, idWhere);
@@ -2581,7 +2582,7 @@ JPtr<JTransaction> JClient::Make_Cmd_SAY(DWORD idWhere, UINT type, const std::st
 	return MakeTrn(COMMAND(CCPM_SAY), 0, os.str());
 }
 
-JPtr<JTransaction> JClient::Make_Cmd_TOPIC(DWORD idWhere, const std::tstring& topic) const
+JPtr<JBTransaction> JClient::Make_Cmd_TOPIC(DWORD idWhere, const std::tstring& topic) const
 {
 	std::ostringstream os;
 	io::pack(os, idWhere);
@@ -2589,7 +2590,7 @@ JPtr<JTransaction> JClient::Make_Cmd_TOPIC(DWORD idWhere, const std::tstring& to
 	return MakeTrn(COMMAND(CCPM_TOPIC), 0, os.str());
 }
 
-JPtr<JTransaction> JClient::Make_Cmd_CHANOPTIONS(DWORD idWhere, int op, DWORD val) const
+JPtr<JBTransaction> JClient::Make_Cmd_CHANOPTIONS(DWORD idWhere, int op, DWORD val) const
 {
 	std::ostringstream os;
 	io::pack(os, idWhere);
@@ -2598,7 +2599,7 @@ JPtr<JTransaction> JClient::Make_Cmd_CHANOPTIONS(DWORD idWhere, int op, DWORD va
 	return MakeTrn(COMMAND(CCPM_CHANOPTIONS), 0, os.str());
 }
 
-JPtr<JTransaction> JClient::Make_Cmd_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat) const
+JPtr<JBTransaction> JClient::Make_Cmd_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -2607,7 +2608,7 @@ JPtr<JTransaction> JClient::Make_Cmd_ACCESS(DWORD idWho, DWORD idWhere, EChanSta
 	return MakeTrn(COMMAND(CCPM_ACCESS), 0, os.str());
 }
 
-JPtr<JTransaction> JClient::Make_Quest_MESSAGE(DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet) const
+JPtr<JBTransaction> JClient::Make_Quest_MESSAGE(DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -2619,14 +2620,14 @@ JPtr<JTransaction> JClient::Make_Quest_MESSAGE(DWORD idWho, const std::string& t
 	return MakeTrn(QUEST(CCPM_MESSAGE), 0, os.str());
 }
 
-JPtr<JTransaction> JClient::Make_Cmd_BEEP(DWORD idWho) const
+JPtr<JBTransaction> JClient::Make_Cmd_BEEP(DWORD idWho) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
 	return MakeTrn(COMMAND(CCPM_BEEP), 0, os.str());
 }
 
-JPtr<JTransaction> JClient::Make_Cmd_CLIPBOARD(DWORD idWho) const
+JPtr<JBTransaction> JClient::Make_Cmd_CLIPBOARD(DWORD idWho) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -2656,7 +2657,7 @@ JPtr<JTransaction> JClient::Make_Cmd_CLIPBOARD(DWORD idWho) const
 	return MakeTrn(COMMAND(CCPM_CLIPBOARD), 0, os.str());
 }
 
-JPtr<JTransaction> JClient::Make_Cmd_SPLASHRTF(DWORD idWho, const std::string& text, const RECT& rcPos, bool bCloseOnDisconnect, DWORD dwCanclose, DWORD dwAutoclose, bool fTransparent, COLORREF crSheet) const
+JPtr<JBTransaction> JClient::Make_Cmd_SPLASHRTF(DWORD idWho, const std::string& text, const RECT& rcPos, bool bCloseOnDisconnect, DWORD dwCanclose, DWORD dwAutoclose, bool fTransparent, COLORREF crSheet) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);

@@ -75,7 +75,7 @@ namespace colibrichat
 	typedef std::map<SOCKET, DWORD> MapSocketId;
 	typedef std::map<DWORD, SOCKET> MapIdSocket;
 
-	class JServer : public JEngine, public JWindow
+	class JServer : public JBNB, public JWindow
 	{
 	public:
 
@@ -130,7 +130,7 @@ namespace colibrichat
 
 		// Constructor
 		JServer();
-		void beforeDestruct() { JEngine::beforeDestruct(); }
+		void beforeDestruct() { JBNB::beforeDestruct(); }
 		DWORD getMinVersion() const {return BNP_ENGINEVERSMIN;}
 		DWORD getCurVersion() const {return BNP_ENGINEVERSNUM;}
 
@@ -192,28 +192,28 @@ namespace colibrichat
 		void Recv_Cmd_SPLASHRTF(SOCKET sock, io::mem& is);
 
 		// Beowolf Network Protocol Messages sending
-		JPtr<JTransaction> Make_Notify_METRICS(const Metrics& metrics) const;
-		JPtr<JTransaction> Make_Notify_NICK(DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname) const;
+		JPtr<JBTransaction> Make_Notify_METRICS(const Metrics& metrics) const;
+		JPtr<JBTransaction> Make_Notify_NICK(DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname) const;
 		void Form_Reply_LIST(std::ostream& os, bool god) const;
 		void Form_Reply_JOIN_Result(std::ostream& os, DWORD result, EContact type, DWORD id) const;
 		void Form_Reply_JOIN_User(std::ostream& os, DWORD id, const User& user) const;
 		void Form_Reply_JOIN_Channel(std::ostream& os, DWORD id, const Channel& chan) const;
-		JPtr<JTransaction> Make_Notify_JOIN(DWORD idWho, DWORD idWhere, const User& user) const;
-		JPtr<JTransaction> Make_Notify_PART(DWORD idWho, DWORD idWhere, DWORD idBy) const;
+		JPtr<JBTransaction> Make_Notify_JOIN(DWORD idWho, DWORD idWhere, const User& user) const;
+		JPtr<JBTransaction> Make_Notify_PART(DWORD idWho, DWORD idWhere, DWORD idBy) const;
 		void Form_Reply_USERINFO(std::ostream& os, const SetId& set) const;
-		JPtr<JTransaction> Make_Notify_ONLINE(DWORD idWho, EOnline online, DWORD id) const;
-		JPtr<JTransaction> Make_Notify_STATUS(DWORD idWho, WORD type, EUserStatus stat, const Alert& a, int img, std::tstring msg) const;
-		JPtr<JTransaction> Make_Notify_STATUS_God(DWORD idWho, bool god) const;
-		JPtr<JTransaction> Make_Notify_STATUS_Devil(DWORD idWho, bool devil) const;
-		JPtr<JTransaction> Make_Notify_SAY(DWORD idWho, DWORD idWhere, UINT type, const std::string& content) const;
-		JPtr<JTransaction> Make_Notify_TOPIC(DWORD idWho, DWORD idWhere, const std::tstring& topic) const;
-		JPtr<JTransaction> Make_Notify_CHANOPTIONS(DWORD idWho, DWORD idWhere, int op, DWORD val) const;
-		JPtr<JTransaction> Make_Notify_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat, DWORD idBy) const;
-		JPtr<JTransaction> Make_Notify_BEEP(DWORD idBy) const;
-		JPtr<JTransaction> Make_Notify_CLIPBOARD(DWORD idBy, const char* ptr, size_t size) const;
-		JPtr<JTransaction> Make_Notify_MESSAGE(DWORD idBy, const FILETIME& ft, const char* ptr, size_t size) const;
+		JPtr<JBTransaction> Make_Notify_ONLINE(DWORD idWho, EOnline online, DWORD id) const;
+		JPtr<JBTransaction> Make_Notify_STATUS(DWORD idWho, WORD type, EUserStatus stat, const Alert& a, int img, std::tstring msg) const;
+		JPtr<JBTransaction> Make_Notify_STATUS_God(DWORD idWho, bool god) const;
+		JPtr<JBTransaction> Make_Notify_STATUS_Devil(DWORD idWho, bool devil) const;
+		JPtr<JBTransaction> Make_Notify_SAY(DWORD idWho, DWORD idWhere, UINT type, const std::string& content) const;
+		JPtr<JBTransaction> Make_Notify_TOPIC(DWORD idWho, DWORD idWhere, const std::tstring& topic) const;
+		JPtr<JBTransaction> Make_Notify_CHANOPTIONS(DWORD idWho, DWORD idWhere, int op, DWORD val) const;
+		JPtr<JBTransaction> Make_Notify_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat, DWORD idBy) const;
+		JPtr<JBTransaction> Make_Notify_BEEP(DWORD idBy) const;
+		JPtr<JBTransaction> Make_Notify_CLIPBOARD(DWORD idBy, const char* ptr, size_t size) const;
+		JPtr<JBTransaction> Make_Notify_MESSAGE(DWORD idBy, const FILETIME& ft, const char* ptr, size_t size) const;
 		void Form_Reply_MESSAGE(std::ostream& os, DWORD idWho, UINT type) const;
-		JPtr<JTransaction> Make_Notify_SPLASHRTF(DWORD idBy, const char* ptr, size_t size) const;
+		JPtr<JBTransaction> Make_Notify_SPLASHRTF(DWORD idBy, const char* ptr, size_t size) const;
 
 		void OnHook(JNode* src);
 		void OnUnhook(JNode* src);

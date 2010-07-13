@@ -36,7 +36,7 @@ static TCHAR szHelpFile[MAX_PATH];
 //
 
 JServer::JServer()
-: JEngine(), JWindow()
+: JBNB(), JWindow()
 {
 	// Dialogs
 	jpConnections = new JConnections();
@@ -55,7 +55,7 @@ JServer::JServer()
 	m_metrics.uChatLineMaxVolume = 80*1024;
 	m_metrics.flags.bTransmitClipboard = true;
 
-	m_encryptorname = ECRYPT_DEFAULT;
+	m_encryptorname = ECRYPT_BINDEFAULT;
 }
 
 void JServer::Init()
@@ -80,14 +80,15 @@ void JServer::Init()
 		if (v < 1000) v = CCP_PORT; // do not use system ports
 		port.insert(v);
 	}
-	Link link;
 	for each (u_short v in port) {
+		Link link;
 		link.m_saAddr.sin_family = AF_INET;
 		link.m_saAddr.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
 		link.m_saAddr.sin_port = htons(v);
 		link.Select(FD_ACCEPT | FD_CLOSE);
 		link.Listen();
-		InsertLink(link);
+		if (link.State == eListening)
+			InsertLink(link);
 	}
 }
 
@@ -122,7 +123,7 @@ void JServer::LoadState()
 	m_bShowIcon = profile::getInt(RF_SERVER, RK_SHOWICON, TRUE) != 0;
 
 	m_nCompression = profile::getInt(RF_SERVER, RK_COMPRESSION, -1);
-	m_encryptorname = tstrToANSI(profile::getString(RF_SERVER, RK_ENCRYPTALG, ANSIToTstr(ECRYPT_DEFAULT)));
+	m_encryptorname = tstrToANSI(profile::getString(RF_SERVER, RK_ENCRYPTALG, ANSIToTstr(ECRYPT_BINDEFAULT)));
 
 	m_metrics.uNameMaxLength = (size_t)profile::getInt(RF_METRICS, RK_NameMaxLength, 20);
 	m_metrics.uPassMaxLength = (size_t)profile::getInt(RF_METRICS, RK_PassMaxLength, 32);
@@ -1394,14 +1395,14 @@ void JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, io::mem& is)
 // Beowolf Network Protocol Messages sending
 //
 
-JPtr<JTransaction> JServer::Make_Notify_METRICS(const Metrics& metrics) const
+JPtr<JBTransaction> JServer::Make_Notify_METRICS(const Metrics& metrics) const
 {
 	std::ostringstream os;
 	io::pack(os, metrics);
 	return MakeTrn(NOTIFY(CCPM_METRICS), 0, os.str());
 }
 
-JPtr<JTransaction> JServer::Make_Notify_NICK(DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname) const
+JPtr<JBTransaction> JServer::Make_Notify_NICK(DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname) const
 {
 	std::ostringstream os;
 	io::pack(os, result);
@@ -1453,7 +1454,7 @@ void JServer::Form_Reply_JOIN_Channel(std::ostream& os, DWORD id, const Channel&
 	io::pack(os, chan);
 }
 
-JPtr<JTransaction> JServer::Make_Notify_JOIN(DWORD idWho, DWORD idWhere, const User& user) const
+JPtr<JBTransaction> JServer::Make_Notify_JOIN(DWORD idWho, DWORD idWhere, const User& user) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1462,7 +1463,7 @@ JPtr<JTransaction> JServer::Make_Notify_JOIN(DWORD idWho, DWORD idWhere, const U
 	return MakeTrn(NOTIFY(CCPM_JOIN), 0, os.str());
 }
 
-JPtr<JTransaction> JServer::Make_Notify_PART(DWORD idWho, DWORD idWhere, DWORD idBy) const
+JPtr<JBTransaction> JServer::Make_Notify_PART(DWORD idWho, DWORD idWhere, DWORD idBy) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1488,7 +1489,7 @@ void JServer::Form_Reply_USERINFO(std::ostream& os, const SetId& set) const
 	}
 }
 
-JPtr<JTransaction> JServer::Make_Notify_ONLINE(DWORD idWho, EOnline online, DWORD id) const
+JPtr<JBTransaction> JServer::Make_Notify_ONLINE(DWORD idWho, EOnline online, DWORD id) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1497,7 +1498,7 @@ JPtr<JTransaction> JServer::Make_Notify_ONLINE(DWORD idWho, EOnline online, DWOR
 	return MakeTrn(NOTIFY(CCPM_ONLINE), 0, os.str());
 }
 
-JPtr<JTransaction> JServer::Make_Notify_STATUS(DWORD idWho, WORD type, EUserStatus stat, const Alert& a, int img, std::tstring msg) const
+JPtr<JBTransaction> JServer::Make_Notify_STATUS(DWORD idWho, WORD type, EUserStatus stat, const Alert& a, int img, std::tstring msg) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1515,7 +1516,7 @@ JPtr<JTransaction> JServer::Make_Notify_STATUS(DWORD idWho, WORD type, EUserStat
 	return MakeTrn(NOTIFY(CCPM_STATUS), 0, os.str());
 }
 
-JPtr<JTransaction> JServer::Make_Notify_STATUS_God(DWORD idWho, bool god) const
+JPtr<JBTransaction> JServer::Make_Notify_STATUS_God(DWORD idWho, bool god) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1524,7 +1525,7 @@ JPtr<JTransaction> JServer::Make_Notify_STATUS_God(DWORD idWho, bool god) const
 	return MakeTrn(NOTIFY(CCPM_STATUS), 0, os.str());
 }
 
-JPtr<JTransaction> JServer::Make_Notify_STATUS_Devil(DWORD idWho, bool devil) const
+JPtr<JBTransaction> JServer::Make_Notify_STATUS_Devil(DWORD idWho, bool devil) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1533,7 +1534,7 @@ JPtr<JTransaction> JServer::Make_Notify_STATUS_Devil(DWORD idWho, bool devil) co
 	return MakeTrn(NOTIFY(CCPM_STATUS), 0, os.str());
 }
 
-JPtr<JTransaction> JServer::Make_Notify_SAY(DWORD idWho, DWORD idWhere, UINT type, const std::string& content) const
+JPtr<JBTransaction> JServer::Make_Notify_SAY(DWORD idWho, DWORD idWhere, UINT type, const std::string& content) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1543,7 +1544,7 @@ JPtr<JTransaction> JServer::Make_Notify_SAY(DWORD idWho, DWORD idWhere, UINT typ
 	return MakeTrn(NOTIFY(CCPM_SAY), 0, os.str());
 }
 
-JPtr<JTransaction> JServer::Make_Notify_TOPIC(DWORD idWho, DWORD idWhere, const std::tstring& topic) const
+JPtr<JBTransaction> JServer::Make_Notify_TOPIC(DWORD idWho, DWORD idWhere, const std::tstring& topic) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1552,7 +1553,7 @@ JPtr<JTransaction> JServer::Make_Notify_TOPIC(DWORD idWho, DWORD idWhere, const 
 	return MakeTrn(NOTIFY(CCPM_TOPIC), 0, os.str());
 }
 
-JPtr<JTransaction> JServer::Make_Notify_CHANOPTIONS(DWORD idWho, DWORD idWhere, int op, DWORD val) const
+JPtr<JBTransaction> JServer::Make_Notify_CHANOPTIONS(DWORD idWho, DWORD idWhere, int op, DWORD val) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1562,7 +1563,7 @@ JPtr<JTransaction> JServer::Make_Notify_CHANOPTIONS(DWORD idWho, DWORD idWhere, 
 	return MakeTrn(NOTIFY(CCPM_CHANOPTIONS), 0, os.str());
 }
 
-JPtr<JTransaction> JServer::Make_Notify_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat, DWORD idBy) const
+JPtr<JBTransaction> JServer::Make_Notify_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat, DWORD idBy) const
 {
 	std::ostringstream os;
 	io::pack(os, idWho);
@@ -1572,14 +1573,14 @@ JPtr<JTransaction> JServer::Make_Notify_ACCESS(DWORD idWho, DWORD idWhere, EChan
 	return MakeTrn(NOTIFY(CCPM_ACCESS), 0, os.str());
 }
 
-JPtr<JTransaction> JServer::Make_Notify_BEEP(DWORD idBy) const
+JPtr<JBTransaction> JServer::Make_Notify_BEEP(DWORD idBy) const
 {
 	std::ostringstream os;
 	io::pack(os, idBy);
 	return MakeTrn(NOTIFY(CCPM_BEEP), 0, os.str());
 }
 
-JPtr<JTransaction> JServer::Make_Notify_CLIPBOARD(DWORD idBy, const char* ptr, size_t size) const
+JPtr<JBTransaction> JServer::Make_Notify_CLIPBOARD(DWORD idBy, const char* ptr, size_t size) const
 {
 	std::ostringstream os;
 	io::pack(os, idBy);
@@ -1587,7 +1588,7 @@ JPtr<JTransaction> JServer::Make_Notify_CLIPBOARD(DWORD idBy, const char* ptr, s
 	return MakeTrn(NOTIFY(CCPM_CLIPBOARD), 0, os.str());
 }
 
-JPtr<JTransaction> JServer::Make_Notify_MESSAGE(DWORD idBy, const FILETIME& ft, const char* ptr, size_t size) const
+JPtr<JBTransaction> JServer::Make_Notify_MESSAGE(DWORD idBy, const FILETIME& ft, const char* ptr, size_t size) const
 {
 	std::ostringstream os;
 	io::pack(os, idBy);
@@ -1602,7 +1603,7 @@ void JServer::Form_Reply_MESSAGE(std::ostream& os, DWORD idWho, UINT type) const
 	io::pack(os, type);
 }
 
-JPtr<JTransaction> JServer::Make_Notify_SPLASHRTF(DWORD idBy, const char* ptr, size_t size) const
+JPtr<JBTransaction> JServer::Make_Notify_SPLASHRTF(DWORD idBy, const char* ptr, size_t size) const
 {
 	std::ostringstream os;
 	io::pack(os, idBy);

@@ -164,10 +164,9 @@
 
 namespace colibrichat
 {
-	enum ETimeFormat {etimeNone, etimeHHMM, etimeHHMMSS};
 	enum EAlert {eGreen, eBlue, eYellow, eRed};
 
-	class JClient : public JEngine, public JDialog, protected initdoneable<JClient>
+	class JClient : public JBNB, public JDialog, protected initdoneable<JClient>
 	{
 	public:
 
@@ -267,7 +266,6 @@ namespace colibrichat
 
 			JPROPERTY_RREF_CONST(std::set<EGroup>, Groups);
 			JPROPERTY_R(EPriority, Priority);
-			ETimeFormat etimeFormat;
 
 			JPROPERTY_R(HWND, hwndLog);
 			RECT rcLog;
@@ -353,7 +351,7 @@ namespace colibrichat
 			void Recv_Reply_LIST(SOCKET sock, WORD trnid, io::mem& is);
 
 			// Beowolf Network Protocol Messages sending
-			JPtr<JTransaction> Make_Quest_LIST() const;
+			JPtr<JBTransaction> Make_Quest_LIST() const;
 
 			void OnHook(JNode* src);
 			void OnUnhook(JNode* src);
@@ -789,23 +787,23 @@ namespace colibrichat
 		void Recv_Notify_SPLASHRTF(SOCKET sock, io::mem& is);
 
 		// Beowolf Network Protocol Messages sending
-		JPtr<JTransaction> Make_Cmd_NICK(DWORD idWho, const std::tstring& nick) const;
-		JPtr<JTransaction> Make_Quest_JOIN(const std::tstring& name, const std::tstring& pass = TEXT(""), int type = eCheat | eUser | eChannel | eBoard) const;
-		JPtr<JTransaction> Make_Cmd_PART(DWORD idWho, DWORD idWhere) const;
-		JPtr<JTransaction> Make_Quest_USERINFO(const SetId& set) const;
-		JPtr<JTransaction> Make_Cmd_ONLINE(EOnline online, DWORD id) const;
-		JPtr<JTransaction> Make_Cmd_STATUS_Mode(EUserStatus stat, const Alert& a) const;
-		JPtr<JTransaction> Make_Cmd_STATUS_Img(int img) const;
-		JPtr<JTransaction> Make_Cmd_STATUS_Msg(const std::tstring& msg) const;
-		JPtr<JTransaction> Make_Cmd_STATUS(EUserStatus stat, const Alert& a, int img, const std::tstring& msg) const;
-		JPtr<JTransaction> Make_Cmd_SAY(DWORD idWhere, UINT type, const std::string& content) const;
-		JPtr<JTransaction> Make_Cmd_TOPIC(DWORD idWhere, const std::tstring& topic) const;
-		JPtr<JTransaction> Make_Cmd_CHANOPTIONS(DWORD idWhere, int op, DWORD val) const;
-		JPtr<JTransaction> Make_Cmd_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat) const;
-		JPtr<JTransaction> Make_Quest_MESSAGE(DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet) const;
-		JPtr<JTransaction> Make_Cmd_BEEP(DWORD idWho) const;
-		JPtr<JTransaction> Make_Cmd_CLIPBOARD(DWORD idWho) const;
-		JPtr<JTransaction> Make_Cmd_SPLASHRTF(DWORD idWho, const std::string& text,
+		JPtr<JBTransaction> Make_Cmd_NICK(DWORD idWho, const std::tstring& nick) const;
+		JPtr<JBTransaction> Make_Quest_JOIN(const std::tstring& name, const std::tstring& pass = TEXT(""), int type = eCheat | eUser | eChannel | eBoard) const;
+		JPtr<JBTransaction> Make_Cmd_PART(DWORD idWho, DWORD idWhere) const;
+		JPtr<JBTransaction> Make_Quest_USERINFO(const SetId& set) const;
+		JPtr<JBTransaction> Make_Cmd_ONLINE(EOnline online, DWORD id) const;
+		JPtr<JBTransaction> Make_Cmd_STATUS_Mode(EUserStatus stat, const Alert& a) const;
+		JPtr<JBTransaction> Make_Cmd_STATUS_Img(int img) const;
+		JPtr<JBTransaction> Make_Cmd_STATUS_Msg(const std::tstring& msg) const;
+		JPtr<JBTransaction> Make_Cmd_STATUS(EUserStatus stat, const Alert& a, int img, const std::tstring& msg) const;
+		JPtr<JBTransaction> Make_Cmd_SAY(DWORD idWhere, UINT type, const std::string& content) const;
+		JPtr<JBTransaction> Make_Cmd_TOPIC(DWORD idWhere, const std::tstring& topic) const;
+		JPtr<JBTransaction> Make_Cmd_CHANOPTIONS(DWORD idWhere, int op, DWORD val) const;
+		JPtr<JBTransaction> Make_Cmd_ACCESS(DWORD idWho, DWORD idWhere, EChanStatus stat) const;
+		JPtr<JBTransaction> Make_Quest_MESSAGE(DWORD idWho, const std::string& text, bool fAlert, COLORREF crSheet) const;
+		JPtr<JBTransaction> Make_Cmd_BEEP(DWORD idWho) const;
+		JPtr<JBTransaction> Make_Cmd_CLIPBOARD(DWORD idWho) const;
+		JPtr<JBTransaction> Make_Cmd_SPLASHRTF(DWORD idWho, const std::string& text,
 			const RECT& rcPos, bool bCloseOnDisconnect = true, DWORD dwCanclose = 2500, DWORD dwAutoclose = 30000,
 			bool fTransparent = true, COLORREF crSheet = RGB(255, 255, 255)) const;
 
@@ -880,6 +878,7 @@ namespace colibrichat
 		JPROPERTY_R(bool, bReconnect);
 		JPROPERTY_R(int, nConnectCount);
 
+		JPROPERTY_RREF_CONST(std::tstring, timeFormat);
 		JPROPERTY_R(bool, bSendByEnter);
 		JPROPERTY_R(bool, bCheatAnonymous);
 		Alert s_mapAlert[6];
