@@ -1244,7 +1244,7 @@ void JClient::OnLinkConnect(SOCKET sock)
 		si.sin_addr.S_un.S_un_b.s_b4,
 		ntohs(si.sin_port)), true);
 
-	PushTrn(sock, Make_Quest_Identify(m_mLinks[sock].getEncryptor()));
+	PushTrn(sock, Make_Quest_Identify(m_mLinks[sock].getEncryptorName()));
 
 	// Lua response
 	if (m_luaVM) {

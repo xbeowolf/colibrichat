@@ -219,7 +219,6 @@ namespace colibrichat
 		void OnUnhook(JNode* src);
 
 		void OnLinkEstablished(SOCKET sock);
-		void OnLinkAccess(SOCKET sock, huge::number* K, SetAccess& access);
 		void OnLinkStart(SOCKET sock);
 		void OnLinkClose(SOCKET sock, UINT err);
 

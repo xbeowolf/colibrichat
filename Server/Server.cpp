@@ -536,14 +536,6 @@ void JServer::OnLinkEstablished(SOCKET sock)
 	}
 }
 
-void JServer::OnLinkAccess(SOCKET sock, huge::number* K, SetAccess& access)
-{
-	__super::OnLinkAccess(sock, K, access);
-	if (K) {
-		access.insert(BNPM_MESSAGE);
-	}
-}
-
 void JServer::OnLinkStart(SOCKET sock)
 {
 	PushTrn(sock, Make_Notify_METRICS(m_metrics));
