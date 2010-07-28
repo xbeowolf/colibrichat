@@ -122,7 +122,7 @@ void JServer::LoadState()
 
 	m_bShowIcon = profile::getInt(RF_SERVER, RK_SHOWICON, TRUE) != 0;
 
-	m_nCompression = profile::getInt(RF_SERVER, RK_COMPRESSION, -1);
+	s_nCompression = profile::getInt(RF_SERVER, RK_COMPRESSION, -1);
 	m_encryptorname = tstrToANSI(profile::getString(RF_SERVER, RK_ENCRYPTALG, ANSIToTstr(ECRYPT_BINDEFAULT)));
 
 	m_metrics.uNameMaxLength = (size_t)profile::getInt(RF_METRICS, RK_NameMaxLength, 20);

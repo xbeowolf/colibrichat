@@ -38,6 +38,8 @@ wsaErr = {
 	[10060] = "Attempt to connect timed out without establishing a connection.", -- WSAETIMEDOUT
 	-- on FD_CLOSE
 	[0] = "The connection was reset by software itself.",
+	[1] = "The connection reset by validate timeout.", -- WSAVALIDATETIME
+	[2] = "The connection reset because was recieved transaction with bad CRC code", -- WSABADCRC
 	[10050] = "The network subsystem failed.", -- WSAENETDOWN
 	[10054] = "The connection was reset by the remote side.", -- WSAECONNRESET
 	[10053] = "The connection was terminated due to a time-out or other failure.", -- WSAECONNABORTED
@@ -53,10 +55,27 @@ chanStatName[4] = "moderator"
 chanStatName[5] = "administrator"
 chanStatName[6] = "founder"
 
+-------------------------------------------------------------------------------
+-- Helper functions
+-------------------------------------------------------------------------------
+
 function colorNick(nick)
 	if nick ~= nickOwn then return "red"
 	else return "blue"
 	end
+end
+
+-------------------------------------------------------------------------------
+-- Service events
+-------------------------------------------------------------------------------
+
+function onInit()
+end
+
+function onDone()
+end
+
+function onRun()
 end
 
 -------------------------------------------------------------------------------
@@ -96,19 +115,6 @@ function onLinkFail(idErr)
 		this:WaitConnectStart(v) -- if not disconnected by user, try to reconnect again
 		this:Log("[style=msg]Waiting "..(v/1000).." seconds and try again (attempt #"..this:getConnectCount()..").[/style]")
 	end
-end
-
--------------------------------------------------------------------------------
--- Application events
--------------------------------------------------------------------------------
-
-function onInit()
-end
-
-function onDone()
-end
-
-function onRun()
 end
 
 -------------------------------------------------------------------------------

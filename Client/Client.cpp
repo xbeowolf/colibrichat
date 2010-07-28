@@ -262,7 +262,7 @@ void JClient::LoadState()
 	user.nStatusImg = profile::getInt(RF_CLIENT, RK_STATUSIMG, 0);
 	user.strStatus = profile::getString(RF_CLIENT, RK_STATUSMSG, TEXT("ready to talk"));
 
-	m_nCompression = profile::getInt(RF_CLIENT, RK_COMPRESSION, -1);
+	s_nCompression = profile::getInt(RF_CLIENT, RK_COMPRESSION, -1);
 	m_encryptorname = tstrToANSI(profile::getString(RF_CLIENT, RK_ENCRYPTALG, ANSIToTstr(ECRYPT_BINDEFAULT)));
 
 	m_hostname = tstrToANSI(profile::getString(RF_CLIENT, RK_HOST, TEXT("127.0.0.1")));
