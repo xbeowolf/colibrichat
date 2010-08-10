@@ -62,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib Ws2_32.lib Winmm.lib"
+				AdditionalDependencies="comctl32.lib Winmm.lib"
 				OutputFile="$(OutDir)\ColibriClient.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"

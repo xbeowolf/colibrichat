@@ -632,7 +632,7 @@ void JServer::Recv_Cmd_NICK(SOCKET sock, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -647,13 +647,13 @@ void JServer::Recv_Cmd_NICK(SOCKET sock, io::mem& is)
 #endif
 			RenameContact(idBy, idOld, name);
 			// Report about message
-			EvReport(tformat(TEXT("nickname renamed: %s"), name.c_str()), eInformation, eNormal);
+			EvReport(tformat(TEXT("nickname renamed: %s"), name.c_str()), elogInfo, eNormal);
 		}
 	} else if (idOld == CRC_NONAME) { // new user
 		ASSERT(idBy == idOld);
 		RenameContact((DWORD)sock, idOld, name);
 		// Report about message
-		EvReport(tformat(TEXT("nickname added: %s"), name.c_str()), eInformation, eNormal);
+		EvReport(tformat(TEXT("nickname added: %s"), name.c_str()), elogInfo, eNormal);
 	} else {
 		MapChannel::const_iterator ic = m_mChannel.find(idOld);
 		if (ic != m_mChannel.end()) { // channel
@@ -664,7 +664,7 @@ void JServer::Recv_Cmd_NICK(SOCKET sock, io::mem& is)
 #endif
 				RenameContact(idBy, idOld, name);
 				// Report about message
-				EvReport(tformat(TEXT("channel name modified to: %s"), name.c_str()), eInformation, eNormal);
+				EvReport(tformat(TEXT("channel name modified to: %s"), name.c_str()), elogInfo, eNormal);
 			}
 		}
 	}
@@ -681,7 +681,7 @@ void JServer::Recv_Quest_LIST(SOCKET sock, WORD trnid, io::mem& is, std::ostream
 	Form_Reply_LIST(os, god);
 
 	// Report about message
-	EvReport(tformat(TEXT("channels list")), eInformation, eNormal);
+	EvReport(tformat(TEXT("channels list")), elogInfo, eNormal);
 }
 
 void JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is, std::ostream& os)
@@ -701,7 +701,7 @@ void JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is, std::ostream
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 
 		case 1:
@@ -817,7 +817,7 @@ void JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is, std::ostream
 	}
 
 	// Report about message
-	EvReport(tformat(TEXT("joins %s to %s"), m_mUser[idSrc].name.c_str(), name.c_str()), eInformation, eNormal);
+	EvReport(tformat(TEXT("joins %s to %s"), m_mUser[idSrc].name.c_str(), name.c_str()), elogInfo, eNormal);
 }
 
 void JServer::Recv_Cmd_PART(SOCKET sock, io::mem& is)
@@ -836,7 +836,7 @@ void JServer::Recv_Cmd_PART(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -851,7 +851,7 @@ void JServer::Recv_Cmd_PART(SOCKET sock, io::mem& is)
 	MapUser::iterator iu = m_mUser.find(idWhere);
 	if (iu != m_mUser.end()) { // private talk
 		// Report about message
-		EvReport(tformat(TEXT("parts %s from %s"), iuWho->second.name.c_str(), iu->second.name.c_str()), eInformation, eNormal);
+		EvReport(tformat(TEXT("parts %s from %s"), iuWho->second.name.c_str(), iu->second.name.c_str()), elogInfo, eNormal);
 
 		PushTrn(m_mIdSocket[idWhere], Make_Notify_PART(idWho, idWho, idBy)); // recieves to close private with idWho
 		PushTrn(sock, Make_Notify_PART(idBy, idWhere, idBy));
@@ -867,7 +867,7 @@ void JServer::Recv_Cmd_PART(SOCKET sock, io::mem& is)
 			if (idWho == idBy || (isModer && canKick)) {
 #endif
 				// Report about message
-				EvReport(tformat(TEXT("parts %s from %s"), iuWho->second.name.c_str(), ic->second.name.c_str()), eInformation, eNormal);
+				EvReport(tformat(TEXT("parts %s from %s"), iuWho->second.name.c_str(), ic->second.name.c_str()), elogInfo, eNormal);
 
 				ic = m_mChannel.find(idWhere);
 				if (ic != m_mChannel.end()) { // check that channel still exist
@@ -893,7 +893,7 @@ void JServer::Recv_Quest_USERINFO(SOCKET sock, WORD trnid, io::mem& is, std::ost
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -901,7 +901,7 @@ void JServer::Recv_Quest_USERINFO(SOCKET sock, WORD trnid, io::mem& is, std::ost
 	Form_Reply_USERINFO(os, wanted);
 
 	// Report about message
-	EvReport(tformat(TEXT("info for %u users"), wanted.size()), eInformation, eNormal);
+	EvReport(tformat(TEXT("info for %u users"), wanted.size()), elogInfo, eNormal);
 }
 
 void JServer::Recv_Cmd_ONLINE(SOCKET sock, io::mem& is)
@@ -937,7 +937,7 @@ void JServer::Recv_Cmd_ONLINE(SOCKET sock, io::mem& is)
 	}
 
 	// Report about message
-	EvReport(tformat(TEXT("user is %s"), isOnline ? TEXT("online") : TEXT("offline")), eInformation, eLowest);
+	EvReport(tformat(TEXT("user is %s"), isOnline ? TEXT("online") : TEXT("offline")), elogInfo, eLowest);
 }
 
 void JServer::Recv_Cmd_STATUS(SOCKET sock, io::mem& is)
@@ -972,7 +972,7 @@ void JServer::Recv_Cmd_STATUS(SOCKET sock, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -997,7 +997,7 @@ void JServer::Recv_Cmd_STATUS(SOCKET sock, io::mem& is)
 	}
 
 	// Report about message
-	EvReport(tformat(TEXT("user changes status")), eInformation, eLowest);
+	EvReport(tformat(TEXT("user changes status")), elogInfo, eLowest);
 }
 
 void JServer::Recv_Cmd_SAY(SOCKET sock, io::mem& is)
@@ -1019,7 +1019,7 @@ void JServer::Recv_Cmd_SAY(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -1061,7 +1061,7 @@ void JServer::Recv_Cmd_TOPIC(SOCKET sock, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -1107,7 +1107,7 @@ void JServer::Recv_Cmd_CHANOPTIONS(SOCKET sock, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 
 		case 1:
@@ -1117,7 +1117,7 @@ void JServer::Recv_Cmd_CHANOPTIONS(SOCKET sock, io::mem& is)
 
 		case 2:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -1179,7 +1179,7 @@ void JServer::Recv_Cmd_ACCESS(SOCKET sock, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -1225,7 +1225,7 @@ void JServer::Recv_Cmd_BEEP(SOCKET sock, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -1267,7 +1267,7 @@ void JServer::Recv_Cmd_CLIPBOARD(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -1309,7 +1309,7 @@ void JServer::Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is, std::ostr
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -1360,7 +1360,7 @@ void JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}

@@ -255,7 +255,7 @@ namespace colibrichat
 			HWND getDefFocusWnd() const {return m_hwndLog;}
 
 			void AppendRtf(std::string& content, bool toascii = false) const;
-			void AppendScript(const std::tstring& content, bool withtime = true) const;
+			void AppendScript(const std::tstring& content) const;
 			virtual void Say(DWORD idWho, std::string& content);
 
 		protected:
@@ -264,7 +264,6 @@ namespace colibrichat
 
 		protected:
 
-			JPROPERTY_RREF_CONST(std::set<EGroup>, Groups);
 			JPROPERTY_R(EPriority, Priority);
 
 			JPROPERTY_R(HWND, hwndLog);
@@ -297,8 +296,8 @@ namespace colibrichat
 			void OnUnhook(JNode* src);
 
 			void OnLinkStart(SOCKET sock);
-			void OnLog(const std::tstring& str, bool withtime = true);
-			void OnReport(const std::tstring& str, EGroup gr = eMessage, EPriority prior = eNormal);
+			void OnLog(const std::string& str, ELog elog = elogDef);
+			void OnReport(const std::tstring& str, ELog elog = elogMsg, EPriority prior = eNormal);
 			void OnMetrics(const Metrics& metrics);
 
 		protected:
@@ -843,6 +842,7 @@ namespace colibrichat
 		DECLARE_LUAMETHOD(PageEnable);
 		DECLARE_LUAMETHOD(PageDisable);
 		DECLARE_LUAMETHOD(PageAppendScript);
+		DECLARE_LUAMETHOD(PageSetIcon);
 		DECLARE_LUAMETHOD(Say);
 		DECLARE_LUAMETHOD(Message);
 		DECLARE_LUAMETHOD(Alert);
@@ -852,7 +852,7 @@ namespace colibrichat
 
 		static std::map<EChanStatus, std::tstring> s_mapChanStatName;
 		static std::map<EUserStatus, std::tstring> s_mapUserStatName;
-		static std::map<UINT, std::tstring> s_mapWsaErr;
+		static std::map<UINT, std::string> s_mapWsaErr;
 
 		// --- Events ---
 
@@ -878,7 +878,7 @@ namespace colibrichat
 		JPROPERTY_R(bool, bReconnect);
 		JPROPERTY_R(int, nConnectCount);
 
-		JPROPERTY_RREF_CONST(std::tstring, timeFormat);
+		JPROPERTY_RREF_CONST(std::string, timeFormat);
 		JPROPERTY_R(bool, bSendByEnter);
 		JPROPERTY_R(bool, bCheatAnonymous);
 		Alert s_mapAlert[6];

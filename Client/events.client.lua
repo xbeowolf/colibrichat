@@ -40,10 +40,42 @@ wsaErr = {
 	[0] = "The connection was reset by software itself.",
 	[1] = "The connection reset by validate timeout.", -- WSAVALIDATETIME
 	[2] = "The connection reset because was recieved transaction with bad CRC code", -- WSABADCRC
+	[3] = "The connection reset because IP-address is banned.", -- WSABANNED
 	[10050] = "The network subsystem failed.", -- WSAENETDOWN
 	[10054] = "The connection was reset by the remote side.", -- WSAECONNRESET
 	[10053] = "The connection was terminated due to a time-out or other failure.", -- WSAECONNABORTED
 }
+
+-- Logging setting
+
+-- Time output format for logging, possible values:
+--   "[%02u:%02u:%02u] "   hours, minutes, seconds
+--   "[%02u:%02u] "        hours, minutes
+--   ""                    no time
+TimeFormat = "[%02u:%02u:%02u] "
+
+elogDef   = 0
+elogError = 1
+elogWarn  = 2
+elogInfo  = 3
+elogMsg   = 4
+elogDescr = 5
+elogTrn   = 6
+-- set value to true to enable that type of logging, or set value to false to disable it.
+LogSet = {
+	[elogDef  ] = true,
+	[elogError] = true,
+	[elogWarn ] = true,
+	[elogInfo ] = true,
+	[elogMsg  ] = true,
+	[elogDescr] = true,
+	[elogTrn  ] = true,
+}
+-- Alert icon indexes
+eGreen  = 0
+eBlue   = 1
+eYellow = 2
+eRed    = 3
 
 -- Channels access status descriptions
 chanStatName = {}
@@ -98,7 +130,7 @@ end
 -- Connection closed
 function onLinkClose(idErr)
 	this:setVars() -- from host to script
-	this:Log("[style=msg]Disconnected. Reason: [i]"..wsaErr[idErr].."[/i][/style]")
+	this:Log("Disconnected. Reason: [i]"..wsaErr[idErr].."[/i]",elogMsg)
 	if idErr ~= 0 and bReconnect then
 		this:Connect(false) -- if not disconnected by user, try to reconnect again
 	else
@@ -109,11 +141,40 @@ end
 -- Connection failed
 function onLinkFail(idErr)
 	this:setVars() -- from host to script
-	this:Log("[style=msg]Connecting failed. Reason: [i]"..wsaErr[idErr].."[/i][/style]")
+	this:Log("Connecting failed. Reason: [i]"..wsaErr[idErr].."[/i]",elogMsg)
 	if idErr ~= 0 and bReconnect then
 		local v = profile.getInt(RF_CLIENT, "TimerConnect", 30*1000)
 		this:WaitConnectStart(v) -- if not disconnected by user, try to reconnect again
-		this:Log("[style=msg]Waiting "..(v/1000).." seconds and try again (attempt #"..this:getConnectCount()..").[/style]")
+		this:Log("Waiting "..(v/1000).." seconds and try again (attempt #"..this:getConnectCount()..").",elogMsg)
+	end
+end
+
+function onLog(timestamp,str,elog)
+	if LogSet[elog] then
+		local msg
+		if elog == elogDef then
+			msg = "[style=Default]"..str.."[/style]"
+		elseif elog == elogError then
+			msg = "[style=Error]"..str.."[/style]"
+			this:PageSetIcon(NAME_SERVER,eRed)
+		elseif elog == elogWarn then
+			msg = "[style=Warning]"..str.."[/style]"
+			this:PageSetIcon(NAME_SERVER,eYellow)
+		elseif elog == elogInfo then
+			msg = "[style=Info]"..str.."[/style]"
+			this:PageSetIcon(NAME_SERVER,eBlue)
+		elseif elog == elogMsg then
+			msg = "[style=Msg]"..str.."[/style]"
+			this:PageSetIcon(NAME_SERVER,eBlue)
+		elseif elog == elogDescr then
+			msg = "[style=Descr]"..str.."[/style]"
+			this:PageSetIcon(NAME_SERVER,eBlue)
+		elseif elog == elogTrn then
+			msg = str
+		else
+			msg = str
+		end
+		this:PageAppendScript(NAME_SERVER,"[style=time]"..timestamp.."[/style]"..msg)
 	end
 end
 
@@ -280,7 +341,7 @@ function wmCreate()
 	if profile.getInt(RF_CLIENT, "ConnectionState", 0) ~= 0 then
 		this:Connect(false)
 	else
-		this:Log("[style=msg]Ready to connect[/style]")
+		this:Log("Ready to connect",elogMsg)
 	end
 end
 
@@ -335,7 +396,7 @@ function idcConnect()
 		this:WaitConnectStop()
 		this:checkConnectionButton(false);
 		this:PageDisable(NAME_SERVER)
-		this:Log("[style=msg]Canceled.[/style]")
+		this:Log("Canceled.",elogMsg)
 	else
 		this:Connect(true)
 	end

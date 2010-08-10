@@ -126,6 +126,7 @@ CLuaGluer<JClient>::_tRegType JClient::methods[] =
 	RESPONSE_LUAMETHOD(JClient, PageEnable),
 	RESPONSE_LUAMETHOD(JClient, PageDisable),
 	RESPONSE_LUAMETHOD(JClient, PageAppendScript),
+	RESPONSE_LUAMETHOD(JClient, PageSetIcon),
 	RESPONSE_LUAMETHOD(JClient, Say),
 	RESPONSE_LUAMETHOD(JClient, Message),
 	RESPONSE_LUAMETHOD(JClient, Alert),
@@ -201,11 +202,11 @@ IMPLEMENT_LUAMETHOD(JClient, openAutoopen)
 
 IMPLEMENT_LUAMETHOD(JClient, Log)
 {
-	ASSERT(lua_gettop(L) >= 1);
-	if (lua_isstring(L, 1)) {
-		EvLog(ANSIToTstr(lua_tostring(L, 1)), true);
+	ASSERT(lua_gettop(L) >= 2);
+	if (lua_isstring(L, -2) && lua_isnumber(L, -1)) {
+		EvLog(lua_tostring(L, -2), (ELog)lua_tointeger(L, -1));
 	} else {
-		lua_pushstring(L, "incorrect string argument in function \"Log\"");
+		lua_pushstring(L, "incorrect arguments in function \"Log\", it must be string and integer");
 		lua_error(L);
 	}
 	return 0;
@@ -338,6 +339,20 @@ IMPLEMENT_LUAMETHOD(JClient, PageAppendScript)
 	JPtr<JPageLog> jp = getPageLog(id);
 	if (jp && lua_isstring(L, 2)) {
 		jp->AppendScript(ANSIToTstr(lua_tostring(L, 2)));
+	}
+	return 0;
+}
+
+IMPLEMENT_LUAMETHOD(JClient, PageSetIcon)
+{
+	ASSERT(lua_gettop(L) >= 2);
+	DWORD id;
+	if (lua_isstring(L, 1)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, 1)).c_str());
+	else if (lua_isnumber(L, 1)) id = (DWORD)lua_tointeger(L, 1);
+	else id = CRC_SERVER;
+	JPtr<JPageLog> jp = getPageLog(id);
+	if (jp && lua_isnumber(L, 2)) {
+		jp->setAlert((EAlert)lua_tointeger(L, 2));
 	}
 	return 0;
 }

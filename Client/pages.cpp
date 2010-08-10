@@ -240,11 +240,6 @@ void JClient::JPage::OnLinkClose(SOCKET sock, UINT err)
 JClient::JPageLog::JPageLog()
 : JPage()
 {
-	m_Groups.insert(eMessage);
-	m_Groups.insert(eDescription);
-	m_Groups.insert(eInformation);
-	m_Groups.insert(eWarning);
-	m_Groups.insert(eError);
 	m_Priority = eNormal;
 }
 
@@ -279,7 +274,7 @@ void JClient::JPageLog::AppendRtf(std::string& content, bool toascii) const
 	if (GetFocus() != m_hwndLog) SendMessage(m_hwndLog, WM_VSCROLL, SB_BOTTOM, 0);
 }
 
-void JClient::JPageLog::AppendScript(const std::tstring& content, bool withtime) const
+void JClient::JPageLog::AppendScript(const std::tstring& content) const
 {
 	CHARRANGE crMark; // Selection position
 	int nTextLen; // Length of text in control
@@ -287,17 +282,8 @@ void JClient::JPageLog::AppendScript(const std::tstring& content, bool withtime)
 	// Save caret position
 	SendMessage(m_hwndLog, EM_EXGETSEL, 0, (LPARAM)&crMark);
 	nTextLen = GetWindowTextLength(m_hwndLog);
-	// Write time
-	static TCHAR time[32];
-	time[0] = 0;
-	if (withtime)
-	{
-		static SYSTEMTIME st;
-		GetLocalTime(&st);
-		_stprintf_s(time, _countof(time), pNode->m_timeFormat.c_str(), st.wHour, st.wMinute, st.wSecond);
-	}
 	// Write whole string to log
-	Write(m_hwndLog, time) && Write(m_hwndLog, content.c_str()) && Write(m_hwndLog, TEXT("\r\n"));
+	Write(m_hwndLog, content.c_str()) && Write(m_hwndLog, TEXT("\r\n"));
 	// Restore caret position
 	if (crMark.cpMin == crMark.cpMax && crMark.cpMin == nTextLen) SendMessage(m_hwndLog, EM_SETSEL, -1, -1);
 	else SendMessage(m_hwndLog, EM_EXSETSEL, 0, (LPARAM)&crMark);
@@ -593,10 +579,10 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 			OnMetrics(pNode->m_metrics);
 
 			// Set introduction comments
-			static const std::tstring szIntro =
+			static const TCHAR* szIntro =
 				TEXT("[color=red,size=16,b]Colibri Chat[/color] [color=purple]v") APPVER TEXT("[/color,/size,/b]\n")
-				TEXT("[b]© Podobashev Dmitry / BEOWOLF[/b], ") APPDATE TEXT(".\n");
-			AppendScript(szIntro, false);
+				TEXT("[b]© Podobashev Dmitry / BEOWOLF[/b], ") APPDATE TEXT(".\r\n");
+			Write(m_hwndLog, szIntro);
 
 			retval = TRUE;
 			break;
@@ -728,7 +714,7 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 						// Update interface
 						CheckDlgButton(m_hwndPage, IDC_CONNECT, FALSE);
 						Disable();
-						pNode->EvLog(TEXT("[style=msg]Canceled.[/style]"), true);
+						pNode->EvLog("Canceled.", elogMsg);
 					} else {
 						pNode->Connect(true);
 					}
@@ -820,44 +806,26 @@ void JClient::JPageServer::OnLinkStart(SOCKET sock)
 	}
 }
 
-void JClient::JPageServer::OnLog(const std::tstring& str, bool withtime)
+void JClient::JPageServer::OnLog(const std::string& str, ELog elog)
 {
-	AppendScript(str, withtime);
+	// Get time
+	static SYSTEMTIME st;
+	GetLocalTime(&st);
+
+	// Call Lua event
+	lua_getglobal(pNode->m_luaVM, "onLog");
+	if (lua_isfunction(pNode->m_luaVM, -1)) {
+		lua_pushstring(pNode->m_luaVM, format(pNode->m_timeFormat.c_str(), st.wHour, st.wMinute, st.wSecond).c_str());
+		lua_pushstring(pNode->m_luaVM, str.c_str());
+		lua_pushinteger(pNode->m_luaVM, elog);
+		lua_call(pNode->m_luaVM, 3, 0);
+	} else lua_pop(pNode->m_luaVM, 1);
 }
 
-void JClient::JPageServer::OnReport(const std::tstring& str, EGroup gr, EPriority prior)
+void JClient::JPageServer::OnReport(const std::tstring& str, ELog elog, EPriority prior)
 {
-	if (!m_hwndPage) return; // ignore if window closed
-	if (m_Groups.find(gr) != m_Groups.end() && prior < m_Priority) return;
-
-	std::tstring msg;
-	switch (gr)
-	{
-	case eMessage:
-		msg = TEXT("[style=Msg]") + str + TEXT("[/style]");
-		setAlert(eBlue);
-		break;
-	case eDescription:
-		msg = TEXT("[style=Descr]") + str + TEXT("[/style]");
-		setAlert(eBlue);
-		break;
-	case eInformation:
-		msg = TEXT("[style=Info]") + str + TEXT("[/style]");
-		setAlert(eBlue);
-		break;
-	case eWarning:
-		msg = TEXT("[style=Warning]") + str + TEXT("[/style]");
-		setAlert(eYellow);
-		break;
-	case eError:
-		msg = TEXT("[style=Error]") + str + TEXT("[/style]");
-		setAlert(eRed);
-		break;
-	default:
-		msg = TEXT("[style=Default]") + str + TEXT("[/style]");
-		break;
-	}
-	AppendScript(msg);
+	if (prior >= m_Priority)
+		OnLog(tstrToANSI(str), elog);
 }
 
 void JClient::JPageServer::OnMetrics(const Metrics& metrics)
@@ -1437,7 +1405,7 @@ void JClient::JPageList::Recv_Reply_LIST(SOCKET sock, WORD trnid, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			pNode->EvReport(SZ_BADTRN, eWarning, eLow);
+			pNode->EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -1446,7 +1414,7 @@ void JClient::JPageList::Recv_Reply_LIST(SOCKET sock, WORD trnid, io::mem& is)
 		ClearView();
 		BuildView();
 	}
-	pNode->EvReport(tformat(TEXT("listed [b]%u[/b] channels"), m_mChannel.size()), eInformation, eNormal);
+	pNode->EvReport(tformat(TEXT("listed [b]%u[/b] channels"), m_mChannel.size()), elogInfo, eNormal);
 }
 
 JPtr<JBTransaction> JClient::JPageList::Make_Quest_LIST() const
@@ -1930,7 +1898,7 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 	case WM_DESTROY:
 		{
 			pNode->PushTrn(pNode->clientsock, pNode->Make_Cmd_PART(pNode->m_idOwn, m_ID));
-			pNode->EvReport(tformat(TEXT("parts from [b]%s[/b] private talk"), m_user.name.c_str()), eInformation, eHigher);
+			pNode->EvReport(tformat(TEXT("parts from [b]%s[/b] private talk"), m_user.name.c_str()), elogInfo, eHigher);
 
 			__super::DlgProc(hWnd, message, wParam, lParam);
 			break;
@@ -2465,7 +2433,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			for each (SetId::value_type const& v in m_channel.opened) {
 				pNode->UnlinkUser(v, m_ID);
 			}
-			pNode->EvReport(tformat(TEXT("parts from [b]#%s[/b] channel"), m_channel.name.c_str()), eInformation, eHigher);
+			pNode->EvReport(tformat(TEXT("parts from [b]#%s[/b] channel"), m_channel.name.c_str()), elogInfo, eHigher);
 
 			__super::DlgProc(hWnd, message, wParam, lParam);
 			break;

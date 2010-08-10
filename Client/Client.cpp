@@ -40,7 +40,7 @@ static TCHAR szHelpFile[MAX_PATH];
 
 std::map<EChanStatus, std::tstring> JClient::s_mapChanStatName;
 std::map<EUserStatus, std::tstring> JClient::s_mapUserStatName;
-std::map<UINT, std::tstring> JClient::s_mapWsaErr;
+std::map<UINT, std::string> JClient::s_mapWsaErr;
 HWND JClient::m_isBaloon = 0;
 HWND JClient::m_hwndBaloon = 0;
 
@@ -64,17 +64,20 @@ void JClient::initclass()
 
 	//   WSA error codes
 	// on FD_CONNECT
-	JClient::s_mapWsaErr[WSAECONNREFUSED] = TEXT("The attempt to connect was rejected.");
-	JClient::s_mapWsaErr[WSAENETUNREACH] = TEXT("The network cannot be reached from this host at this time.");
-	JClient::s_mapWsaErr[WSAEMFILE] = TEXT("No more file descriptors are available.");
-	JClient::s_mapWsaErr[WSAENOBUFS] = TEXT("No buffer space is available. The socket cannot be connected.");
-	JClient::s_mapWsaErr[WSAENOTCONN] = TEXT("The socket is not connected.");
-	JClient::s_mapWsaErr[WSAETIMEDOUT] = TEXT("Attempt to connect timed out without establishing a connection.");
+	JClient::s_mapWsaErr[WSAECONNREFUSED] = "The attempt to connect was rejected.";
+	JClient::s_mapWsaErr[WSAENETUNREACH] = "The network cannot be reached from this host at this time.";
+	JClient::s_mapWsaErr[WSAEMFILE] = "No more file descriptors are available.";
+	JClient::s_mapWsaErr[WSAENOBUFS] = "No buffer space is available. The socket cannot be connected.";
+	JClient::s_mapWsaErr[WSAENOTCONN] = "The socket is not connected.";
+	JClient::s_mapWsaErr[WSAETIMEDOUT] = "Attempt to connect timed out without establishing a connection.";
 	// on FD_CLOSE
-	JClient::s_mapWsaErr[0] = TEXT("The connection was reset by software itself.");
-	JClient::s_mapWsaErr[WSAENETDOWN] = TEXT("The network subsystem failed."); // and all other
-	JClient::s_mapWsaErr[WSAECONNRESET] = TEXT("The connection was reset by the remote side.");
-	JClient::s_mapWsaErr[WSAECONNABORTED] = TEXT("The connection was terminated due to a time-out or other failure.");
+	JClient::s_mapWsaErr[0] = "The connection was reset by software itself.";
+	JClient::s_mapWsaErr[1] = "The connection reset by validate timeout.";
+	JClient::s_mapWsaErr[2] = "The connection reset because was recieved transaction with bad CRC code";
+	JClient::s_mapWsaErr[3] = "The connection reset because IP-address is banned.";
+	JClient::s_mapWsaErr[WSAENETDOWN] = "The network subsystem failed."; // and all other
+	JClient::s_mapWsaErr[WSAECONNRESET] = "The connection was reset by the remote side.";
+	JClient::s_mapWsaErr[WSAECONNABORTED] = "The connection was terminated due to a time-out or other failure.";
 
 	// Create baloon tool tip for users list
 	ASSERT(JClientApp::jpApp);
@@ -181,7 +184,7 @@ void JClient::lua_openVM()
 	if (luaL_dofile(m_luaVM, "events.client.lua")) {
 		const char* msg = lua_tostring(m_luaVM, -1);
 		int t = lua_gettop(m_luaVM);
-		EvReport(tformat(TEXT("Error in script: %s"), ANSIToTstr(msg).c_str()), eError, eTop);
+		EvReport(tformat(TEXT("Error in script: %s"), ANSIToTstr(msg).c_str()), elogError, eTop);
 		// Close Lua virtual machine
 		lua_closeVM();
 		return;
@@ -270,7 +273,7 @@ void JClient::LoadState()
 	m_passwordNet = profile::getString(RF_CLIENT, RK_PASSWORDNET, TEXT("beowolf"));
 	m_bSendByEnter = profile::getInt(RF_CLIENT, RK_SENDBYENTER, true) != 0;
 	m_bCheatAnonymous = profile::getInt(RF_CLIENT, RK_CHEATANONYMOUS, false) != 0;
-	m_timeFormat = TEXT("[style=time][%02u:%02u:%02u][/style] ");
+	m_timeFormat = "[%02u:%02u:%02u] ";
 }
 
 void JClient::SaveState()
@@ -334,7 +337,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 				if (profile::getInt(RF_CLIENT, RK_STATE, FALSE))
 					Connect();
 				else
-					EvLog(TEXT("[style=msg]Ready to connect[/style]"), true);
+					EvLog("Ready to connect", elogMsg);
 			}
 
 			retval = TRUE;
@@ -740,13 +743,13 @@ void JClient::Connect(bool getsetting)
 
 	// Write it's to log
 	EvLog(
-		tformat(TEXT("[style=msg]Connecting to %s (%i.%i.%i.%i:%i)[/style]"),
-		ANSIToTstr(m_hostname).c_str(),
+		format("Connecting to %s (%i.%i.%i.%i:%i)",
+		m_hostname.c_str(),
 		(addr >> 0) & 0xFF,
 		(addr >> 8) & 0xFF,
 		(addr >> 16) & 0xFF,
 		(addr >> 24) & 0xFF,
-		m_port), true);
+		m_port), elogMsg);
 	// Update interface
 	if (jpPageServer->hwndPage) {
 		CheckDlgButton(jpPageServer->hwndPage, IDC_CONNECT, TRUE);
@@ -1237,12 +1240,12 @@ void JClient::OnLinkConnect(SOCKET sock)
 	int len = sizeof(si);
 
 	getpeername(sock, (struct sockaddr*)&si, &len);
-	EvLog(tformat(TEXT("[style=msg]Connected to %i.%i.%i.%i:%i[/style]"),
+	EvLog(format("Connected to %i.%i.%i.%i:%i",
 		si.sin_addr.S_un.S_un_b.s_b1,
 		si.sin_addr.S_un.S_un_b.s_b2,
 		si.sin_addr.S_un.S_un_b.s_b3,
 		si.sin_addr.S_un.S_un_b.s_b4,
-		ntohs(si.sin_port)), true);
+		ntohs(si.sin_port)), elogMsg);
 
 	PushTrn(sock, Make_Quest_Identify(m_mLinks[sock].getEncryptorName()));
 
@@ -1284,7 +1287,7 @@ void JClient::OnLinkClose(SOCKET sock, UINT err)
 		}
 
 		// Update interface
-		EvLog(tformat(TEXT("[style=msg]Disconnected. Reason: [i]%s[/i][/style]"), JClient::s_mapWsaErr[err].c_str()), true);
+		EvLog(format("Disconnected. Reason: [i]%s[/i]", JClient::s_mapWsaErr[err].c_str()), elogMsg);
 	}
 }
 
@@ -1304,12 +1307,12 @@ void JClient::OnLinkFail(SOCKET sock, UINT err)
 		lua_call(m_luaVM, 1, 0);
 	} else {
 		// Update interface
-		EvLog(tformat(TEXT("[style=msg]Connecting failed. Reason: [i]%s[/i][/style]"), JClient::s_mapWsaErr[err].c_str()), true);
+		EvLog(format("Connecting failed. Reason: [i]%s[/i]", JClient::s_mapWsaErr[err].c_str()), elogMsg);
 		// If not disconnected by user, try to reconnect again
 		if (err && m_bReconnect) {
 			SetTimer(m_hwndPage, IDT_CONNECT, profile::getInt(RF_CLIENT, RK_TIMERCONNECT, TIMER_CONNECT), 0);
 			// Update interface
-			EvLog(tformat(TEXT("[style=msg]Waiting %u seconds and try again (attempt #%i).[/style]"), TIMER_CONNECT/1000, m_nConnectCount), true);
+			EvLog(format("Waiting %u seconds and try again (attempt #%i).", TIMER_CONNECT/1000, m_nConnectCount), elogMsg);
 		}
 	}
 }
@@ -1356,13 +1359,13 @@ void JClient::Recv_Notify_METRICS(SOCKET sock, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
 
 	EvMetrics(m_metrics);
-	EvReport(TEXT("metrics from server"), eInformation, eLow);
+	EvReport(TEXT("metrics from server"), elogInfo, eLow);
 }
 
 void JClient::Recv_Notify_NICK(SOCKET sock, io::mem& is)
@@ -1387,7 +1390,7 @@ void JClient::Recv_Notify_NICK(SOCKET sock, io::mem& is)
 		case 2:
 		case 3:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -1419,7 +1422,7 @@ void JClient::Recv_Notify_NICK(SOCKET sock, io::mem& is)
 			msg = TEXT("nickname is taken by channel");
 			break;
 		}
-		EvReport(tformat(TEXT("%s, now nickname is [b]%s[/b]"), msg, newname.c_str()), eInformation, eHigh);
+		EvReport(tformat(TEXT("%s, now nickname is [b]%s[/b]"), msg, newname.c_str()), elogInfo, eHigh);
 	}
 
 	// Lua response
@@ -1481,7 +1484,7 @@ void JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 						jp->AppendScript(tformat(TEXT("[style=Info]now talk with [b]%s[/b][/style]"), getSafeName(ID).c_str()));
 					}
 
-					EvReport(tformat(TEXT("opened private talk with [b]%s[/b]"), user.name.c_str()), eInformation, eHigher);
+					EvReport(tformat(TEXT("opened private talk with [b]%s[/b]"), user.name.c_str()), elogInfo, eHigher);
 					break;
 				}
 
@@ -1520,7 +1523,7 @@ void JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 						jp->AppendScript(tformat(TEXT("[style=Info]now talking in [b]#%s[/b][/style]"), chan.name.c_str()));
 					}
 
-					EvReport(tformat(TEXT("joins to [b]#%s[/b] channel"), chan.name.c_str()), eInformation, eHigher);
+					EvReport(tformat(TEXT("joins to [b]#%s[/b] channel"), chan.name.c_str()), elogInfo, eHigher);
 					break;
 				}
 			}
@@ -1551,13 +1554,13 @@ void JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 				msg = TEXT("can not join to contact");
 				break;
 			}
-			EvReport(msg, eError, eHigher);
+			EvReport(msg, elogError, eHigher);
 		}
 	}
 	catch (io::exception e)
 	{
 		// Report about message
-		EvReport(SZ_BADTRN, eWarning, eLow);
+		EvReport(SZ_BADTRN, elogWarn, eLow);
 		return;
 	}
 }
@@ -1581,7 +1584,7 @@ void JClient::Recv_Notify_JOIN(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -1609,7 +1612,7 @@ void JClient::Recv_Notify_JOIN(SOCKET sock, io::mem& is)
 
 		EvReport(tformat(TEXT("[b]%s[/b] opens private talk"),
 			user.name.c_str()),
-			eInformation, eAbove);
+			elogInfo, eAbove);
 	} else { // channel
 		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
 		if (ipc != mPageChannel.end()) {
@@ -1621,7 +1624,7 @@ void JClient::Recv_Notify_JOIN(SOCKET sock, io::mem& is)
 			EvReport(tformat(TEXT("[b]%s[/b] joins to [b]%s[/b]"),
 				getSafeName(idWho).c_str(),
 				ipc->second->m_channel.name.c_str()),
-				eInformation, eUnder);
+				elogInfo, eUnder);
 		} else {
 			PushTrn(sock, Make_Cmd_PART(m_idOwn, idWhere));
 		}
@@ -1645,7 +1648,7 @@ void JClient::Recv_Notify_PART(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 
 		case 2:
@@ -1680,7 +1683,7 @@ void JClient::Recv_Notify_PART(SOCKET sock, io::mem& is)
 			ipu->second->AppendScript(msg);
 		}
 
-		EvReport(tformat(TEXT("[style=Info]private with [b]%s[/b] closed[/style]"), getSafeName(idWho).c_str()), eInformation, eHigher);
+		EvReport(tformat(TEXT("[style=Info]private with [b]%s[/b] closed[/style]"), getSafeName(idWho).c_str()), elogInfo, eHigher);
 	} else { // channel
 		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
 		if (ipc != mPageChannel.end()) {
@@ -1722,13 +1725,13 @@ void JClient::Recv_Reply_USERINFO(SOCKET sock, WORD trnid, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
 
 	// Report about message
-	EvReport(tformat(TEXT("recieve users info")), eInformation, eLow);
+	EvReport(tformat(TEXT("recieve users info")), elogInfo, eLow);
 }
 
 void JClient::Recv_Notify_ONLINE(SOCKET sock, io::mem& is)
@@ -1775,7 +1778,7 @@ void JClient::Recv_Notify_ONLINE(SOCKET sock, io::mem& is)
 	}
 
 	// Report about message
-	EvReport(tformat(TEXT("user %s is %s"), iu != m_mUser.end() ? iu->second.name.c_str() : TEXT("unknown"), isOnline ? TEXT("online") : TEXT("offline")), eInformation, eLowest);
+	EvReport(tformat(TEXT("user %s is %s"), iu != m_mUser.end() ? iu->second.name.c_str() : TEXT("unknown"), isOnline ? TEXT("online") : TEXT("offline")), elogInfo, eLowest);
 }
 
 void JClient::Recv_Notify_STATUS(SOCKET sock, io::mem& is)
@@ -1817,7 +1820,7 @@ void JClient::Recv_Notify_STATUS(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -1913,7 +1916,7 @@ void JClient::Recv_Notify_SAY(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -1969,7 +1972,7 @@ void JClient::Recv_Notify_TOPIC(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -2031,7 +2034,7 @@ void JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 
 		case 2:
@@ -2041,7 +2044,7 @@ void JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, io::mem& is)
 
 		case 3:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -2195,7 +2198,7 @@ void JClient::Recv_Notify_ACCESS(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -2250,7 +2253,7 @@ void JClient::Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -2269,7 +2272,7 @@ void JClient::Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 		msg = TEXT("message to [b]%s[/b] saved");
 		break;
 	}
-	EvReport(tformat(msg.c_str(), getSafeName(idWho).c_str()), eInformation, eNormal);
+	EvReport(tformat(msg.c_str(), getSafeName(idWho).c_str()), elogInfo, eNormal);
 }
 
 void JClient::Recv_Notify_MESSAGE(SOCKET sock, io::mem& is)
@@ -2301,7 +2304,7 @@ void JClient::Recv_Notify_MESSAGE(SOCKET sock, io::mem& is)
 		case 2:
 		case 3:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 
 		case 4:
@@ -2325,7 +2328,7 @@ void JClient::Recv_Notify_MESSAGE(SOCKET sock, io::mem& is)
 		PostMessage(m_hwndPage, BEM_JDIALOG, IDD_MSGRECV, (LPARAM)(JDialog*)jp);
 	}
 	// Report about message
-	EvReport(tformat(TEXT("%s from [b]%s[/b]"), fAlert ? TEXT("alert") : TEXT("message"), getSafeName(idBy).c_str()), eInformation, eNormal);
+	EvReport(tformat(TEXT("%s from [b]%s[/b]"), fAlert ? TEXT("alert") : TEXT("message"), getSafeName(idBy).c_str()), elogInfo, eNormal);
 }
 
 void JClient::Recv_Notify_BEEP(SOCKET sock, io::mem& is)
@@ -2342,7 +2345,7 @@ void JClient::Recv_Notify_BEEP(SOCKET sock, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -2358,7 +2361,7 @@ void JClient::Recv_Notify_BEEP(SOCKET sock, io::mem& is)
 	}
 
 	// Report about message
-	EvReport(tformat(TEXT("sound signal from [b]%s[/b]"), getSafeName(idBy).c_str()), eInformation, eHigh);
+	EvReport(tformat(TEXT("sound signal from [b]%s[/b]"), getSafeName(idBy).c_str()), elogInfo, eHigh);
 }
 
 void JClient::Recv_Notify_CLIPBOARD(SOCKET sock, io::mem& is)
@@ -2410,10 +2413,10 @@ void JClient::Recv_Notify_CLIPBOARD(SOCKET sock, io::mem& is)
 			}
 
 			// Report about message
-			EvReport(tformat(TEXT("recieve clipboard content from [b]%s[/b]"), getSafeName(idBy).c_str()), eInformation, eHigh);
+			EvReport(tformat(TEXT("recieve clipboard content from [b]%s[/b]"), getSafeName(idBy).c_str()), elogInfo, eHigh);
 		} else {
 			// Report about message
-			EvReport(tformat(TEXT("can not paste recieved clipboard content from [b]%s[/b]"), getSafeName(idBy).c_str()), eError, eHigh);
+			EvReport(tformat(TEXT("can not paste recieved clipboard content from [b]%s[/b]"), getSafeName(idBy).c_str()), elogError, eHigh);
 		}
 	}
 	catch (io::exception e)
@@ -2422,7 +2425,7 @@ void JClient::Recv_Notify_CLIPBOARD(SOCKET sock, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 		}
 	}
@@ -2459,7 +2462,7 @@ void JClient::Recv_Notify_SPLASHRTF(SOCKET sock, io::mem& is)
 		case 1:
 		case 2:
 			// Report about message
-			EvReport(SZ_BADTRN, eWarning, eLow);
+			EvReport(SZ_BADTRN, elogWarn, eLow);
 			return;
 
 		case 3:
@@ -2490,7 +2493,7 @@ void JClient::Recv_Notify_SPLASHRTF(SOCKET sock, io::mem& is)
 		PostMessage(m_hwndPage, BEM_JDIALOG, IDD_SPLASHRTF, (LPARAM)(JDialog*)jp);
 	}
 	// Report about message
-	EvReport(tformat(TEXT("splash text from [b]%s[/b]"), getSafeName(idBy).c_str()), eInformation, eNormal);
+	EvReport(tformat(TEXT("splash text from [b]%s[/b]"), getSafeName(idBy).c_str()), elogInfo, eNormal);
 }
 
 //
