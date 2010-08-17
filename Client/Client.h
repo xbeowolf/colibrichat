@@ -264,8 +264,6 @@ namespace colibrichat
 
 		protected:
 
-			JPROPERTY_R(EPriority, Priority);
-
 			JPROPERTY_R(HWND, hwndLog);
 			RECT rcLog;
 		};
@@ -297,7 +295,6 @@ namespace colibrichat
 
 			void OnLinkStart(SOCKET sock);
 			void OnLog(const std::string& str, ELog elog = elogDef);
-			void OnReport(const std::tstring& str, ELog elog = elogMsg, EPriority prior = eNormal);
 			void OnMetrics(const Metrics& metrics);
 
 		protected:
@@ -766,7 +763,8 @@ namespace colibrichat
 
 	protected:
 
-		// Beowolf Network Protocol Messages reciving
+		// --- Beowolf Network Protocol Messages reciving ---
+
 		void Recv_Notify_METRICS(SOCKET sock, io::mem& is);
 		void Recv_Notify_NICK(SOCKET sock, io::mem& is);
 		void Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is);
@@ -785,7 +783,8 @@ namespace colibrichat
 		void Recv_Notify_CLIPBOARD(SOCKET sock, io::mem& is);
 		void Recv_Notify_SPLASHRTF(SOCKET sock, io::mem& is);
 
-		// Beowolf Network Protocol Messages sending
+		// --- Beowolf Network Protocol Messages sending ---
+
 		JPtr<JBTransaction> Make_Cmd_NICK(DWORD idWho, const std::tstring& nick) const;
 		JPtr<JBTransaction> Make_Quest_JOIN(const std::tstring& name, const std::tstring& pass = TEXT(""), int type = eCheat | eUser | eChannel | eBoard) const;
 		JPtr<JBTransaction> Make_Cmd_PART(DWORD idWho, DWORD idWhere) const;
@@ -806,6 +805,8 @@ namespace colibrichat
 			const RECT& rcPos, bool bCloseOnDisconnect = true, DWORD dwCanclose = 2500, DWORD dwAutoclose = 30000,
 			bool fTransparent = true, COLORREF crSheet = RGB(255, 255, 255)) const;
 
+		// --- Events responders ---
+
 		void OnHook(JNode* src);
 		void OnUnhook(JNode* src);
 
@@ -815,7 +816,8 @@ namespace colibrichat
 		void OnLinkStart(SOCKET sock);
 		void OnNick(DWORD idOld, const std::tstring& oldname, DWORD idNew, const std::tstring& newname);
 
-		// Lua gluer
+		// --- Lua gluer ---
+
 		int lua_regFuncs(lua_State *L);
 		DECLARE_LUAMETHOD(getGlobal);
 		DECLARE_LUAMETHOD(getVars);

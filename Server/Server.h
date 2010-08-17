@@ -174,7 +174,8 @@ namespace colibrichat
 		int  BroadcastTrn(const SetId& set, bool nested, JTransaction* jpTrn, size_t ssi = 0) throw();
 		int  BroadcastTrn(const SetId& set, bool nested, WORD message, const std::string& str, size_t ssi = 0) throw();
 
-		// Beowolf Network Protocol Messages reciving
+		// --- Beowolf Network Protocol Messages reciving ---
+
 		void Recv_Cmd_NICK(SOCKET sock, io::mem& is);
 		void Recv_Quest_LIST(SOCKET sock, WORD trnid, io::mem& is, std::ostream& os);
 		void Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is, std::ostream& os);
@@ -191,7 +192,8 @@ namespace colibrichat
 		void Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is, std::ostream& os);
 		void Recv_Cmd_SPLASHRTF(SOCKET sock, io::mem& is);
 
-		// Beowolf Network Protocol Messages sending
+		// --- Beowolf Network Protocol Messages sending ---
+
 		JPtr<JBTransaction> Make_Notify_METRICS(const Metrics& metrics) const;
 		JPtr<JBTransaction> Make_Notify_NICK(DWORD result, DWORD idOld, DWORD idNew, const std::tstring& newname) const;
 		void Form_Reply_LIST(std::ostream& os, bool god) const;
@@ -214,6 +216,8 @@ namespace colibrichat
 		JPtr<JBTransaction> Make_Notify_MESSAGE(DWORD idBy, const FILETIME& ft, const char* ptr, size_t size) const;
 		void Form_Reply_MESSAGE(std::ostream& os, DWORD idWho, UINT type) const;
 		JPtr<JBTransaction> Make_Notify_SPLASHRTF(DWORD idBy, const char* ptr, size_t size) const;
+
+		// --- Events responders ---
 
 		void OnHook(JNode* src);
 		void OnUnhook(JNode* src);

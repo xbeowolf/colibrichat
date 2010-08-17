@@ -194,9 +194,9 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 					if (pnmh->idFrom == IDC_LIST)
 					{
-						MapLink::const_iterator iter = pNode->mLinks.find((SOCKET)pnmv->item.lParam);
-						if (iter == pNode->mLinks.end()) break;
-						MapSocketId::const_iterator iid = pNode->mSocketId.find(iter->second.Sock);
+						JPtr<JLink> link = JLink::get((JID)pnmv->item.lParam);
+						if (!link) break;
+						MapSocketId::const_iterator iid = pNode->mSocketId.find(link->ID);
 						if (iid == pNode->mSocketId.end()) break;
 						MapUser::const_iterator iu = pNode->mUser.find(iid->second);
 						ASSERT(iu != pNode->m_mUser.end());
@@ -245,17 +245,17 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 							case 5:
 								_stprintf_s(buffer, _countof(buffer),
 									TEXT("%i.%i.%i.%i"),
-									iter->second.m_saAddr.sin_addr.S_un.S_un_b.s_b1,
-									iter->second.m_saAddr.sin_addr.S_un.S_un_b.s_b2,
-									iter->second.m_saAddr.sin_addr.S_un.S_un_b.s_b3,
-									iter->second.m_saAddr.sin_addr.S_un.S_un_b.s_b4);
+									link->m_saAddr.sin_addr.S_un.S_un_b.s_b1,
+									link->m_saAddr.sin_addr.S_un.S_un_b.s_b2,
+									link->m_saAddr.sin_addr.S_un.S_un_b.s_b3,
+									link->m_saAddr.sin_addr.S_un.S_un_b.s_b4);
 								pnmv->item.pszText = buffer;
 								break;
 
 							case 6:
 								{
 									SYSTEMTIME st;
-									FileTimeToLocalTime(iter->second.ftTime, st);
+									FileTimeToLocalTime(link->ftTime, st);
 
 									_stprintf_s(buffer, _countof(buffer),
 										TEXT("%02i:%02i:%02i, %02i.%02i.%04i"),
@@ -407,8 +407,8 @@ void JServer::JConnections::DelLine(SOCKET sock)
 
 void JServer::JConnections::BuildView()
 {
-	for each (MapLink::value_type const& v in pNode->mLinks) {
-		if (v.second.isEstablished()) AddLine(v.first);
+	for each (SetSocket::value_type const& v in pNode->mLinks) {
+		if (JLink::get((JID)v)->isEstablished()) AddLine(v);
 	}
 }
 

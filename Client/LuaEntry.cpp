@@ -30,11 +30,10 @@ using namespace colibrichat;
 
 static int getInt(lua_State *L)
 {
-	ASSERT(lua_gettop(L) >= 3);
-	if (lua_isstring(L, 1) && lua_isstring(L, 2) && lua_isnumber(L, 3)) {
-		std::tstring section = ANSIToTstr(lua_tostring(L, 1));
-		std::tstring entry = ANSIToTstr(lua_tostring(L, 2));
-		UINT nDefault = (UINT)lua_tointeger(L, 3);
+	if (lua_isstring(L, -3) && lua_isstring(L, -2) && lua_isnumber(L, -1)) {
+		std::tstring section = ANSIToTstr(lua_tostring(L, -3));
+		std::tstring entry = ANSIToTstr(lua_tostring(L, -2));
+		UINT nDefault = (UINT)lua_tointeger(L, -1);
 		UINT result = profile::getInt(section, entry, nDefault);
 		lua_pushinteger(L, result);
 	} else {
@@ -46,11 +45,10 @@ static int getInt(lua_State *L)
 
 static int setInt(lua_State *L)
 {
-	ASSERT(lua_gettop(L) >= 3);
-	if (lua_isstring(L, 1) && lua_isstring(L, 2) && lua_isnumber(L, 3)) {
-		std::tstring section = ANSIToTstr(lua_tostring(L, 1));
-		std::tstring entry = ANSIToTstr(lua_tostring(L, 2));
-		UINT nValue = (UINT)lua_tointeger(L, 3);
+	if (lua_isstring(L, -3) && lua_isstring(L, -2) && lua_isnumber(L, -1)) {
+		std::tstring section = ANSIToTstr(lua_tostring(L, -3));
+		std::tstring entry = ANSIToTstr(lua_tostring(L, -2));
+		UINT nValue = (UINT)lua_tointeger(L, -1);
 		profile::setInt(section, entry, nValue);
 	} else {
 		lua_pushstring(L, "incorrect argument in function \"setInt\"");
@@ -61,10 +59,9 @@ static int setInt(lua_State *L)
 
 static int hasstr(lua_State *L)
 {
-	ASSERT(lua_gettop(L) >= 2);
-	if (lua_isstring(L, 1) && lua_isstring(L, 2)) {
-		const char* host = lua_tostring(L, 1);
-		const char* entry = lua_tostring(L, 2);
+	if (lua_isstring(L, -2) && lua_isstring(L, -1)) {
+		const char* host = lua_tostring(L, -2);
+		const char* entry = lua_tostring(L, -1);
 		int i = 0;
 		while ((host = strstr(host, entry)) != 0) {
 			host += strlen(entry);
@@ -177,14 +174,14 @@ IMPLEMENT_LUAMETHOD(JClient, setVars)
 
 IMPLEMENT_LUAMETHOD(JClient, PlaySound)
 {
-	ASSERT(lua_gettop(L) >= 1);
-	PlaySound(ANSIToTstr(luaL_checkstring(L, 1)).c_str());
+	ASSERT(lua_isstring(L, -1));
+	PlaySound(ANSIToTstr(lua_tostring(L, -1)).c_str());
 	return 0;
 }
 
 IMPLEMENT_LUAMETHOD(JClient, ShowTopic)
 {
-	ShowTopic(lua_isstring(L, 1) ? ANSIToTstr(lua_tostring(L, 1)).c_str() : TEXT(""));
+	ShowTopic(lua_isstring(L, -1) ? ANSIToTstr(lua_tostring(L, -1)).c_str() : TEXT(""));
 	return 0;
 }
 
@@ -202,7 +199,6 @@ IMPLEMENT_LUAMETHOD(JClient, openAutoopen)
 
 IMPLEMENT_LUAMETHOD(JClient, Log)
 {
-	ASSERT(lua_gettop(L) >= 2);
 	if (lua_isstring(L, -2) && lua_isnumber(L, -1)) {
 		EvLog(lua_tostring(L, -2), (ELog)lua_tointeger(L, -1));
 	} else {
@@ -220,7 +216,7 @@ IMPLEMENT_LUAMETHOD(JClient, HideBaloon)
 
 IMPLEMENT_LUAMETHOD(JClient, Connect)
 {
-	bool getsetting = lua_isboolean(L, 1) ? lua_toboolean(L, 1) != 0 : false;
+	bool getsetting = lua_isboolean(L, -1) ? lua_toboolean(L, -1) != 0 : false;
 	Connect(getsetting);
 	return 0;
 }
@@ -239,7 +235,7 @@ IMPLEMENT_LUAMETHOD(JClient, getConnectCount)
 
 IMPLEMENT_LUAMETHOD(JClient, setConnectCount)
 {
-	m_nConnectCount = lua_isnumber(L, 1) ? (int)lua_tointeger(L, 1) : 0;
+	m_nConnectCount = lua_isnumber(L, -1) ? (int)lua_tointeger(L, -1) : 0;
 	return 0;
 }
 
@@ -252,7 +248,7 @@ IMPLEMENT_LUAMETHOD(JClient, getSocket)
 IMPLEMENT_LUAMETHOD(JClient, checkConnectionButton)
 {
 	if (jpPageServer->hwndPage) {
-		int check = lua_isboolean(L, 1) ? lua_toboolean(L, 1) : 0;
+		int check = lua_isboolean(L, -1) ? lua_toboolean(L, -1) : 0;
 		CheckDlgButton(jpPageServer->hwndPage, IDC_CONNECT, check);
 	}
 	return 0;
@@ -260,8 +256,7 @@ IMPLEMENT_LUAMETHOD(JClient, checkConnectionButton)
 
 IMPLEMENT_LUAMETHOD(JClient, WaitConnectStart)
 {
-	ASSERT(lua_gettop(L) >= 1);
-	int wait = lua_isnumber(L, 1) ? (int)lua_tointeger(L, 1) : 30*1000;
+	int wait = lua_isnumber(L, -1) ? (int)lua_tointeger(L, -1) : 30*1000;
 	SetTimer(m_hwndPage, IDT_CONNECT, wait, 0);
 	return 0;
 }
@@ -292,7 +287,7 @@ IMPLEMENT_LUAMETHOD(JClient, RestoreWindow)
 
 IMPLEMENT_LUAMETHOD(JClient, FlashWindow)
 {
-	BOOL flash = lua_isboolean(L, 1) ? (BOOL)lua_toboolean(L, 1) : TRUE;
+	BOOL flash = lua_isboolean(L, -1) ? (BOOL)lua_toboolean(L, -1) : TRUE;
 	FlashWindow(m_hwndPage, flash);
 	return 0;
 }
@@ -306,8 +301,8 @@ IMPLEMENT_LUAMETHOD(JClient, DestroyWindow)
 IMPLEMENT_LUAMETHOD(JClient, PageEnable)
 {
 	DWORD id;
-	if (lua_isstring(L, 1)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, 1)).c_str());
-	else if (lua_isnumber(L, 1)) id = (DWORD)lua_tointeger(L, 1);
+	if (lua_isstring(L, -1)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, -1)).c_str());
+	else if (lua_isnumber(L, -1)) id = (DWORD)lua_tointeger(L, -1);
 	else id = CRC_SERVER;
 	JPtr<JPage> jp = getPage(id);
 	if (jp) {
@@ -319,8 +314,8 @@ IMPLEMENT_LUAMETHOD(JClient, PageEnable)
 IMPLEMENT_LUAMETHOD(JClient, PageDisable)
 {
 	DWORD id;
-	if (lua_isstring(L, 1)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, 1)).c_str());
-	else if (lua_isnumber(L, 1)) id = (DWORD)lua_tointeger(L, 1);
+	if (lua_isstring(L, -1)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, -1)).c_str());
+	else if (lua_isnumber(L, -1)) id = (DWORD)lua_tointeger(L, -1);
 	else id = CRC_SERVER;
 	JPtr<JPage> jp = getPage(id);
 	if (jp) {
@@ -331,77 +326,71 @@ IMPLEMENT_LUAMETHOD(JClient, PageDisable)
 
 IMPLEMENT_LUAMETHOD(JClient, PageAppendScript)
 {
-	ASSERT(lua_gettop(L) >= 2);
 	DWORD id;
-	if (lua_isstring(L, 1)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, 1)).c_str());
-	else if (lua_isnumber(L, 1)) id = (DWORD)lua_tointeger(L, 1);
+	if (lua_isstring(L, -2)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, -2)).c_str());
+	else if (lua_isnumber(L, -2)) id = (DWORD)lua_tointeger(L, -2);
 	else id = CRC_SERVER;
 	JPtr<JPageLog> jp = getPageLog(id);
-	if (jp && lua_isstring(L, 2)) {
-		jp->AppendScript(ANSIToTstr(lua_tostring(L, 2)));
+	if (jp && lua_isstring(L, -1)) {
+		jp->AppendScript(ANSIToTstr(lua_tostring(L, -1)));
 	}
 	return 0;
 }
 
 IMPLEMENT_LUAMETHOD(JClient, PageSetIcon)
 {
-	ASSERT(lua_gettop(L) >= 2);
 	DWORD id;
-	if (lua_isstring(L, 1)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, 1)).c_str());
-	else if (lua_isnumber(L, 1)) id = (DWORD)lua_tointeger(L, 1);
+	if (lua_isstring(L, -2)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, -2)).c_str());
+	else if (lua_isnumber(L, -2)) id = (DWORD)lua_tointeger(L, -2);
 	else id = CRC_SERVER;
 	JPtr<JPageLog> jp = getPageLog(id);
-	if (jp && lua_isnumber(L, 2)) {
-		jp->setAlert((EAlert)lua_tointeger(L, 2));
+	if (jp && lua_isnumber(L, -1)) {
+		jp->setAlert((EAlert)lua_tointeger(L, -1));
 	}
 	return 0;
 }
 
 IMPLEMENT_LUAMETHOD(JClient, Say)
 {
-	ASSERT(lua_gettop(L) >= 2);
 	DWORD id;
-	if (lua_isstring(L, 1)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, 1)).c_str());
-	else if (lua_isnumber(L, 1)) id = (DWORD)lua_tointeger(L, 1);
+	if (lua_isstring(L, -2)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, -1)).c_str());
+	else if (lua_isnumber(L, -2)) id = (DWORD)lua_tointeger(L, -2);
 	else id = CRC_SERVER;
 	if (m_clientsock) {
-		PushTrn(m_clientsock, Make_Cmd_SAY(id, SF_TEXT, lua_tostring(L, 2)));
+		PushTrn(m_clientsock, Make_Cmd_SAY(id, SF_TEXT, lua_tostring(L, -1)));
 	}
 	return 0;
 }
 
 IMPLEMENT_LUAMETHOD(JClient, Message)
 {
-	ASSERT(lua_gettop(L) >= 2);
 	DWORD id;
-	if (lua_isstring(L, 1)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, 1)).c_str());
-	else if (lua_isnumber(L, 1)) id = (DWORD)lua_tointeger(L, 1);
+	if (lua_isstring(L, -2)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, -2)).c_str());
+	else if (lua_isnumber(L, -2)) id = (DWORD)lua_tointeger(L, -2);
 	else id = CRC_SERVER;
 	if (m_clientsock) {
-		PushTrn(m_clientsock, Make_Quest_MESSAGE(id, lua_tostring(L, 2), false, GetSysColor(COLOR_WINDOW)));
+		PushTrn(m_clientsock, Make_Quest_MESSAGE(id, lua_tostring(L, -1), false, GetSysColor(COLOR_WINDOW)));
 	}
 	return 0;
 }
 
 IMPLEMENT_LUAMETHOD(JClient, Alert)
 {
-	ASSERT(lua_gettop(L) >= 2);
 	DWORD id;
-	if (lua_isstring(L, 1)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, 1)).c_str());
-	else if (lua_isnumber(L, 1)) id = (DWORD)lua_tointeger(L, 1);
+	if (lua_isstring(L, -2)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, -2)).c_str());
+	else if (lua_isnumber(L, -2)) id = (DWORD)lua_tointeger(L, -2);
 	else id = CRC_SERVER;
 	if (m_clientsock) {
-		PushTrn(m_clientsock, Make_Quest_MESSAGE(id, lua_tostring(L, 2), true, GetSysColor(COLOR_WINDOW)));
+		PushTrn(m_clientsock, Make_Quest_MESSAGE(id, lua_tostring(L, -1), true, GetSysColor(COLOR_WINDOW)));
 	}
 	return 0;
 }
 
 IMPLEMENT_LUAMETHOD(JClient, Beep)
 {
-	ASSERT(lua_gettop(L) >= 1);
 	DWORD id;
-	if (lua_isstring(L, 1)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, 1)).c_str());
-	else if (lua_isnumber(L, 1)) id = (DWORD)lua_tointeger(L, 1);
+	if (lua_isstring(L, -1)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, -1)).c_str());
+	else if (lua_isnumber(L, -1)) id = (DWORD)lua_tointeger(L, -1);
 	else id = CRC_SERVER;
 	if (m_clientsock) {
 		PushTrn(m_clientsock, Make_Cmd_BEEP(id));

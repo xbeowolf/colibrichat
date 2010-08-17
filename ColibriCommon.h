@@ -24,7 +24,7 @@
 
 //-----------------------------------------------------------------------------
 
-#define SZ_BADTRN              TEXT("bad transaction data format")
+#define SZ_BADTRN              "bad transaction data format"
 
 // --- Windows messages ---
 

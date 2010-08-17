@@ -240,7 +240,6 @@ void JClient::JPage::OnLinkClose(SOCKET sock, UINT err)
 JClient::JPageLog::JPageLog()
 : JPage()
 {
-	m_Priority = eNormal;
 }
 
 void JClient::JPageLog::AppendRtf(std::string& content, bool toascii) const
@@ -775,7 +774,6 @@ void JClient::JPageServer::OnHook(JNode* src)
 	if (node) {
 		node->EvLinkStart += MakeDelegate(this, &JClient::JPageServer::OnLinkStart);
 		node->EvLog += MakeDelegate(this, &JClient::JPageServer::OnLog);
-		node->EvReport += MakeDelegate(this, &JClient::JPageServer::OnReport);
 		node->EvMetrics += MakeDelegate(this, &JClient::JPageServer::OnMetrics);
 	}
 }
@@ -788,7 +786,6 @@ void JClient::JPageServer::OnUnhook(JNode* src)
 	if (node) {
 		node->EvLinkStart -= MakeDelegate(this, &JClient::JPageServer::OnLinkStart);
 		node->EvLog -= MakeDelegate(this, &JClient::JPageServer::OnLog);
-		node->EvReport -= MakeDelegate(this, &JClient::JPageServer::OnReport);
 		node->EvMetrics -= MakeDelegate(this, &JClient::JPageServer::OnMetrics);
 	}
 
@@ -820,12 +817,6 @@ void JClient::JPageServer::OnLog(const std::string& str, ELog elog)
 		lua_pushinteger(pNode->m_luaVM, elog);
 		lua_call(pNode->m_luaVM, 3, 0);
 	} else lua_pop(pNode->m_luaVM, 1);
-}
-
-void JClient::JPageServer::OnReport(const std::tstring& str, ELog elog, EPriority prior)
-{
-	if (prior >= m_Priority)
-		OnLog(tstrToANSI(str), elog);
 }
 
 void JClient::JPageServer::OnMetrics(const Metrics& metrics)
@@ -1405,7 +1396,7 @@ void JClient::JPageList::Recv_Reply_LIST(SOCKET sock, WORD trnid, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			pNode->EvReport(SZ_BADTRN, elogWarn, eLow);
+			pNode->EvLog(SZ_BADTRN, elogTrn);
 			return;
 		}
 	}
@@ -1414,7 +1405,7 @@ void JClient::JPageList::Recv_Reply_LIST(SOCKET sock, WORD trnid, io::mem& is)
 		ClearView();
 		BuildView();
 	}
-	pNode->EvReport(tformat(TEXT("listed [b]%u[/b] channels"), m_mChannel.size()), elogInfo, eNormal);
+	pNode->EvLog(format("listed [b]%u[/b] channels", m_mChannel.size()), elogInfo);
 }
 
 JPtr<JBTransaction> JClient::JPageList::Make_Quest_LIST() const
@@ -1898,7 +1889,7 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 	case WM_DESTROY:
 		{
 			pNode->PushTrn(pNode->clientsock, pNode->Make_Cmd_PART(pNode->m_idOwn, m_ID));
-			pNode->EvReport(tformat(TEXT("parts from [b]%s[/b] private talk"), m_user.name.c_str()), elogInfo, eHigher);
+			pNode->EvLog(format("parts from [b]%s[/b] private talk", tstrToANSI(m_user.name).c_str()), elogInfo);
 
 			__super::DlgProc(hWnd, message, wParam, lParam);
 			break;
@@ -2433,7 +2424,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			for each (SetId::value_type const& v in m_channel.opened) {
 				pNode->UnlinkUser(v, m_ID);
 			}
-			pNode->EvReport(tformat(TEXT("parts from [b]#%s[/b] channel"), m_channel.name.c_str()), elogInfo, eHigher);
+			pNode->EvLog(format("parts from [b]#%s[/b] channel", tstrToANSI(m_channel.name).c_str()), elogInfo);
 
 			__super::DlgProc(hWnd, message, wParam, lParam);
 			break;

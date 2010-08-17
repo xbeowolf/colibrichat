@@ -183,8 +183,7 @@ void JClient::lua_openVM()
 	CLuaGluer<JClient>::setglobal(m_luaVM, this, "this", false);
 	if (luaL_dofile(m_luaVM, "events.client.lua")) {
 		const char* msg = lua_tostring(m_luaVM, -1);
-		int t = lua_gettop(m_luaVM);
-		EvReport(tformat(TEXT("Error in script: %s"), ANSIToTstr(msg).c_str()), elogError, eTop);
+		EvLog(format("Error in script: %s", msg), elogError);
 		// Close Lua virtual machine
 		lua_closeVM();
 		return;
@@ -727,16 +726,16 @@ void JClient::Connect(bool getsetting)
 		}
 	}
 	// Add into socket manager
-	Link link;
+	JPtr<JLink> link = new JLink();
 	hostent* h = gethostbyname(m_hostname.c_str());
 	u_long addr = h ? *(u_long*)h->h_addr : htonl(INADDR_LOOPBACK);
-	link.m_saAddr.sin_family = AF_INET;
-	link.m_saAddr.sin_addr.S_un.S_addr = addr;
-	link.m_saAddr.sin_port = htons(m_port);
-	link.Select(FD_CONNECT | FD_READ | FD_WRITE | FD_CLOSE, m_hwndPage, BEM_NETWORK);
-	link.Connect();
+	link->m_saAddr.sin_family = AF_INET;
+	link->m_saAddr.sin_addr.S_un.S_addr = addr;
+	link->m_saAddr.sin_port = htons(m_port);
+	link->Select(FD_CONNECT | FD_READ | FD_WRITE | FD_CLOSE, m_hwndPage, BEM_NETWORK);
+	link->Connect();
 	InsertLink(link);
-	m_clientsock = link.Sock;
+	m_clientsock = link->ID;
 	m_nConnectCount++;
 
 	KillTimer(m_hwndPage, IDT_CONNECT);
@@ -1247,7 +1246,7 @@ void JClient::OnLinkConnect(SOCKET sock)
 		si.sin_addr.S_un.S_un_b.s_b4,
 		ntohs(si.sin_port)), elogMsg);
 
-	PushTrn(sock, Make_Quest_Identify(m_mLinks[sock].getEncryptorName()));
+	PushTrn(sock, Make_Quest_Identify(JLink::get((JID)sock)->getEncryptorName()));
 
 	// Lua response
 	if (m_luaVM) {
@@ -1359,13 +1358,13 @@ void JClient::Recv_Notify_METRICS(SOCKET sock, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, elogWarn, eLow);
+			EvLog(SZ_BADTRN, elogTrn);
 			return;
 		}
 	}
 
 	EvMetrics(m_metrics);
-	EvReport(TEXT("metrics from server"), elogInfo, eLow);
+	EvLog("metrics from server", elogTrn);
 }
 
 void JClient::Recv_Notify_NICK(SOCKET sock, io::mem& is)
@@ -1390,7 +1389,7 @@ void JClient::Recv_Notify_NICK(SOCKET sock, io::mem& is)
 		case 2:
 		case 3:
 			// Report about message
-			EvReport(SZ_BADTRN, elogWarn, eLow);
+			EvLog(SZ_BADTRN, elogTrn);
 			return;
 		}
 	}
@@ -1406,23 +1405,23 @@ void JClient::Recv_Notify_NICK(SOCKET sock, io::mem& is)
 		SetWindowText(jpPageServer->hwndNick, newname.c_str());
 
 		// Report about message
-		const TCHAR* msg = TEXT("unknown result");
+		const char* msg = "unknown result";
 		switch (result)
 		{
 		case NICK_OK:
-			msg = TEXT("nickname successfully assigned");
+			msg = "nickname successfully assigned";
 			break;
 		case NICK_TAKEN:
-			msg = TEXT("nickname is taken");
+			msg = "nickname is taken";
 			break;
 		case NICK_TAKENUSER:
-			msg = TEXT("nickname is taken by other user");
+			msg = "nickname is taken by other user";
 			break;
 		case NICK_TAKENCHANNEL:
-			msg = TEXT("nickname is taken by channel");
+			msg = "nickname is taken by channel";
 			break;
 		}
-		EvReport(tformat(TEXT("%s, now nickname is [b]%s[/b]"), msg, newname.c_str()), elogInfo, eHigh);
+		EvLog(format("%s, now nickname is [b]%s[/b]", msg, tstrToANSI(newname).c_str()), elogInfo);
 	}
 
 	// Lua response
@@ -1484,7 +1483,7 @@ void JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 						jp->AppendScript(tformat(TEXT("[style=Info]now talk with [b]%s[/b][/style]"), getSafeName(ID).c_str()));
 					}
 
-					EvReport(tformat(TEXT("opened private talk with [b]%s[/b]"), user.name.c_str()), elogInfo, eHigher);
+					EvLog(format("opened private talk with [b]%s[/b]", tstrToANSI(user.name).c_str()), elogInfo);
 					break;
 				}
 
@@ -1523,12 +1522,12 @@ void JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 						jp->AppendScript(tformat(TEXT("[style=Info]now talking in [b]#%s[/b][/style]"), chan.name.c_str()));
 					}
 
-					EvReport(tformat(TEXT("joins to [b]#%s[/b] channel"), chan.name.c_str()), elogInfo, eHigher);
+					EvLog(format("joins to [b]#%s[/b] channel", tstrToANSI(chan.name).c_str()), elogInfo);
 					break;
 				}
 			}
 		} else {
-			std::tstring msg;
+			const char* msg;
 			switch (result)
 			{
 			case CHAN_ALREADY:
@@ -1536,31 +1535,31 @@ void JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 					int i = getTabIndex(ID);
 					if (i >= 0) ContactSel(i);
 				}
-				msg = TEXT("contact is already opened");
+				msg = "contact is already opened";
 				break;
 			case CHAN_BADPASS:
-				msg = TEXT("password does not satisfies");
+				msg = "password does not satisfies";
 				break;
 			case CHAN_DENY:
-				msg = TEXT("access denied, channel is invite-only");
+				msg = "access denied, channel is invite-only";
 				break;
 			case CHAN_LIMIT:
-				msg = TEXT("number of users exceeds the channel limits");
+				msg = "number of users exceeds the channel limits";
 				break;
 			case CHAN_ABSENT:
-				msg = TEXT("contact is absent");
+				msg = "contact is absent";
 				break;
 			default:
-				msg = TEXT("can not join to contact");
+				msg = "can not join to contact";
 				break;
 			}
-			EvReport(msg, elogError, eHigher);
+			EvLog(msg, elogError);
 		}
 	}
 	catch (io::exception e)
 	{
 		// Report about message
-		EvReport(SZ_BADTRN, elogWarn, eLow);
+		EvLog(SZ_BADTRN, elogTrn);
 		return;
 	}
 }
@@ -1584,7 +1583,7 @@ void JClient::Recv_Notify_JOIN(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, elogWarn, eLow);
+			EvLog(SZ_BADTRN, elogTrn);
 			return;
 		}
 	}
@@ -1610,9 +1609,9 @@ void JClient::Recv_Notify_JOIN(SOCKET sock, io::mem& is)
 			jp->AppendScript(tformat(TEXT("[style=Info][b]%s[/b] call you to private talk[/style]"), user.name.c_str()));
 		}
 
-		EvReport(tformat(TEXT("[b]%s[/b] opens private talk"),
-			user.name.c_str()),
-			elogInfo, eAbove);
+		EvLog(format("[b]%s[/b] opens private talk",
+			tstrToANSI(user.name).c_str()),
+			elogInfo);
 	} else { // channel
 		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
 		if (ipc != mPageChannel.end()) {
@@ -1621,10 +1620,10 @@ void JClient::Recv_Notify_JOIN(SOCKET sock, io::mem& is)
 			if (m_mUser[m_idOwn].accessibility.fPlayChatSounds)
 				PlaySound(JClientApp::jpApp->strWavJoin.c_str());
 
-			EvReport(tformat(TEXT("[b]%s[/b] joins to [b]%s[/b]"),
-				getSafeName(idWho).c_str(),
-				ipc->second->m_channel.name.c_str()),
-				elogInfo, eUnder);
+			EvLog(format("[b]%s[/b] joins to [b]%s[/b]",
+				tstrToANSI(getSafeName(idWho)).c_str(),
+				tstrToANSI(ipc->second->m_channel.name).c_str()),
+				elogInfo);
 		} else {
 			PushTrn(sock, Make_Cmd_PART(m_idOwn, idWhere));
 		}
@@ -1648,7 +1647,7 @@ void JClient::Recv_Notify_PART(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, elogWarn, eLow);
+			EvLog(SZ_BADTRN, elogTrn);
 			return;
 
 		case 2:
@@ -1683,7 +1682,7 @@ void JClient::Recv_Notify_PART(SOCKET sock, io::mem& is)
 			ipu->second->AppendScript(msg);
 		}
 
-		EvReport(tformat(TEXT("[style=Info]private with [b]%s[/b] closed[/style]"), getSafeName(idWho).c_str()), elogInfo, eHigher);
+		EvLog(format("[style=Info]private with [b]%s[/b] closed[/style]", tstrToANSI(getSafeName(idWho)).c_str()), elogInfo);
 	} else { // channel
 		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
 		if (ipc != mPageChannel.end()) {
@@ -1725,13 +1724,13 @@ void JClient::Recv_Reply_USERINFO(SOCKET sock, WORD trnid, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, elogWarn, eLow);
+			EvLog(SZ_BADTRN, elogTrn);
 			return;
 		}
 	}
 
 	// Report about message
-	EvReport(tformat(TEXT("recieve users info")), elogInfo, eLow);
+	EvLog("recieve users info", elogTrn);
 }
 
 void JClient::Recv_Notify_ONLINE(SOCKET sock, io::mem& is)
@@ -1778,7 +1777,7 @@ void JClient::Recv_Notify_ONLINE(SOCKET sock, io::mem& is)
 	}
 
 	// Report about message
-	EvReport(tformat(TEXT("user %s is %s"), iu != m_mUser.end() ? iu->second.name.c_str() : TEXT("unknown"), isOnline ? TEXT("online") : TEXT("offline")), elogInfo, eLowest);
+	EvLog(format("user %s is %s", iu != m_mUser.end() ? tstrToANSI(iu->second.name).c_str() : "unknown", isOnline ? "online" : "offline"), elogTrn);
 }
 
 void JClient::Recv_Notify_STATUS(SOCKET sock, io::mem& is)
@@ -1820,7 +1819,7 @@ void JClient::Recv_Notify_STATUS(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, elogWarn, eLow);
+			EvLog(SZ_BADTRN, elogTrn);
 			return;
 		}
 	}
@@ -1916,7 +1915,7 @@ void JClient::Recv_Notify_SAY(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, elogWarn, eLow);
+			EvLog(SZ_BADTRN, elogTrn);
 			return;
 		}
 	}
@@ -1972,7 +1971,7 @@ void JClient::Recv_Notify_TOPIC(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, elogWarn, eLow);
+			EvLog(SZ_BADTRN, elogTrn);
 			return;
 		}
 	}
@@ -2034,7 +2033,7 @@ void JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, elogWarn, eLow);
+			EvLog(SZ_BADTRN, elogTrn);
 			return;
 
 		case 2:
@@ -2044,7 +2043,7 @@ void JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, io::mem& is)
 
 		case 3:
 			// Report about message
-			EvReport(SZ_BADTRN, elogWarn, eLow);
+			EvLog(SZ_BADTRN, elogTrn);
 			return;
 		}
 	}
@@ -2198,7 +2197,7 @@ void JClient::Recv_Notify_ACCESS(SOCKET sock, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, elogWarn, eLow);
+			EvLog(SZ_BADTRN, elogTrn);
 			return;
 		}
 	}
@@ -2253,26 +2252,26 @@ void JClient::Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 		case 0:
 		case 1:
 			// Report about message
-			EvReport(SZ_BADTRN, elogWarn, eLow);
+			EvLog(SZ_BADTRN, elogTrn);
 			return;
 		}
 	}
 
 	// Report about message
-	std::tstring msg;
+	const char* msg;
 	switch (type)
 	{
 	case MESSAGE_IGNORE:
-		msg = TEXT("message to [b]%s[/b] ignored");
+		msg = "message to [b]%s[/b] ignored";
 		break;
 	case MESSAGE_SENT:
-		msg = TEXT("message sent to [b]%s[/b]");
+		msg = "message sent to [b]%s[/b]";
 		break;
 	case MESSAGE_SAVED:
-		msg = TEXT("message to [b]%s[/b] saved");
+		msg = "message to [b]%s[/b] saved";
 		break;
 	}
-	EvReport(tformat(msg.c_str(), getSafeName(idWho).c_str()), elogInfo, eNormal);
+	EvLog(format(msg, tstrToANSI(getSafeName(idWho)).c_str()), elogInfo);
 }
 
 void JClient::Recv_Notify_MESSAGE(SOCKET sock, io::mem& is)
@@ -2304,7 +2303,7 @@ void JClient::Recv_Notify_MESSAGE(SOCKET sock, io::mem& is)
 		case 2:
 		case 3:
 			// Report about message
-			EvReport(SZ_BADTRN, elogWarn, eLow);
+			EvLog(SZ_BADTRN, elogTrn);
 			return;
 
 		case 4:
@@ -2328,7 +2327,7 @@ void JClient::Recv_Notify_MESSAGE(SOCKET sock, io::mem& is)
 		PostMessage(m_hwndPage, BEM_JDIALOG, IDD_MSGRECV, (LPARAM)(JDialog*)jp);
 	}
 	// Report about message
-	EvReport(tformat(TEXT("%s from [b]%s[/b]"), fAlert ? TEXT("alert") : TEXT("message"), getSafeName(idBy).c_str()), elogInfo, eNormal);
+	EvLog(format("%s from [b]%s[/b]", fAlert ? "alert" : "message", tstrToANSI(getSafeName(idBy)).c_str()), elogInfo);
 }
 
 void JClient::Recv_Notify_BEEP(SOCKET sock, io::mem& is)
@@ -2345,7 +2344,7 @@ void JClient::Recv_Notify_BEEP(SOCKET sock, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, elogWarn, eLow);
+			EvLog(SZ_BADTRN, elogTrn);
 			return;
 		}
 	}
@@ -2361,7 +2360,7 @@ void JClient::Recv_Notify_BEEP(SOCKET sock, io::mem& is)
 	}
 
 	// Report about message
-	EvReport(tformat(TEXT("sound signal from [b]%s[/b]"), getSafeName(idBy).c_str()), elogInfo, eHigh);
+	EvLog(format("sound signal from [b]%s[/b]", tstrToANSI(getSafeName(idBy)).c_str()), elogInfo);
 }
 
 void JClient::Recv_Notify_CLIPBOARD(SOCKET sock, io::mem& is)
@@ -2372,25 +2371,25 @@ void JClient::Recv_Notify_CLIPBOARD(SOCKET sock, io::mem& is)
 	{
 		io::unpack(is, idBy);
 		if (OpenClipboard(m_hwndPage)) {
-			UINT format;
+			UINT fmt;
 			std::tstring name;
 			HANDLE hMem;
 			std::streamsize size;
 			void* ptr;
 			EmptyClipboard();
-			while (io::unpack(is, format), format) {
+			while (io::unpack(is, fmt), fmt) {
 				io::unpack(is, name);
 				io::unpack(is, size);
-				if (format >= 0xC000 && format <= 0xFFFF) {
-					format = RegisterClipboardFormat(name.c_str());
+				if (fmt >= 0xC000 && fmt <= 0xFFFF) {
+					fmt = RegisterClipboardFormat(name.c_str());
 				}
-				if (format) {
+				if (fmt) {
 					hMem = GlobalAlloc(GMEM_MOVEABLE, (SIZE_T)size);
 					ptr = GlobalLock(hMem);
 					if (ptr) {
 						io::unpackmem(is, ptr, size);
 						GlobalUnlock(hMem);
-						SetClipboardData(format, hMem);
+						SetClipboardData(fmt, hMem);
 					} else {
 						GlobalFree(hMem);
 						io::skip(is, size);
@@ -2413,10 +2412,10 @@ void JClient::Recv_Notify_CLIPBOARD(SOCKET sock, io::mem& is)
 			}
 
 			// Report about message
-			EvReport(tformat(TEXT("recieve clipboard content from [b]%s[/b]"), getSafeName(idBy).c_str()), elogInfo, eHigh);
+			EvLog(format("recieve clipboard content from [b]%s[/b]", tstrToANSI(getSafeName(idBy)).c_str()), elogInfo);
 		} else {
 			// Report about message
-			EvReport(tformat(TEXT("can not paste recieved clipboard content from [b]%s[/b]"), getSafeName(idBy).c_str()), elogError, eHigh);
+			EvLog(format("can not paste recieved clipboard content from [b]%s[/b]", tstrToANSI(getSafeName(idBy)).c_str()), elogError);
 		}
 	}
 	catch (io::exception e)
@@ -2425,7 +2424,7 @@ void JClient::Recv_Notify_CLIPBOARD(SOCKET sock, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			EvReport(SZ_BADTRN, elogWarn, eLow);
+			EvLog(SZ_BADTRN, elogTrn);
 			return;
 		}
 	}
@@ -2462,7 +2461,7 @@ void JClient::Recv_Notify_SPLASHRTF(SOCKET sock, io::mem& is)
 		case 1:
 		case 2:
 			// Report about message
-			EvReport(SZ_BADTRN, elogWarn, eLow);
+			EvLog(SZ_BADTRN, elogTrn);
 			return;
 
 		case 3:
@@ -2493,7 +2492,7 @@ void JClient::Recv_Notify_SPLASHRTF(SOCKET sock, io::mem& is)
 		PostMessage(m_hwndPage, BEM_JDIALOG, IDD_SPLASHRTF, (LPARAM)(JDialog*)jp);
 	}
 	// Report about message
-	EvReport(tformat(TEXT("splash text from [b]%s[/b]"), getSafeName(idBy).c_str()), elogInfo, eNormal);
+	EvLog(format("splash text from [b]%s[/b]", tstrToANSI(getSafeName(idBy)).c_str()), elogInfo);
 }
 
 //
