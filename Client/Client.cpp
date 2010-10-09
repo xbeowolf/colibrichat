@@ -98,10 +98,12 @@ void JClient::doneclass()
 	JClient::s_mapWsaErr.clear();
 }
 
-JClient::JClient()
+JClient::JClient(lua_State* L)
 : JBNB(), JDialog(),
 jpOnline(0)
 {
+	ASSERT(L == 0);
+
 	m_clientsock = 0;
 	m_bReconnect = true;
 	m_nConnectCount = 0;
@@ -352,12 +354,12 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 				lua_call(m_luaVM, 0, 0);
 			} else {
 				profile::setInt(RF_CLIENT, RK_STATE, m_clientsock != 0);
-				if (m_clientsock != 0) DeleteLink(m_clientsock);
+				if (m_clientsock != 0) EvLinkClose(m_clientsock, 0);
 			}
 
 			m_hwndTab = 0;
 
-			HideBaloon(hWnd);
+			BaloonHide(hWnd);
 			TOOLINFO ti;
 			ti.cbSize = sizeof(ti);
 			ti.hwnd = hWnd;
@@ -406,7 +408,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 				ASSERT(lua_gettop(m_luaVM) == 1);
 				lua_call(m_luaVM, 0, 0);
 			} else {
-				HideBaloon();
+				BaloonHide();
 			}
 			break;
 		}
@@ -490,7 +492,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 				ASSERT(lua_gettop(m_luaVM) == 2);
 				lua_call(m_luaVM, 1, 0);
 			} else {
-				HideBaloon();
+				BaloonHide();
 			}
 		}
 		break;
@@ -515,7 +517,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 				ASSERT(lua_gettop(m_luaVM) == 2);
 				lua_call(m_luaVM, 1, 0);
 			} else {
-				HideBaloon();
+				BaloonHide();
 			}
 
 			switch (LOWORD(wParam))
@@ -545,7 +547,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 								ASSERT(!m_clientsock); // only for disconnected
 								SendMessage(jpPageServer->hwndPage, WM_COMMAND, IDC_CONNECT, 0);
 							} else {
-								DisplayMessage(jpPageServer->hwndNick, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
+								BaloonShow(jpPageServer->hwndNick, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
 							}
 							break;
 						}
@@ -560,7 +562,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 								if (m_clientsock) PushTrn(m_clientsock, Make_Cmd_NICK(m_idOwn, nick));
 								else if (!m_nConnectCount) SendMessage(jpPageServer->hwndPage, WM_COMMAND, IDC_CONNECT, 0);
 							} else {
-								DisplayMessage(jpPageServer->hwndNick, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
+								BaloonShow(jpPageServer->hwndNick, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
 							}
 							break;
 						}
@@ -584,7 +586,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			case IDC_TABCLOSE:
 				{
 					if (jpOnline->IsPermanent()) {
-						DisplayMessage(m_hwndTab, MAKEINTRESOURCE(IDS_MSG_TABCLOSE), 0, 2);
+						BaloonShow(m_hwndTab, MAKEINTRESOURCE(IDS_MSG_TABCLOSE), 0, 2);
 					} else {
 						int sel;
 						TCITEM tci;
@@ -674,7 +676,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 			case IDT_BALOONPOP:
 				{
-					HideBaloon();
+					BaloonHide();
 					break;
 				}
 			}
@@ -721,20 +723,23 @@ void JClient::Connect(bool getsetting)
 		nick = nickbuf.c_str();
 		if (!JClient::CheckNick(nick, msg)) { // check content
 			if (jpOnline != jpPageServer) ContactSel(getTabIndex(CRC_SERVER));
-			DisplayMessage(jpPageServer->hwndNick, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
+			BaloonShow(jpPageServer->hwndNick, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
 			return;
 		}
 	}
-	// Add into socket manager
-	JPtr<JLink> link = new JLink();
 	hostent* h = gethostbyname(m_hostname.c_str());
 	u_long addr = h ? *(u_long*)h->h_addr : htonl(INADDR_LOOPBACK);
+	// Add into socket manager
+	JPtr<JLink> link = createLink();
 	link->m_saAddr.sin_family = AF_INET;
 	link->m_saAddr.sin_addr.S_un.S_addr = addr;
 	link->m_saAddr.sin_port = htons(m_port);
 	link->Select(FD_CONNECT | FD_READ | FD_WRITE | FD_CLOSE, m_hwndPage, BEM_NETWORK);
 	link->Connect();
-	InsertLink(link);
+	if (link->State == eConnecting || link->State == eConnected)
+		InsertLink(link);
+	else
+		JLink::destroy(link->ID);
 	m_clientsock = link->ID;
 	m_nConnectCount++;
 
@@ -904,7 +909,7 @@ void CALLBACK JClient::ContactSel(int index)
 	jpOnline = jp;
 
 	// Hide any baloon content
-	HideBaloon();
+	BaloonHide();
 	// Set main window topic
 	ShowTopic(jp->gettopic());
 	// Set default focus control
@@ -1024,21 +1029,21 @@ void CALLBACK JClient::ShowTopic(const std::tstring& topic)
 	SetWindowText(m_hwndPage, tformat(TEXT("[%s] - Colibri Chat"), topic.c_str()).c_str());
 }
 
-void CALLBACK JClient::DisplayMessage(HWND hwndCtrl, const TCHAR* msg, const TCHAR* title, int icon, COLORREF cr)
+void CALLBACK JClient::BaloonShow(HWND hwndCtrl, const TCHAR* msg, const TCHAR* title, int icon, COLORREF cr)
 {
-	DisplayMessage(m_hwndPage, hwndCtrl, msg, title, icon, cr);
+	BaloonShow(m_hwndPage, hwndCtrl, msg, title, icon, cr);
 }
 
-void CALLBACK JClient::DisplayMessage(HWND hwndId, HWND hwndCtrl, const TCHAR* msg, const TCHAR* title, int icon, COLORREF cr)
+void CALLBACK JClient::BaloonShow(HWND hwndId, HWND hwndCtrl, const TCHAR* msg, const TCHAR* title, int icon, COLORREF cr)
 {
 	RECT r;
 	VERIFY(GetWindowRect(hwndCtrl, &r));
 	POINT p;
 	p.x = (r.left + r.right)/2, p.y = (r.top + r.bottom)/2;
-	ShowBaloon(hwndId, p, msg, title, (HICON)(INT_PTR)icon, cr);
+	BaloonShow(hwndId, p, msg, title, (HICON)(INT_PTR)icon, cr);
 }
 
-void CALLBACK JClient::ShowBaloon(HWND hwndId, const POINT& p, const TCHAR* msg, const TCHAR* title, HICON hicon, COLORREF cr)
+void CALLBACK JClient::BaloonShow(HWND hwndId, const POINT& p, const TCHAR* msg, const TCHAR* title, HICON hicon, COLORREF cr)
 {
 	static TCHAR buftitle[256];
 	if (HIWORD(title)) _tcscpy_s(buftitle, _countof(buftitle), title);
@@ -1064,7 +1069,7 @@ void CALLBACK JClient::ShowBaloon(HWND hwndId, const POINT& p, const TCHAR* msg,
 	SetTimer(hwndId, IDT_BALOONPOP, TIMER_BALOONPOP, 0);
 }
 
-void CALLBACK JClient::HideBaloon(HWND hwndId)
+void CALLBACK JClient::BaloonHide(HWND hwndId)
 {
 	if (!hwndId) hwndId = m_isBaloon;
 	if (hwndId) {
@@ -1181,59 +1186,78 @@ void JClient::OnHook(JNode* src)
 	__super::OnHook(src);
 
 	EvNick += MakeDelegate(this, &JClient::OnNick);
-
-	// Transactions parsers
-	m_mTrnNotify[CCPM_METRICS] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_METRICS);
-	m_mTrnNotify[CCPM_NICK] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_NICK);
-	m_mTrnReply[CCPM_JOIN] = fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_JOIN);
-	m_mTrnNotify[CCPM_JOIN] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_JOIN);
-	m_mTrnNotify[CCPM_PART] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_PART);
-	m_mTrnReply[CCPM_USERINFO] = fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_USERINFO);
-	m_mTrnNotify[CCPM_ONLINE] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_ONLINE);
-	m_mTrnNotify[CCPM_STATUS] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_STATUS);
-	m_mTrnNotify[CCPM_SAY] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_SAY);
-	m_mTrnNotify[CCPM_TOPIC] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_TOPIC);
-	m_mTrnNotify[CCPM_CHANOPTIONS] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_CHANOPTIONS);
-	m_mTrnNotify[CCPM_ACCESS] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_ACCESS);
-	m_mTrnReply[CCPM_MESSAGE] = fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_MESSAGE);
-	m_mTrnNotify[CCPM_MESSAGE] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_MESSAGE);
-	m_mTrnNotify[CCPM_BEEP] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_BEEP);
-	m_mTrnNotify[CCPM_CLIPBOARD] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_CLIPBOARD);
-	m_mTrnNotify[CCPM_SPLASHRTF] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_SPLASHRTF);
 }
 
 void JClient::OnUnhook(JNode* src)
 {
 	using namespace fastdelegate;
 
-	// Transactions parsers
-	m_mTrnNotify.erase(CCPM_METRICS);
-	m_mTrnReply.erase(CCPM_NICK);
-	m_mTrnNotify.erase(CCPM_NICK);
-	m_mTrnReply.erase(CCPM_JOIN);
-	m_mTrnNotify.erase(CCPM_JOIN);
-	m_mTrnNotify.erase(CCPM_PART);
-	m_mTrnReply.erase(CCPM_USERINFO);
-	m_mTrnNotify.erase(CCPM_ONLINE);
-	m_mTrnNotify.erase(CCPM_STATUS);
-	m_mTrnNotify.erase(CCPM_SAY);
-	m_mTrnNotify.erase(CCPM_TOPIC);
-	m_mTrnNotify.erase(CCPM_CHANOPTIONS);
-	m_mTrnNotify.erase(CCPM_ACCESS);
-	m_mTrnReply.erase(CCPM_MESSAGE);
-	m_mTrnNotify.erase(CCPM_MESSAGE);
-	m_mTrnNotify.erase(CCPM_BEEP);
-	m_mTrnNotify.erase(CCPM_CLIPBOARD);
-	m_mTrnNotify.erase(CCPM_SPLASHRTF);
-
 	EvNick -= MakeDelegate(this, &JClient::OnNick);
 
 	__super::OnUnhook(src);
 }
 
-void JClient::OnLinkConnect(SOCKET sock)
+//-----------------------------------------------------------------------------
+
+// --- Register/unregister transactions parsers ---
+
+void JClient::RegHandlers(JNode* src)
 {
-	__super::OnLinkConnect(sock);
+	__super::RegHandlers(src);
+
+	JNODE(JClient, node, src);
+	if (node) {
+		// Transactions parsers
+		node->m_mTrnNotify[CCPM_METRICS] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_METRICS);
+		node->m_mTrnNotify[CCPM_NICK] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_NICK);
+		node->m_mTrnReply[CCPM_JOIN] = fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_JOIN);
+		node->m_mTrnNotify[CCPM_JOIN] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_JOIN);
+		node->m_mTrnNotify[CCPM_PART] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_PART);
+		node->m_mTrnReply[CCPM_USERINFO] = fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_USERINFO);
+		node->m_mTrnNotify[CCPM_ONLINE] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_ONLINE);
+		node->m_mTrnNotify[CCPM_STATUS] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_STATUS);
+		node->m_mTrnNotify[CCPM_SAY] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_SAY);
+		node->m_mTrnNotify[CCPM_TOPIC] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_TOPIC);
+		node->m_mTrnNotify[CCPM_CHANOPTIONS] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_CHANOPTIONS);
+		node->m_mTrnNotify[CCPM_ACCESS] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_ACCESS);
+		node->m_mTrnReply[CCPM_MESSAGE] = fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_MESSAGE);
+		node->m_mTrnNotify[CCPM_MESSAGE] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_MESSAGE);
+		node->m_mTrnNotify[CCPM_BEEP] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_BEEP);
+		node->m_mTrnNotify[CCPM_CLIPBOARD] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_CLIPBOARD);
+		node->m_mTrnNotify[CCPM_SPLASHRTF] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_SPLASHRTF);
+	}
+}
+
+void JClient::UnregHandlers(JNode* src)
+{
+	JNODE(JClient, node, src);
+	if (node) {
+		// Transactions parsers
+		node->m_mTrnNotify.erase(CCPM_METRICS);
+		node->m_mTrnNotify.erase(CCPM_NICK);
+		node->m_mTrnReply.erase(CCPM_JOIN);
+		node->m_mTrnNotify.erase(CCPM_JOIN);
+		node->m_mTrnNotify.erase(CCPM_PART);
+		node->m_mTrnReply.erase(CCPM_USERINFO);
+		node->m_mTrnNotify.erase(CCPM_ONLINE);
+		node->m_mTrnNotify.erase(CCPM_STATUS);
+		node->m_mTrnNotify.erase(CCPM_SAY);
+		node->m_mTrnNotify.erase(CCPM_TOPIC);
+		node->m_mTrnNotify.erase(CCPM_CHANOPTIONS);
+		node->m_mTrnNotify.erase(CCPM_ACCESS);
+		node->m_mTrnReply.erase(CCPM_MESSAGE);
+		node->m_mTrnNotify.erase(CCPM_MESSAGE);
+		node->m_mTrnNotify.erase(CCPM_BEEP);
+		node->m_mTrnNotify.erase(CCPM_CLIPBOARD);
+		node->m_mTrnNotify.erase(CCPM_SPLASHRTF);
+	}
+
+	__super::UnregHandlers(src);
+}
+
+void JClient::OnLinkEstablished(SOCKET sock)
+{
+	__super::OnLinkEstablished(sock);
 
 	sockaddr_in si;
 	int len = sizeof(si);
@@ -1246,7 +1270,7 @@ void JClient::OnLinkConnect(SOCKET sock)
 		si.sin_addr.S_un.S_un_b.s_b4,
 		ntohs(si.sin_port)), elogMsg);
 
-	PushTrn(sock, Make_Quest_Identify(JLink::get((JID)sock)->getEncryptorName()));
+	PushTrn(sock, Make_Quest_Identify(JBLink::get((JID)sock)->getEncryptorName()));
 
 	// Lua response
 	if (m_luaVM) {

@@ -706,7 +706,7 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 						ASSERT(lua_gettop(pNode->m_luaVM) == 1);
 						lua_call(pNode->m_luaVM, 0, 0);
 					} else if (pNode->m_clientsock) {
-						pNode->DeleteLink(pNode->m_clientsock);
+						pNode->EvLinkClose(pNode->m_clientsock, 0);
 					} else if (pNode->m_nConnectCount) {
 						pNode->m_nConnectCount = 0;
 						KillTimer(pNode->hwndPage, IDT_CONNECT);
@@ -1009,7 +1009,7 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 						// send only c-strings, not buffer!
 						pNode->PushTrn(pNode->m_clientsock, pNode->Make_Quest_JOIN(chan, pass));
 					} else {
-						pNode->DisplayMessage(m_hwndChan, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
+						pNode->BaloonShow(m_hwndChan, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
 					}
 					break;
 				}
@@ -1158,7 +1158,7 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 								retval = TRUE;
 								break;
 							} else {
-								pNode->DisplayMessage(ListView_GetEditControl(m_hwndList), msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
+								pNode->BaloonShow(ListView_GetEditControl(m_hwndList), msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
 							}
 						}
 					}
@@ -1645,8 +1645,8 @@ LRESULT WINAPI JClient::JPageChat::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 									SetWindowText(m_hwndEdit, TEXT(""));
 									SendMessage(m_hwndMsgSpinBlue, UDM_SETPOS, 0, MAKELONG(0, 0));
 									SendMessage(m_hwndMsgSpinRed, UDM_SETPOS, 0, MAKELONG(0, 0));
-								} else pNode->DisplayMessage(m_hwndEdit, MAKEINTRESOURCE(IDS_MSG_READER), MAKEINTRESOURCE(IDS_MSG_EDITOR), 1);
-							} else pNode->DisplayMessage(m_hwndEdit, MAKEINTRESOURCE(IDS_MSG_LIMITCHATLINE), MAKEINTRESOURCE(IDS_MSG_EDITOR), 2);
+								} else pNode->BaloonShow(m_hwndEdit, MAKEINTRESOURCE(IDS_MSG_READER), MAKEINTRESOURCE(IDS_MSG_EDITOR), 1);
+							} else pNode->BaloonShow(m_hwndEdit, MAKEINTRESOURCE(IDS_MSG_LIMITCHATLINE), MAKEINTRESOURCE(IDS_MSG_EDITOR), 2);
 						}
 					} else { // connect
 						pNode->Connect(true);
@@ -2035,7 +2035,7 @@ std::tstring JClient::JPageChannel::gettopic() const
 	}
 }
 
-void CALLBACK JClient::JPageChannel::DisplayMessage(DWORD idUser, const TCHAR* msg, HICON hicon, COLORREF cr)
+void CALLBACK JClient::JPageChannel::BaloonShow(DWORD idUser, const TCHAR* msg, HICON hicon, COLORREF cr)
 {
 	POINT p;
 	VERIFY(GetCursorPos(&p));
@@ -2056,7 +2056,7 @@ void CALLBACK JClient::JPageChannel::DisplayMessage(DWORD idUser, const TCHAR* m
 	if (p.x < r.left || p.x > r.right) p.x = (r.left + r.right)/2;
 	if (p.y < r.top || p.y > r.bottom) p.y = (r.top + r.bottom)/2;
 	MapUser::const_iterator iu = pNode->m_mUser.find(idUser);
-	pNode->ShowBaloon(
+	pNode->BaloonShow(
 		pNode->hwndPage,
 		p,
 		msg,
@@ -2416,7 +2416,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 	case WM_DESTROY:
 		{
-			pNode->HideBaloon(m_hwndList);
+			pNode->BaloonHide(m_hwndList);
 
 			pNode->EvPageClose.Invoke(m_ID);
 
@@ -2585,7 +2585,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					if ((!m_channel.isAnonymous && iu->second.accessibility.fCanOpenPrivate) || pNode->isGod()) {
 						ASSERT(pNode->m_clientsock);
 						pNode->PushTrn(pNode->m_clientsock, pNode->Make_Quest_JOIN(iu->second.name));
-					} else DisplayMessage(iu->first, MAKEINTRESOURCE(IDS_MSG_PRIVATETALK), (HICON)1);
+					} else BaloonShow(iu->first, MAKEINTRESOURCE(IDS_MSG_PRIVATETALK), (HICON)1);
 					break;
 				}
 
@@ -2596,7 +2596,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					if ((!m_channel.isAnonymous && iu->second.accessibility.fCanMessage) || pNode->isGod()) {
 						ASSERT(pNode->m_clientsock);
 						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_MSGSEND), pNode->hwndPage, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JMessageEditor(pNode, iu->second.name, false));
-					} else DisplayMessage(iu->first, MAKEINTRESOURCE(IDS_MSG_PRIVATEMESSAGE), (HICON)1);
+					} else BaloonShow(iu->first, MAKEINTRESOURCE(IDS_MSG_PRIVATEMESSAGE), (HICON)1);
 					break;
 				}
 
@@ -2607,7 +2607,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					if ((!m_channel.isAnonymous && iu->second.accessibility.fCanAlert) || pNode->isGod()) {
 						ASSERT(pNode->m_clientsock);
 						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_MSGSEND), pNode->hwndPage, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JMessageEditor(pNode, iu->second.name, true));
-					} else DisplayMessage(iu->first, MAKEINTRESOURCE(IDS_MSG_ALERT), (HICON)1);
+					} else BaloonShow(iu->first, MAKEINTRESOURCE(IDS_MSG_ALERT), (HICON)1);
 					break;
 				}
 
@@ -2618,7 +2618,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					if (iu->second.accessibility.fCanSignal || pNode->isGod()) {
 						ASSERT(pNode->m_clientsock);
 						pNode->PushTrn(pNode->m_clientsock, pNode->Make_Cmd_BEEP(iu->first));
-					} else DisplayMessage(iu->first, MAKEINTRESOURCE(IDS_MSG_SOUNDSIGNAL), (HICON)1);
+					} else BaloonShow(iu->first, MAKEINTRESOURCE(IDS_MSG_SOUNDSIGNAL), (HICON)1);
 					break;
 				}
 
@@ -2629,7 +2629,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					if ((pNode->m_metrics.flags.bTransmitClipboard && iu->second.accessibility.fCanRecvClipboard) || pNode->isGod()) {
 						ASSERT(pNode->m_clientsock);
 						pNode->PushTrn(pNode->m_clientsock, pNode->Make_Cmd_CLIPBOARD(iu->first));
-					} else DisplayMessage(iu->first, MAKEINTRESOURCE(IDS_MSG_CLIPBOARD), (HICON)1);
+					} else BaloonShow(iu->first, MAKEINTRESOURCE(IDS_MSG_CLIPBOARD), (HICON)1);
 					break;
 				}
 
@@ -2640,7 +2640,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					if (iu->second.accessibility.fCanSplash || pNode->isGod()) {
 						ASSERT(pNode->m_clientsock);
 						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_SPLASHRTFEDITOR), pNode->hwndPage, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JSplashRtfEditor(pNode, iu->first));
-					} else DisplayMessage(iu->first, MAKEINTRESOURCE(IDS_MSG_SPLASHRTF), (HICON)1);
+					} else BaloonShow(iu->first, MAKEINTRESOURCE(IDS_MSG_SPLASHRTF), (HICON)1);
 					break;
 				}
 
@@ -2664,7 +2664,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					if (pNode->m_idOwn == iu->first || (isModer && canKick && !pNode->isDevil(iu->first)) || pNode->isDevil()) {
 						ASSERT(pNode->m_clientsock);
 						pNode->PushTrn(pNode->clientsock, pNode->Make_Cmd_PART(iu->first, m_ID));
-					} else DisplayMessage(iu->first, MAKEINTRESOURCE(IDS_MSG_KICK), (HICON)1);
+					} else BaloonShow(iu->first, MAKEINTRESOURCE(IDS_MSG_KICK), (HICON)1);
 					break;
 				}
 
@@ -2836,7 +2836,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 								retval = TRUE;
 								break;
 							} else {
-								pNode->DisplayMessage(ListView_GetEditControl(m_hwndList), msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
+								pNode->BaloonShow(ListView_GetEditControl(m_hwndList), msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
 							}
 						}
 					}
@@ -2858,7 +2858,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 							SYSTEMTIME st;
 							FileTimeToLocalTime(iu->second.ftCreation, st);
 							HICON hicon = ImageList_GetIcon(JClientApp::jpApp->himlStatusImg, iu->second.nStatusImg, ILD_TRANSPARENT);
-							DisplayMessage(
+							BaloonShow(
 								iu->first,
 								tformat(
 								TEXT("%s\t%s%s%s\n")
@@ -2899,7 +2899,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			case NM_KILLFOCUS:
 				{
 					if (pnmh->idFrom == IDC_USERLIST) {
-						pNode->HideBaloon(m_hwndList);
+						pNode->BaloonHide(m_hwndList);
 					}
 					break;
 				}
@@ -3000,7 +3000,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				MapUser::const_iterator iu = getSelUser();
 				bool valid = iu != pNode->m_mUser.end();
 
-				pNode->HideBaloon(m_hwndList);
+				pNode->BaloonHide(m_hwndList);
 
 				VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_PRIVATETALK, FALSE));
 				EnableMenuItem((HMENU)wParam, IDC_PRIVATETALK,

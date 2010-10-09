@@ -80,9 +80,11 @@ void JServer::Init()
 		if (v < 1000) v = CCP_PORT; // do not use system ports
 		port.insert(v);
 	}
+
+	// create listening sockets
 	int l = 0;
 	for each (u_short v in port) {
-		JPtr<JLink> link = new JLink();
+		JPtr<JLink> link = createLink();
 		link->m_saAddr.sin_family = AF_INET;
 		link->m_saAddr.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
 		link->m_saAddr.sin_port = htons(v);
@@ -91,7 +93,8 @@ void JServer::Init()
 		if (link->State == eListening) {
 			InsertLink(link);
 			l++;
-		}
+		} else
+			JLink::destroy(link->ID);
 	}
 	ASSERT(l > 0);
 }
@@ -477,23 +480,6 @@ void JServer::OnHook(JNode* src)
 {
 	using namespace fastdelegate;
 
-	// Transactions parsers
-	m_mTrnCommand[CCPM_NICK] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_NICK);
-	m_mTrnQuest[CCPM_LIST] = fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_LIST);
-	m_mTrnQuest[CCPM_JOIN] = fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_JOIN);
-	m_mTrnCommand[CCPM_PART] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_PART);
-	m_mTrnQuest[CCPM_USERINFO] = fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_USERINFO);
-	m_mTrnCommand[CCPM_ONLINE] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_ONLINE);
-	m_mTrnCommand[CCPM_STATUS] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_STATUS);
-	m_mTrnCommand[CCPM_SAY] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_SAY);
-	m_mTrnCommand[CCPM_TOPIC] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_TOPIC);
-	m_mTrnCommand[CCPM_CHANOPTIONS] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_CHANOPTIONS);
-	m_mTrnCommand[CCPM_ACCESS] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_ACCESS);
-	m_mTrnCommand[CCPM_BEEP] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_BEEP);
-	m_mTrnCommand[CCPM_CLIPBOARD] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_CLIPBOARD);
-	m_mTrnQuest[CCPM_MESSAGE] = fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_MESSAGE);
-	m_mTrnCommand[CCPM_SPLASHRTF] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_SPLASHRTF);
-
 	__super::OnHook(src);
 }
 
@@ -501,24 +487,61 @@ void JServer::OnUnhook(JNode* src)
 {
 	using namespace fastdelegate;
 
-	// Transactions parsers
-	m_mTrnCommand.erase(CCPM_NICK);
-	m_mTrnQuest.erase(CCPM_LIST);
-	m_mTrnQuest.erase(CCPM_JOIN);
-	m_mTrnCommand.erase(CCPM_PART);
-	m_mTrnQuest.erase(CCPM_USERINFO);
-	m_mTrnCommand.erase(CCPM_ONLINE);
-	m_mTrnCommand.erase(CCPM_STATUS);
-	m_mTrnCommand.erase(CCPM_SAY);
-	m_mTrnCommand.erase(CCPM_TOPIC);
-	m_mTrnCommand.erase(CCPM_CHANOPTIONS);
-	m_mTrnCommand.erase(CCPM_ACCESS);
-	m_mTrnCommand.erase(CCPM_BEEP);
-	m_mTrnCommand.erase(CCPM_CLIPBOARD);
-	m_mTrnQuest.erase(CCPM_MESSAGE);
-	m_mTrnCommand.erase(CCPM_SPLASHRTF);
-
 	__super::OnUnhook(src);
+}
+
+//-----------------------------------------------------------------------------
+
+// --- Register/unregister transactions parsers ---
+
+void JServer::RegHandlers(JNode* src)
+{
+	__super::RegHandlers(src);
+
+	JNODE(JServer, node, src);
+	if (node) {
+		// Transactions parsers
+		node->m_mTrnCommand[CCPM_NICK] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_NICK);
+		node->m_mTrnQuest[CCPM_LIST] = fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_LIST);
+		node->m_mTrnQuest[CCPM_JOIN] = fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_JOIN);
+		node->m_mTrnCommand[CCPM_PART] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_PART);
+		node->m_mTrnQuest[CCPM_USERINFO] = fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_USERINFO);
+		node->m_mTrnCommand[CCPM_ONLINE] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_ONLINE);
+		node->m_mTrnCommand[CCPM_STATUS] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_STATUS);
+		node->m_mTrnCommand[CCPM_SAY] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_SAY);
+		node->m_mTrnCommand[CCPM_TOPIC] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_TOPIC);
+		node->m_mTrnCommand[CCPM_CHANOPTIONS] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_CHANOPTIONS);
+		node->m_mTrnCommand[CCPM_ACCESS] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_ACCESS);
+		node->m_mTrnCommand[CCPM_BEEP] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_BEEP);
+		node->m_mTrnCommand[CCPM_CLIPBOARD] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_CLIPBOARD);
+		node->m_mTrnQuest[CCPM_MESSAGE] = fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_MESSAGE);
+		node->m_mTrnCommand[CCPM_SPLASHRTF] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_SPLASHRTF);
+	}
+}
+
+void JServer::UnregHandlers(JNode* src)
+{
+	JNODE(JServer, node, src);
+	if (node) {
+		// Transactions parsers
+		node->m_mTrnCommand.erase(CCPM_NICK);
+		node->m_mTrnQuest.erase(CCPM_LIST);
+		node->m_mTrnQuest.erase(CCPM_JOIN);
+		node->m_mTrnCommand.erase(CCPM_PART);
+		node->m_mTrnQuest.erase(CCPM_USERINFO);
+		node->m_mTrnCommand.erase(CCPM_ONLINE);
+		node->m_mTrnCommand.erase(CCPM_STATUS);
+		node->m_mTrnCommand.erase(CCPM_SAY);
+		node->m_mTrnCommand.erase(CCPM_TOPIC);
+		node->m_mTrnCommand.erase(CCPM_CHANOPTIONS);
+		node->m_mTrnCommand.erase(CCPM_ACCESS);
+		node->m_mTrnCommand.erase(CCPM_BEEP);
+		node->m_mTrnCommand.erase(CCPM_CLIPBOARD);
+		node->m_mTrnQuest.erase(CCPM_MESSAGE);
+		node->m_mTrnCommand.erase(CCPM_SPLASHRTF);
+	}
+
+	__super::UnregHandlers(src);
 }
 
 void JServer::OnLinkEstablished(SOCKET sock)
@@ -586,13 +609,13 @@ void JServer::OnLinkClose(SOCKET sock, UINT err)
 int  JServer::BroadcastTrn(const SetId& set, bool nested, JTransaction* jpTrn, size_t ssi) throw()
 {
 	// Count users to prevent duplicate sents
-	SetSocket broadcast;
+	SetJID broadcast;
 	MapIdSocket::const_iterator iis;
 	for each (SetId::value_type const& v in set)
 	{
 		iis = m_mIdSocket.find(v);
 		if (iis != m_mIdSocket.end()) // private talk
-			broadcast.insert(iis->second);
+			broadcast.insert((JID)iis->second);
 		else {
 			if (nested) {
 				MapChannel::const_iterator ic = m_mChannel.find(v);
@@ -600,7 +623,7 @@ int  JServer::BroadcastTrn(const SetId& set, bool nested, JTransaction* jpTrn, s
 					for each (SetId::value_type const& v in ic->second.opened) {
 						iis = m_mIdSocket.find(v);
 						if (iis != m_mIdSocket.end())
-							broadcast.insert(iis->second);
+							broadcast.insert((JID)iis->second);
 					}
 				}
 			}

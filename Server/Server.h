@@ -221,6 +221,9 @@ namespace colibrichat
 
 		void OnHook(JNode* src);
 		void OnUnhook(JNode* src);
+		// Register/unregister transactions parsers
+		void RegHandlers(JNode* src);
+		void UnregHandlers(JNode* src);
 
 		void OnLinkEstablished(SOCKET sock);
 		void OnLinkStart(SOCKET sock);

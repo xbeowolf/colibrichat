@@ -461,7 +461,7 @@ namespace colibrichat
 			void Enable();
 			void Disable();
 
-			void CALLBACK DisplayMessage(DWORD idUser, const TCHAR* msg, HICON hicon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
+			void CALLBACK BaloonShow(DWORD idUser, const TCHAR* msg, HICON hicon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
 
 			void OnSheetColor(COLORREF cr);
 			bool CanSend() const;
@@ -699,7 +699,7 @@ namespace colibrichat
 		static void doneclass();
 		static const char className[];
 		static CLuaGluer<JClient>::_tRegType methods[];
-		JClient();
+		JClient(lua_State* L = 0);
 		void beforeDestruct();
 		DWORD getMinVersion() const {return BNP_ENGINEVERSMIN;}
 		DWORD getCurVersion() const {return BNP_ENGINEVERSNUM;}
@@ -746,10 +746,10 @@ namespace colibrichat
 		void CALLBACK ShowTopic(const std::tstring& topic);
 
 		// Error provider
-		void CALLBACK DisplayMessage(HWND hwndCtrl, const TCHAR* msg, const TCHAR* title, int icon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
-		static void CALLBACK DisplayMessage(HWND hwndId, HWND hwndCtrl, const TCHAR* msg, const TCHAR* title, int icon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
-		static void CALLBACK ShowBaloon(HWND hwndId, const POINT& p, const TCHAR* msg, const TCHAR* title = 0, HICON hicon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
-		static void CALLBACK HideBaloon(HWND hwndId = 0);
+		void CALLBACK BaloonShow(HWND hwndCtrl, const TCHAR* msg, const TCHAR* title, int icon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
+		static void CALLBACK BaloonShow(HWND hwndId, HWND hwndCtrl, const TCHAR* msg, const TCHAR* title, int icon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
+		static void CALLBACK BaloonShow(HWND hwndId, const POINT& p, const TCHAR* msg, const TCHAR* title = 0, HICON hicon = 0, COLORREF cr = RGB(0x00, 0x00, 0x00));
+		static void CALLBACK BaloonHide(HWND hwndId = 0);
 		void CALLBACK PlaySound(const TCHAR* snd);
 
 		// Users managment
@@ -809,8 +809,11 @@ namespace colibrichat
 
 		void OnHook(JNode* src);
 		void OnUnhook(JNode* src);
+		// Register/unregister transactions parsers
+		void RegHandlers(JNode* src);
+		void UnregHandlers(JNode* src);
 
-		void OnLinkConnect(SOCKET sock);
+		void OnLinkEstablished(SOCKET sock);
 		void OnLinkClose(SOCKET sock, UINT err);
 		void OnLinkFail(SOCKET sock, UINT err);
 		void OnLinkStart(SOCKET sock);
@@ -827,7 +830,7 @@ namespace colibrichat
 		DECLARE_LUAMETHOD(saveAutoopen);
 		DECLARE_LUAMETHOD(openAutoopen);
 		DECLARE_LUAMETHOD(Log);
-		DECLARE_LUAMETHOD(HideBaloon);
+		DECLARE_LUAMETHOD(BaloonHide);
 		DECLARE_LUAMETHOD(Connect);
 		DECLARE_LUAMETHOD(Disconnect);
 		DECLARE_LUAMETHOD(getConnectCount);

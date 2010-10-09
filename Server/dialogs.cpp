@@ -407,8 +407,11 @@ void JServer::JConnections::DelLine(SOCKET sock)
 
 void JServer::JConnections::BuildView()
 {
-	for each (SetSocket::value_type const& v in pNode->mLinks) {
-		if (JLink::get((JID)v)->isEstablished()) AddLine(v);
+	for each (SetJID::value_type const& v in pNode->aLinksEvent) {
+		if (JLink::get(v)->isEstablished()) AddLine(v);
+	}
+	for each (SetJID::value_type const& v in pNode->aLinksAsync) {
+		if (JLink::get(v)->isEstablished()) AddLine(v);
 	}
 }
 

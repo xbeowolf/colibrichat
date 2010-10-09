@@ -364,17 +364,17 @@ end
 
 -- WM_ENTERSIZEMOVE
 function wmEnterSizeMove()
-	this:HideBaloon()
+	this:BaloonHide()
 end
 
 -- WM_ACTIVATEAPP
 function wmActivateApp(activated)
-	this:HideBaloon()
+	this:BaloonHide()
 end
 
 -- WM_COMMAND preprocess call
 function wmCommand(id)
-	this:HideBaloon()
+	this:BaloonHide()
 end
 
 -------------------------------------------------------------------------------

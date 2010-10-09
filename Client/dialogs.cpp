@@ -152,7 +152,7 @@ INT_PTR WINAPI JClient::DlgProcHelper0(HWND hWnd, UINT message, WPARAM wParam, L
 
 	case WM_DESTROY:
 		{
-			HideBaloon(hWnd);
+			BaloonHide(hWnd);
 			TOOLINFO ti;
 			ti.cbSize = sizeof(ti);
 			ti.hwnd = hWnd;
@@ -194,7 +194,7 @@ INT_PTR WINAPI JClient::DlgProcHelper0(HWND hWnd, UINT message, WPARAM wParam, L
 			{
 			case IDT_BALOONPOP:
 				{
-					HideBaloon();
+					BaloonHide();
 					break;
 				}
 			}
@@ -246,7 +246,7 @@ INT_PTR WINAPI JClient::DlgProcHelper1(HWND hWnd, UINT message, WPARAM wParam, L
 
 	case WM_DESTROY:
 		{
-			HideBaloon(hWnd);
+			BaloonHide(hWnd);
 			TOOLINFO ti;
 			ti.cbSize = sizeof(ti);
 			ti.hwnd = hWnd;
@@ -283,7 +283,7 @@ INT_PTR WINAPI JClient::DlgProcHelper1(HWND hWnd, UINT message, WPARAM wParam, L
 						retval = 0;
 					} else {
 						// on failure
-						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_NICK), msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
+						obj->BaloonShow(hWnd, GetDlgItem(hWnd, IDC_NICK), msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
 						retval = -1;
 					}
 					break;
@@ -302,7 +302,7 @@ INT_PTR WINAPI JClient::DlgProcHelper1(HWND hWnd, UINT message, WPARAM wParam, L
 			{
 			case IDT_BALOONPOP:
 				{
-					HideBaloon();
+					BaloonHide();
 					break;
 				}
 			}
@@ -356,7 +356,7 @@ INT_PTR WINAPI JClient::DlgProcHelper2(HWND hWnd, UINT message, WPARAM wParam, L
 
 	case WM_DESTROY:
 		{
-			HideBaloon(hWnd);
+			BaloonHide(hWnd);
 			TOOLINFO ti;
 			ti.cbSize = sizeof(ti);
 			ti.hwnd = hWnd;
@@ -381,26 +381,26 @@ INT_PTR WINAPI JClient::DlgProcHelper2(HWND hWnd, UINT message, WPARAM wParam, L
 						GetDlgItemText(hWnd, IDC_PASS2, (TCHAR*)pass2buf.data(), (int)pass2buf.size());
 						std::tstring pass1 = pass1buf.data(), pass2 = pass2buf.data();
 						if (pass1.empty()) {
-							obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+							obj->BaloonShow(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
 						} else if (pass2.empty()) {
-							obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PASS2), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+							obj->BaloonShow(hWnd, GetDlgItem(hWnd, IDC_PASS2), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
 						} else if (pass1.length() <= 6) {
-							obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+							obj->BaloonShow(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
 						} else if (pass2.length() <= 6) {
-							obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PASS2), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+							obj->BaloonShow(hWnd, GetDlgItem(hWnd, IDC_PASS2), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
 						} else if (pass1 != pass2) {
-							obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+							obj->BaloonShow(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
 						} else if (pass1.empty()) {
-							obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+							obj->BaloonShow(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
 						} else {
-							obj->HideBaloon();
+							obj->BaloonHide();
 						}
 						break;
 					}
 
 				case EN_CHANGE:
 					{
-						obj->HideBaloon();
+						obj->BaloonHide();
 						break;
 					}
 				}
@@ -441,10 +441,10 @@ INT_PTR WINAPI JClient::DlgProcHelper2(HWND hWnd, UINT message, WPARAM wParam, L
 					GetDlgItemText(hWnd, IDC_PASS2, (TCHAR*)pass2buf.data(), (int)pass2buf.size());
 					std::tstring pass1 = pass1buf.data(), pass2 = pass2buf.data();
 					if (pass1 != pass2) {
-						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+						obj->BaloonShow(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
 						retval = -1;
 					} else if (pass1.empty()) {
-						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+						obj->BaloonShow(hWnd, GetDlgItem(hWnd, IDC_PASS1), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
 						retval = -1;
 					} else {
 						// on OK
@@ -467,7 +467,7 @@ INT_PTR WINAPI JClient::DlgProcHelper2(HWND hWnd, UINT message, WPARAM wParam, L
 			{
 			case IDT_BALOONPOP:
 				{
-					HideBaloon();
+					BaloonHide();
 					break;
 				}
 			}
@@ -522,7 +522,7 @@ INT_PTR WINAPI JClient::DlgProcHelper3(HWND hWnd, UINT message, WPARAM wParam, L
 
 	case WM_DESTROY:
 		{
-			HideBaloon(hWnd);
+			BaloonHide(hWnd);
 			TOOLINFO ti;
 			ti.cbSize = sizeof(ti);
 			ti.hwnd = hWnd;
@@ -555,13 +555,13 @@ INT_PTR WINAPI JClient::DlgProcHelper3(HWND hWnd, UINT message, WPARAM wParam, L
 					BOOL bTranslated;
 					UINT port = GetDlgItemInt(hWnd, IDC_PORT, &bTranslated, FALSE);
 					if (!h) {
-						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_HOST), MAKEINTRESOURCE(IDS_MSG_BADHOST), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
+						obj->BaloonShow(hWnd, GetDlgItem(hWnd, IDC_HOST), MAKEINTRESOURCE(IDS_MSG_BADHOST), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
 						retval = -1;
 					} else if (!bTranslated) {
-						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PORT), MAKEINTRESOURCE(IDS_MSG_BADPORT), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
+						obj->BaloonShow(hWnd, GetDlgItem(hWnd, IDC_PORT), MAKEINTRESOURCE(IDS_MSG_BADPORT), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
 						retval = -1;
 					} else if (port < 1000 || port > 0xFFFF) {
-						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PORT), MAKEINTRESOURCE(IDS_MSG_PORTRANGE), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
+						obj->BaloonShow(hWnd, GetDlgItem(hWnd, IDC_PORT), MAKEINTRESOURCE(IDS_MSG_PORTRANGE), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
 						retval = -1;
 					} else {
 						// on OK
@@ -579,13 +579,13 @@ INT_PTR WINAPI JClient::DlgProcHelper3(HWND hWnd, UINT message, WPARAM wParam, L
 					BOOL bTranslated;
 					UINT port = GetDlgItemInt(hWnd, IDC_PORT, &bTranslated, FALSE);
 					if (!h) {
-						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_HOST), MAKEINTRESOURCE(IDS_MSG_BADHOST), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
+						obj->BaloonShow(hWnd, GetDlgItem(hWnd, IDC_HOST), MAKEINTRESOURCE(IDS_MSG_BADHOST), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
 						retval = -1;
 					} else if (!bTranslated) {
-						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PORT), MAKEINTRESOURCE(IDS_MSG_BADPORT), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
+						obj->BaloonShow(hWnd, GetDlgItem(hWnd, IDC_PORT), MAKEINTRESOURCE(IDS_MSG_BADPORT), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
 						retval = -1;
 					} else if (port < 1000 || port > 0xFFFF) {
-						obj->DisplayMessage(hWnd, GetDlgItem(hWnd, IDC_PORT), MAKEINTRESOURCE(IDS_MSG_PORTRANGE), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
+						obj->BaloonShow(hWnd, GetDlgItem(hWnd, IDC_PORT), MAKEINTRESOURCE(IDS_MSG_PORTRANGE), MAKEINTRESOURCE(IDS_MSG_HOSTVRF), 1);
 						retval = -1;
 					} else {
 						// on OK
@@ -607,7 +607,7 @@ INT_PTR WINAPI JClient::DlgProcHelper3(HWND hWnd, UINT message, WPARAM wParam, L
 			{
 			case IDT_BALOONPOP:
 				{
-					HideBaloon();
+					BaloonHide();
 					break;
 				}
 			}
@@ -722,22 +722,22 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 					GetDlgItemText(m_hwndPage, IDC_NEWPASS2, (TCHAR*)pass2buf.data(), (int)pass2buf.size());
 					std::tstring old = oldbuf.data(), pass1 = pass1buf.data(), pass2 = pass2buf.data();
 					if (pNode->m_passwordNet != old) {
-						pNode->DisplayMessage(GetDlgItem(m_hwndPage, IDC_OLDPASS), MAKEINTRESOURCE(IDS_MSG_OLDPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+						pNode->BaloonShow(GetDlgItem(m_hwndPage, IDC_OLDPASS), MAKEINTRESOURCE(IDS_MSG_OLDPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
 					} else if (pass1 != pass2) {
-						pNode->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+						pNode->BaloonShow(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
 					} else {
 						char ciphbuf[32];
 						pNode->m_passwordNet = pass1;
 						GetDlgItemTextA(m_hwndPage, IDC_ENCRYPTSEL, ciphbuf, _countof(ciphbuf));
 						pNode->m_encryptorname = ciphbuf;
-						pNode->HideBaloon();
+						pNode->BaloonHide();
 						DestroyWindow(hWnd);
 					}
 					break;
 				}
 
 			case IDCANCEL:
-				pNode->HideBaloon();
+				pNode->BaloonHide();
 				DestroyWindow(hWnd);
 				break;
 
@@ -754,26 +754,26 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 						GetDlgItemText(m_hwndPage, IDC_NEWPASS2, (TCHAR*)pass2buf.data(), (int)pass2buf.size());
 						std::tstring old = oldbuf.data(), pass1 = pass1buf.data(), pass2 = pass2buf.data();
 						if (pass1.empty()) {
-							pNode->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+							pNode->BaloonShow(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
 						} else if (pass2.empty()) {
-							pNode->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS2), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+							pNode->BaloonShow(GetDlgItem(m_hwndPage, IDC_NEWPASS2), MAKEINTRESOURCE(IDS_MSG_EMPTYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
 						} else if (pass1.length() <= 6) {
-							pNode->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+							pNode->BaloonShow(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
 						} else if (pass2.length() <= 6) {
-							pNode->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS2), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
+							pNode->BaloonShow(GetDlgItem(m_hwndPage, IDC_NEWPASS2), MAKEINTRESOURCE(IDS_MSG_EASYPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 1);
 						} else if (pNode->m_passwordNet != old) {
-							pNode->DisplayMessage(GetDlgItem(m_hwndPage, IDC_OLDPASS), MAKEINTRESOURCE(IDS_MSG_OLDPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+							pNode->BaloonShow(GetDlgItem(m_hwndPage, IDC_OLDPASS), MAKEINTRESOURCE(IDS_MSG_OLDPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
 						} else if (pass1 != pass2) {
-							pNode->DisplayMessage(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
+							pNode->BaloonShow(GetDlgItem(m_hwndPage, IDC_NEWPASS1), MAKEINTRESOURCE(IDS_MSG_NEWPASS), MAKEINTRESOURCE(IDS_MSG_PASSAUTH), 2);
 						} else {
-							pNode->HideBaloon();
+							pNode->BaloonHide();
 						}
 						break;
 					}
 
 				case EN_CHANGE:
 					{
-						pNode->HideBaloon();
+						pNode->BaloonHide();
 						break;
 					}
 				}
@@ -1726,7 +1726,7 @@ LRESULT WINAPI JClient::JMessageEditor::DlgProc(HWND hWnd, UINT message, WPARAM 
 							content.c_str(), fAlert, crSheet));
 						DestroyWindow(hWnd);
 					} else {
-						pNode->DisplayMessage(pNode->jpPageServer->hwndNick, msg, strWho.c_str(), 2);
+						pNode->BaloonShow(pNode->jpPageServer->hwndNick, msg, strWho.c_str(), 2);
 					}
 					break;
 				}
@@ -1982,7 +1982,7 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 						ASSERT(pNode->m_clientsock);
 						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_MSGSEND), pNode->hwndPage, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JMessageEditor(pNode, iu->second.name, false));
 						DestroyWindow(hWnd);
-					} else pNode->DisplayMessage(m_hwndPage, MAKEINTRESOURCE(IDS_MSG_PRIVATEMESSAGE), pNode->getSafeName(m_idWho).c_str(), 1);
+					} else pNode->BaloonShow(m_hwndPage, MAKEINTRESOURCE(IDS_MSG_PRIVATEMESSAGE), pNode->getSafeName(m_idWho).c_str(), 1);
 					break;
 				}
 
@@ -1994,7 +1994,7 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 						ASSERT(pNode->m_clientsock);
 						pNode->PushTrn(pNode->m_clientsock, pNode->Make_Quest_JOIN(iu->second.name));
 						DestroyWindow(hWnd);
-					} else pNode->DisplayMessage(m_hwndPage, MAKEINTRESOURCE(IDS_MSG_PRIVATETALK), pNode->getSafeName(m_idWho).c_str(), 1);
+					} else pNode->BaloonShow(m_hwndPage, MAKEINTRESOURCE(IDS_MSG_PRIVATETALK), pNode->getSafeName(m_idWho).c_str(), 1);
 					break;
 				}
 

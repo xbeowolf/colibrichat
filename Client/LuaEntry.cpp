@@ -106,7 +106,7 @@ CLuaGluer<JClient>::_tRegType JClient::methods[] =
 	RESPONSE_LUAMETHOD(JClient, saveAutoopen),
 	RESPONSE_LUAMETHOD(JClient, openAutoopen),
 	RESPONSE_LUAMETHOD(JClient, Log),
-	RESPONSE_LUAMETHOD(JClient, HideBaloon),
+	RESPONSE_LUAMETHOD(JClient, BaloonHide),
 	RESPONSE_LUAMETHOD(JClient, Connect),
 	RESPONSE_LUAMETHOD(JClient, Disconnect),
 	RESPONSE_LUAMETHOD(JClient, getConnectCount),
@@ -208,9 +208,9 @@ IMPLEMENT_LUAMETHOD(JClient, Log)
 	return 0;
 }
 
-IMPLEMENT_LUAMETHOD(JClient, HideBaloon)
+IMPLEMENT_LUAMETHOD(JClient, BaloonHide)
 {
-	HideBaloon();
+	BaloonHide();
 	return 0;
 }
 
@@ -223,7 +223,7 @@ IMPLEMENT_LUAMETHOD(JClient, Connect)
 
 IMPLEMENT_LUAMETHOD(JClient, Disconnect)
 {
-	DeleteLink(m_clientsock);
+	EvLinkClose(m_clientsock, 0);
 	return 0;
 }
 
