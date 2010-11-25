@@ -1294,7 +1294,7 @@ void JClient::JPageList::OnHook(JNode* src)
 		node->EvNick += MakeDelegate(this, &JClient::JPageList::OnNick);
 
 		// Transactions parsers
-		node->m_mTrnReply[CCPM_LIST] = fastdelegate::MakeDelegate(this, &JClient::JPageList::Recv_Reply_LIST);
+		node->m_mTrnReply[CCPM_LIST] += fastdelegate::MakeDelegate(this, &JClient::JPageList::Recv_Reply_LIST);
 	}
 }
 
@@ -1305,7 +1305,7 @@ void JClient::JPageList::OnUnhook(JNode* src)
 	JNODE(JClient, node, src);
 	if (node) {
 		// Transactions parsers
-		node->m_mTrnReply.erase(CCPM_LIST);
+		node->m_mTrnReply[CCPM_LIST] -= fastdelegate::MakeDelegate(this, &JClient::JPageList::Recv_Reply_LIST);
 
 		node->EvLinkStart -= MakeDelegate(this, &JClient::JPageList::OnLinkStart);
 		node->EvMetrics -= MakeDelegate(this, &JClient::JPageList::OnMetrics);

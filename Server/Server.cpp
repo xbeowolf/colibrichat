@@ -501,21 +501,21 @@ void JServer::RegHandlers(JNode* src)
 	JNODE(JServer, node, src);
 	if (node) {
 		// Transactions parsers
-		node->m_mTrnCommand[CCPM_NICK] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_NICK);
-		node->m_mTrnQuest[CCPM_LIST] = fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_LIST);
-		node->m_mTrnQuest[CCPM_JOIN] = fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_JOIN);
-		node->m_mTrnCommand[CCPM_PART] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_PART);
-		node->m_mTrnQuest[CCPM_USERINFO] = fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_USERINFO);
-		node->m_mTrnCommand[CCPM_ONLINE] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_ONLINE);
-		node->m_mTrnCommand[CCPM_STATUS] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_STATUS);
-		node->m_mTrnCommand[CCPM_SAY] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_SAY);
-		node->m_mTrnCommand[CCPM_TOPIC] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_TOPIC);
-		node->m_mTrnCommand[CCPM_CHANOPTIONS] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_CHANOPTIONS);
-		node->m_mTrnCommand[CCPM_ACCESS] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_ACCESS);
-		node->m_mTrnCommand[CCPM_BEEP] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_BEEP);
-		node->m_mTrnCommand[CCPM_CLIPBOARD] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_CLIPBOARD);
-		node->m_mTrnQuest[CCPM_MESSAGE] = fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_MESSAGE);
-		node->m_mTrnCommand[CCPM_SPLASHRTF] = fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_SPLASHRTF);
+		node->m_mTrnCommand[CCPM_NICK] += fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_NICK);
+		node->m_mTrnQuest[CCPM_LIST] += fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_LIST);
+		node->m_mTrnQuest[CCPM_JOIN] += fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_JOIN);
+		node->m_mTrnCommand[CCPM_PART] += fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_PART);
+		node->m_mTrnQuest[CCPM_USERINFO] += fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_USERINFO);
+		node->m_mTrnCommand[CCPM_ONLINE] += fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_ONLINE);
+		node->m_mTrnCommand[CCPM_STATUS] += fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_STATUS);
+		node->m_mTrnCommand[CCPM_SAY] += fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_SAY);
+		node->m_mTrnCommand[CCPM_TOPIC] += fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_TOPIC);
+		node->m_mTrnCommand[CCPM_CHANOPTIONS] += fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_CHANOPTIONS);
+		node->m_mTrnCommand[CCPM_ACCESS] += fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_ACCESS);
+		node->m_mTrnCommand[CCPM_BEEP] += fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_BEEP);
+		node->m_mTrnCommand[CCPM_CLIPBOARD] += fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_CLIPBOARD);
+		node->m_mTrnQuest[CCPM_MESSAGE] += fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_MESSAGE);
+		node->m_mTrnCommand[CCPM_SPLASHRTF] += fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_SPLASHRTF);
 	}
 }
 
@@ -524,21 +524,21 @@ void JServer::UnregHandlers(JNode* src)
 	JNODE(JServer, node, src);
 	if (node) {
 		// Transactions parsers
-		node->m_mTrnCommand.erase(CCPM_NICK);
-		node->m_mTrnQuest.erase(CCPM_LIST);
-		node->m_mTrnQuest.erase(CCPM_JOIN);
-		node->m_mTrnCommand.erase(CCPM_PART);
-		node->m_mTrnQuest.erase(CCPM_USERINFO);
-		node->m_mTrnCommand.erase(CCPM_ONLINE);
-		node->m_mTrnCommand.erase(CCPM_STATUS);
-		node->m_mTrnCommand.erase(CCPM_SAY);
-		node->m_mTrnCommand.erase(CCPM_TOPIC);
-		node->m_mTrnCommand.erase(CCPM_CHANOPTIONS);
-		node->m_mTrnCommand.erase(CCPM_ACCESS);
-		node->m_mTrnCommand.erase(CCPM_BEEP);
-		node->m_mTrnCommand.erase(CCPM_CLIPBOARD);
-		node->m_mTrnQuest.erase(CCPM_MESSAGE);
-		node->m_mTrnCommand.erase(CCPM_SPLASHRTF);
+		node->m_mTrnCommand[CCPM_NICK] -= fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_NICK);
+		node->m_mTrnQuest[CCPM_LIST] -= fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_LIST);
+		node->m_mTrnQuest[CCPM_JOIN] -= fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_JOIN);
+		node->m_mTrnCommand[CCPM_PART] -= fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_PART);
+		node->m_mTrnQuest[CCPM_USERINFO] -= fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_USERINFO);
+		node->m_mTrnCommand[CCPM_ONLINE] -= fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_ONLINE);
+		node->m_mTrnCommand[CCPM_STATUS] -= fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_STATUS);
+		node->m_mTrnCommand[CCPM_SAY] -= fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_SAY);
+		node->m_mTrnCommand[CCPM_TOPIC] -= fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_TOPIC);
+		node->m_mTrnCommand[CCPM_CHANOPTIONS] -= fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_CHANOPTIONS);
+		node->m_mTrnCommand[CCPM_ACCESS] -= fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_ACCESS);
+		node->m_mTrnCommand[CCPM_BEEP] -= fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_BEEP);
+		node->m_mTrnCommand[CCPM_CLIPBOARD] -= fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_CLIPBOARD);
+		node->m_mTrnQuest[CCPM_MESSAGE] -= fastdelegate::MakeDelegate(this, &JServer::Recv_Quest_MESSAGE);
+		node->m_mTrnCommand[CCPM_SPLASHRTF] -= fastdelegate::MakeDelegate(this, &JServer::Recv_Cmd_SPLASHRTF);
 	}
 
 	__super::UnregHandlers(src);
@@ -570,6 +570,7 @@ void JServer::OnLinkStart(SOCKET sock)
 
 void JServer::OnLinkClose(SOCKET sock, UINT err)
 {
+	size_t count = countEstablished() - 1;
 	__super::OnLinkClose(sock, err);
 
 	DWORD idSrc = m_mSocketId[sock];
@@ -601,7 +602,7 @@ void JServer::OnLinkClose(SOCKET sock, UINT err)
 		tnid.uID = 1;
 		tnid.uFlags = NIF_TIP;
 		tnid.uVersion = NOTIFYICON_VERSION;
-		_stprintf_s(tnid.szTip, _countof(tnid.szTip), APPNAME TEXT("\n%u connections"), countEstablished());
+		_stprintf_s(tnid.szTip, _countof(tnid.szTip), APPNAME TEXT("\n%u connections"), count);
 		Shell_NotifyIcon(NIM_MODIFY, &tnid);
 	}
 }

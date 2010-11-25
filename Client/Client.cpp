@@ -1208,23 +1208,23 @@ void JClient::RegHandlers(JNode* src)
 	JNODE(JClient, node, src);
 	if (node) {
 		// Transactions parsers
-		node->m_mTrnNotify[CCPM_METRICS] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_METRICS);
-		node->m_mTrnNotify[CCPM_NICK] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_NICK);
-		node->m_mTrnReply[CCPM_JOIN] = fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_JOIN);
-		node->m_mTrnNotify[CCPM_JOIN] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_JOIN);
-		node->m_mTrnNotify[CCPM_PART] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_PART);
-		node->m_mTrnReply[CCPM_USERINFO] = fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_USERINFO);
-		node->m_mTrnNotify[CCPM_ONLINE] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_ONLINE);
-		node->m_mTrnNotify[CCPM_STATUS] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_STATUS);
-		node->m_mTrnNotify[CCPM_SAY] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_SAY);
-		node->m_mTrnNotify[CCPM_TOPIC] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_TOPIC);
-		node->m_mTrnNotify[CCPM_CHANOPTIONS] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_CHANOPTIONS);
-		node->m_mTrnNotify[CCPM_ACCESS] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_ACCESS);
-		node->m_mTrnReply[CCPM_MESSAGE] = fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_MESSAGE);
-		node->m_mTrnNotify[CCPM_MESSAGE] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_MESSAGE);
-		node->m_mTrnNotify[CCPM_BEEP] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_BEEP);
-		node->m_mTrnNotify[CCPM_CLIPBOARD] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_CLIPBOARD);
-		node->m_mTrnNotify[CCPM_SPLASHRTF] = fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_SPLASHRTF);
+		node->m_mTrnNotify[CCPM_METRICS] += fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_METRICS);
+		node->m_mTrnNotify[CCPM_NICK] += fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_NICK);
+		node->m_mTrnReply[CCPM_JOIN] += fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_JOIN);
+		node->m_mTrnNotify[CCPM_JOIN] += fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_JOIN);
+		node->m_mTrnNotify[CCPM_PART] += fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_PART);
+		node->m_mTrnReply[CCPM_USERINFO] += fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_USERINFO);
+		node->m_mTrnNotify[CCPM_ONLINE] += fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_ONLINE);
+		node->m_mTrnNotify[CCPM_STATUS] += fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_STATUS);
+		node->m_mTrnNotify[CCPM_SAY] += fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_SAY);
+		node->m_mTrnNotify[CCPM_TOPIC] += fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_TOPIC);
+		node->m_mTrnNotify[CCPM_CHANOPTIONS] += fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_CHANOPTIONS);
+		node->m_mTrnNotify[CCPM_ACCESS] += fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_ACCESS);
+		node->m_mTrnReply[CCPM_MESSAGE] += fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_MESSAGE);
+		node->m_mTrnNotify[CCPM_MESSAGE] += fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_MESSAGE);
+		node->m_mTrnNotify[CCPM_BEEP] += fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_BEEP);
+		node->m_mTrnNotify[CCPM_CLIPBOARD] += fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_CLIPBOARD);
+		node->m_mTrnNotify[CCPM_SPLASHRTF] += fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_SPLASHRTF);
 	}
 }
 
@@ -1233,23 +1233,23 @@ void JClient::UnregHandlers(JNode* src)
 	JNODE(JClient, node, src);
 	if (node) {
 		// Transactions parsers
-		node->m_mTrnNotify.erase(CCPM_METRICS);
-		node->m_mTrnNotify.erase(CCPM_NICK);
-		node->m_mTrnReply.erase(CCPM_JOIN);
-		node->m_mTrnNotify.erase(CCPM_JOIN);
-		node->m_mTrnNotify.erase(CCPM_PART);
-		node->m_mTrnReply.erase(CCPM_USERINFO);
-		node->m_mTrnNotify.erase(CCPM_ONLINE);
-		node->m_mTrnNotify.erase(CCPM_STATUS);
-		node->m_mTrnNotify.erase(CCPM_SAY);
-		node->m_mTrnNotify.erase(CCPM_TOPIC);
-		node->m_mTrnNotify.erase(CCPM_CHANOPTIONS);
-		node->m_mTrnNotify.erase(CCPM_ACCESS);
-		node->m_mTrnReply.erase(CCPM_MESSAGE);
-		node->m_mTrnNotify.erase(CCPM_MESSAGE);
-		node->m_mTrnNotify.erase(CCPM_BEEP);
-		node->m_mTrnNotify.erase(CCPM_CLIPBOARD);
-		node->m_mTrnNotify.erase(CCPM_SPLASHRTF);
+		node->m_mTrnNotify[CCPM_METRICS] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_METRICS);
+		node->m_mTrnNotify[CCPM_NICK] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_NICK);
+		node->m_mTrnReply[CCPM_JOIN] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_JOIN);
+		node->m_mTrnNotify[CCPM_JOIN] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_JOIN);
+		node->m_mTrnNotify[CCPM_PART] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_PART);
+		node->m_mTrnReply[CCPM_USERINFO] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_USERINFO);
+		node->m_mTrnNotify[CCPM_ONLINE] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_ONLINE);
+		node->m_mTrnNotify[CCPM_STATUS] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_STATUS);
+		node->m_mTrnNotify[CCPM_SAY] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_SAY);
+		node->m_mTrnNotify[CCPM_TOPIC] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_TOPIC);
+		node->m_mTrnNotify[CCPM_CHANOPTIONS] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_CHANOPTIONS);
+		node->m_mTrnNotify[CCPM_ACCESS] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_ACCESS);
+		node->m_mTrnReply[CCPM_MESSAGE] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Reply_MESSAGE);
+		node->m_mTrnNotify[CCPM_MESSAGE] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_MESSAGE);
+		node->m_mTrnNotify[CCPM_BEEP] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_BEEP);
+		node->m_mTrnNotify[CCPM_CLIPBOARD] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_CLIPBOARD);
+		node->m_mTrnNotify[CCPM_SPLASHRTF] -= fastdelegate::MakeDelegate(this, &JClient::Recv_Notify_SPLASHRTF);
 	}
 
 	__super::UnregHandlers(src);
@@ -2781,7 +2781,7 @@ void JClientApp::Init()
 	m_himgULSel = LoadBitmap(hinstApp, MAKEINTRESOURCE(IDB_UL_SEL));
 	m_himgULHot = LoadBitmap(hinstApp, MAKEINTRESOURCE(IDB_UL_HOT));
 
-	jpClient = new JClient;
+	jpClient = new JClient(0);
 }
 
 bool JClientApp::InitInstance()

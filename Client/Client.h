@@ -697,9 +697,7 @@ namespace colibrichat
 		// Constructor
 		static void initclass();
 		static void doneclass();
-		static const char className[];
-		static CLuaGluer<JClient>::_tRegType methods[];
-		JClient(lua_State* L = 0);
+		DECLARE_LUACLASS(JClient);
 		void beforeDestruct();
 		DWORD getMinVersion() const {return BNP_ENGINEVERSMIN;}
 		DWORD getCurVersion() const {return BNP_ENGINEVERSNUM;}
