@@ -197,6 +197,7 @@ void JClient::JPage::OnHook(JNode* src)
 
 	JNODE(JClient, node, src);
 	if (node) {
+		jpLuaVM = node->jpLuaVM;
 		node->EvLinkStart += MakeDelegate(this, &JClient::JPage::OnLinkStart);
 		node->EvLinkClose += MakeDelegate(this, &JClient::JPage::OnLinkClose);
 	}
@@ -210,11 +211,10 @@ void JClient::JPage::OnUnhook(JNode* src)
 	if (node) {
 		node->EvLinkStart -= MakeDelegate(this, &JClient::JPage::OnLinkStart);
 		node->EvLinkClose -= MakeDelegate(this, &JClient::JPage::OnLinkClose);
+		jpLuaVM = 0;
 	}
 
 	__super::OnUnhook(src);
-
-	//DelNode(pNode);
 }
 
 void JClient::JPage::OnLinkStart(SOCKET sock)
@@ -242,10 +242,11 @@ JClient::JPageLog::JPageLog()
 {
 }
 
-void JClient::JPageLog::AppendRtf(std::string& content, bool toascii) const
+std::string JClient::JPageLog::AppendRtf(const std::string& content) const
 {
 	CHARRANGE crMark, crIns; // Selection position
 	int nTextLen; // Length of text in control
+	std::string plain;
 
 	SendMessage(m_hwndLog, EM_HIDESELECTION, TRUE, 0);
 
@@ -256,13 +257,11 @@ void JClient::JPageLog::AppendRtf(std::string& content, bool toascii) const
 	SendMessage(m_hwndLog, EM_EXGETSEL, 0, (LPARAM)&crIns);
 	SendMessage(m_hwndLog, EM_REPLACESEL, FALSE, (LPARAM)ANSIToTstr(content).c_str());
 
-	if (toascii) {
-		crIns.cpMax = -1;
-		SendMessage(m_hwndLog, EM_EXSETSEL, 0, (LPARAM)&crIns);
-		SendMessage(m_hwndLog, EM_EXGETSEL, 0, (LPARAM)&crIns);
-		content.resize(crIns.cpMax - crIns.cpMin);
-		SendMessageA(m_hwndLog, EM_GETSELTEXT, 0, (LPARAM)content.data());
-	}
+	crIns.cpMax = -1;
+	SendMessage(m_hwndLog, EM_EXSETSEL, 0, (LPARAM)&crIns);
+	SendMessage(m_hwndLog, EM_EXGETSEL, 0, (LPARAM)&crIns);
+	plain.resize(crIns.cpMax - crIns.cpMin);
+	SendMessageA(m_hwndLog, EM_GETSELTEXT, 0, (LPARAM)plain.data());
 
 	// Restore caret position
 	if (crMark.cpMin == crMark.cpMax && crMark.cpMin == nTextLen) SendMessage(m_hwndLog, EM_SETSEL, -1, -1);
@@ -271,6 +270,7 @@ void JClient::JPageLog::AppendRtf(std::string& content, bool toascii) const
 	SendMessage(m_hwndLog, EM_HIDESELECTION, FALSE, 0);
 
 	if (GetFocus() != m_hwndLog) SendMessage(m_hwndLog, WM_VSCROLL, SB_BOTTOM, 0);
+	return plain;
 }
 
 void JClient::JPageLog::AppendScript(const std::tstring& content) const
@@ -292,20 +292,16 @@ void JClient::JPageLog::AppendScript(const std::tstring& content) const
 
 void JClient::JPageLog::Say(DWORD idWho, std::string& content)
 {
-	AppendScript(tformat(TEXT("[color=%s]%s[/color]:"),
-		idWho != pNode->m_idOwn ? TEXT("red") : TEXT("blue"),
-		getSafeName(idWho).c_str()));
-	AppendRtf(content, true);
-
 	// Lua response
-	if (pNode->m_luaVM) {
-		lua_getglobal(pNode->m_luaVM, "onSay");
-		lua_pushstring(pNode->m_luaVM, tstrToANSI(getSafeName(idWho)).c_str());
-		lua_pushstring(pNode->m_luaVM, tstrToANSI(getname()).c_str());
-		lua_pushstring(pNode->m_luaVM, content.c_str());
-		ASSERT(lua_gettop(pNode->m_luaVM) == 4);
-		lua_call(pNode->m_luaVM, 3, 0);
-	}
+	DOLUACS;
+	pNode->lua_getmethod(L, "onSay");
+	if (lua_isfunction(L, -1)) {
+		lua_insert(L, -2);
+		lua_pushstring(L, tstrToANSI(getSafeName(idWho)).c_str());
+		lua_pushstring(L, tstrToANSI(getname()).c_str());
+		lua_pushstring(L, content.c_str());
+		lua_call(L, 4, 0);
+	} else lua_pop(L, 2);
 }
 
 LRESULT WINAPI JClient::JPageLog::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -701,22 +697,12 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 			case IDC_CONNECT:
 				{
 					// Lua response
-					if (pNode->m_luaVM) {
-						lua_getglobal(pNode->m_luaVM, "idcConnect");
-						ASSERT(lua_gettop(pNode->m_luaVM) == 1);
-						lua_call(pNode->m_luaVM, 0, 0);
-					} else if (pNode->m_clientsock) {
-						pNode->EvLinkClose(pNode->m_clientsock, 0);
-					} else if (pNode->m_nConnectCount) {
-						pNode->m_nConnectCount = 0;
-						KillTimer(pNode->hwndPage, IDT_CONNECT);
-						// Update interface
-						CheckDlgButton(m_hwndPage, IDC_CONNECT, FALSE);
-						Disable();
-						pNode->EvLog("Canceled.", elogMsg);
-					} else {
-						pNode->Connect(true);
-					}
+					DOLUACS;
+					pNode->lua_getmethod(L, "idcConnect");
+					if (lua_isfunction(L, -1)) {
+						lua_insert(L, -2);
+						lua_call(L, 1, 0);
+					} else lua_pop(L, 2);
 					break;
 				}
 
@@ -805,18 +791,15 @@ void JClient::JPageServer::OnLinkStart(SOCKET sock)
 
 void JClient::JPageServer::OnLog(const std::string& str, ELog elog)
 {
-	// Get time
-	static SYSTEMTIME st;
-	GetLocalTime(&st);
-
 	// Call Lua event
-	lua_getglobal(pNode->m_luaVM, "onLog");
-	if (lua_isfunction(pNode->m_luaVM, -1)) {
-		lua_pushstring(pNode->m_luaVM, format(pNode->m_timeFormat.c_str(), st.wHour, st.wMinute, st.wSecond).c_str());
-		lua_pushstring(pNode->m_luaVM, str.c_str());
-		lua_pushinteger(pNode->m_luaVM, elog);
-		lua_call(pNode->m_luaVM, 3, 0);
-	} else lua_pop(pNode->m_luaVM, 1);
+	DOLUACS;
+	pNode->lua_getmethod(L, "onLog");
+	if (lua_isfunction(L, -1)) {
+		lua_insert(L, -2);
+		lua_pushstring(L, str.c_str());
+		lua_pushinteger(L, elog);
+		lua_call(L, 3, 0);
+	} else lua_pop(L, 2);
 }
 
 void JClient::JPageServer::OnMetrics(const Metrics& metrics)
@@ -1396,7 +1379,7 @@ void JClient::JPageList::Recv_Reply_LIST(SOCKET sock, WORD trnid, io::mem& is)
 		{
 		case 0:
 			// Report about message
-			pNode->EvLog(SZ_BADTRN, elogTrn);
+			pNode->EvLog(SZ_BADTRN, elogItrn);
 			return;
 		}
 	}
@@ -2179,15 +2162,14 @@ void JClient::JPageChannel::Join(DWORD idWho)
 	MapUser::const_iterator iu = pNode->m_mUser.find(idWho);
 	if (iu != pNode->m_mUser.end() && iu->second.name.length()) {
 		// Lua response
-		if (pNode->m_luaVM) {
-			lua_getglobal(pNode->m_luaVM, "onJoinChannel");
-			lua_pushstring(pNode->m_luaVM, tstrToANSI(getSafeName(idWho)).c_str());
-			lua_pushstring(pNode->m_luaVM, tstrToANSI(m_channel.name).c_str());
-			ASSERT(lua_gettop(pNode->m_luaVM) == 3);
-			lua_call(pNode->m_luaVM, 2, 0);
-		} else {
-			AppendScript(tformat(TEXT("[style=Info]joins: [b]%s[/b][/style]"), getSafeName(idWho).c_str()));
-		}
+		DOLUACS;
+		pNode->lua_getmethod(L, "onJoinChannel");
+		if (lua_isfunction(L, -1)) {
+			lua_insert(L, -2);
+			lua_pushstring(L, tstrToANSI(getSafeName(idWho)).c_str());
+			lua_pushstring(L, tstrToANSI(m_channel.name).c_str());
+			lua_call(L, 3, 0);
+		} else lua_pop(L, 2);
 	}
 }
 
@@ -2197,27 +2179,15 @@ void JClient::JPageChannel::Part(DWORD idWho, DWORD idBy)
 	if (m_hwndPage) DelLine(idWho);
 
 	// Lua response
-	if (pNode->m_luaVM) {
-		lua_getglobal(pNode->m_luaVM, "onPartChannel");
-		lua_pushstring(pNode->m_luaVM, tstrToANSI(getSafeName(idWho)).c_str());
-		lua_pushstring(pNode->m_luaVM, tstrToANSI(getSafeName(idBy)).c_str());
-		lua_pushstring(pNode->m_luaVM, tstrToANSI(m_channel.name).c_str());
-		ASSERT(lua_gettop(pNode->m_luaVM) == 4);
-		lua_call(pNode->m_luaVM, 3, 0);
-	} else {
-		// Parting message
-		std::tstring msg;
-		std::tstring who = getSafeName(idWho);
-		std::tstring by = getSafeName(idBy);
-		if (idWho == idBy) {
-			msg = tformat(TEXT("[style=Info]parts: [b]%s[/b][/style]"), who.c_str());
-		} else if (idBy == CRC_SERVER) {
-			msg = tformat(TEXT("[style=Info]quits: [b]%s[/b][/style]"), who.c_str());
-		} else {
-			msg = tformat(TEXT("[style=Info][b]%s[/b] was kicked by [b]%s[/b][/style]"), who.c_str(), by.c_str());
-		}
-		AppendScript(msg);
-	}
+	DOLUACS;
+	pNode->lua_getmethod(L, "onPartChannel");
+	if (lua_isfunction(L, -1)) {
+		lua_insert(L, -2);
+		lua_pushstring(L, tstrToANSI(getSafeName(idWho)).c_str());
+		lua_pushstring(L, tstrToANSI(getSafeName(idBy)).c_str());
+		lua_pushstring(L, tstrToANSI(m_channel.name).c_str());
+		lua_call(L, 4, 0);
+	} else lua_pop(L, 2);
 }
 
 int  JClient::JPageChannel::indexIcon(DWORD idUser) const

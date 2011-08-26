@@ -43,13 +43,11 @@
 #define IDB_UL_FOC                      152
 #define IDR_USER                        157
 #define IDM_USER                        157
-#define IDR_ACCELERATOR1                159
 #define IDA_RICHEDIT                    159
 #define IDD_MSGSEND                     161
 #define IDD_MSGRECV                     162
 #define IDR_MENU1                       168
 #define IDM_CHANLIST                    168
-#define IDM_USER1                       169
 #define IDM_USERGOD                     169
 #define IDD_CLIENTPASS                  169
 #define IDD_HELPER0                     171
@@ -125,9 +123,7 @@
 #define IDC_STATIC5                     1050
 #define IDC_AUTOCLOSE                   1052
 #define IDC_AUTOCLOSESPIN               1053
-#define IDC_RICHEDIT21                  1054
 #define IDC_SHOWPASS                    1056
-#define IDC_DATETIMEPICKER1             1058
 #define IDC_RECVTIME                    1058
 #define IDC_REPLY                       1059
 #define IDC_MSGSPINBLUE                 1060
@@ -138,13 +134,9 @@
 #define IDC_NEWPASS2                    1063
 #define IDC_ENCRYPTLIST                 1065
 #define IDC_ENCRYPTSEL                  1066
-#define IDC_COMBO1                      1068
-#define IDC_EDIT1                       1069
 #define IDC_PASS1                       1069
 #define IDC_PASS2                       1070
-#define IDC_CUSTOM1                     1071
 #define IDC_REBAR1                      1071
-#define IDC_CUSTOM4                     1074
 #define IDC_REBAR2                      1074
 #define IDC_NICK                        40002
 #define IDC_CONNECT                     40004
@@ -169,9 +161,7 @@
 #define IDC_SPLASHRTF                   40052
 #define ID_OVERLAP_ACCESSRIGHTS         40053
 #define ID_ACCESSRIGHTS_FOUNDER         40054
-#define ID_ACCESSRIGHTS_FOUNDER40055    40055
 #define ID_ACCESSRIGHTS_ADMINISTRATOR   40056
-#define ID_ACCESSRIGHTS_ADMINISTRATOR40057 40057
 #define ID_ACCESSRIGHTS_MODERATOR       40058
 #define ID_ACCESSRIGHTS_MEMBER          40059
 #define ID_ACCESSRIGHTS_WRITER          40060
@@ -186,7 +176,6 @@
 #define IDC_READER                      40069
 #define IDC_OUTSIDER                    40070
 #define ID_OVERLAP_SOUNDSIGNAL          40071
-#define ID_OVERLAP_SOUNDSIGNAL40072     40072
 #define IDS_SOUNDSIGNAL                 40073
 #define ID_OVERLAP_ALERT                40074
 #define IDC_ALERT                       40075
@@ -203,7 +192,6 @@
 #define IDC_CHANANONYMOUS               40087
 #define IDC_CHANHIDDEN                  40088
 #define ID_OVERLAP_ENTRYSTATUS          40089
-#define ID_OVERLAP_ENTRYSTATUS40090     40090
 #define ID_ENTRYSTATUS_FOUNDER          40091
 #define ID_ENTRYSTATUS_ADMINISTRATOR    40092
 #define ID_ENTRYSTATUS_MODERATOR        40093
@@ -219,13 +207,10 @@
 #define IDC_CHANREADER                  40105
 #define ID_OVERLAP_JOIN                 40106
 #define ID_OVERLAP_RENAME               40107
-#define ID_OVERLAP_RENAME40108          40108
-#define ID_OVERLAP_RENAME40109          40109
 #define ID_OVERLAP_REFRESHLIST          40110
 #define IDC_RENAME                      40111
 #define ID_OVERLAP_TOPIC                40112
 #define IDC_TOPIC                       40113
-#define ID_OVERLAP_RENAME40114          40114
 
 // Next default values for new objects
 // 

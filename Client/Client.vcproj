@@ -218,6 +218,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\Common\luanetengine.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\Common\Profile.cpp"
 					>
 				</File>
@@ -298,6 +302,14 @@
 				</File>
 				<File
 					RelativePath="..\..\Common\LuaGluer.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Common\luanetengine.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Common\luanetengine.hpp"
 					>
 				</File>
 				<File

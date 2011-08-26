@@ -22,6 +22,8 @@
 
 // Lua
 #include "LuaGluer.h"
+#include "LuaBinder.h"
+#include "luanetengine.hpp"
 
 // Common
 #include "app.h"
@@ -166,7 +168,7 @@ namespace colibrichat
 {
 	enum EAlert {eGreen, eBlue, eYellow, eRed};
 
-	class JClient : public JBNB, public JDialog, protected initdoneable<JClient>
+	class JClient : public JLuaEngine<JBNB>, public JDialog, protected initdoneable<JClient>
 	{
 	public:
 
@@ -242,6 +244,7 @@ namespace colibrichat
 
 		protected:
 
+			JPtr<JLuaWrapper> jpLuaVM;
 			JPROPERTY_R(EAlert, alert);
 			JPROPERTY_R(bool, fEnabled);
 		};
@@ -254,7 +257,7 @@ namespace colibrichat
 
 			HWND getDefFocusWnd() const {return m_hwndLog;}
 
-			void AppendRtf(std::string& content, bool toascii = false) const;
+			std::string AppendRtf(const std::string& content) const;
 			void AppendScript(const std::tstring& content) const;
 			virtual void Say(DWORD idWho, std::string& content);
 
@@ -698,12 +701,13 @@ namespace colibrichat
 		static void initclass();
 		static void doneclass();
 		DECLARE_LUACLASS(JClient);
+		const char* ClassName() const {return "JClient";}
 		void beforeDestruct();
+
 		DWORD getMinVersion() const {return BNP_ENGINEVERSMIN;}
 		DWORD getCurVersion() const {return BNP_ENGINEVERSNUM;}
 
 		virtual void lua_openVM();
-		virtual void lua_closeVM();
 
 		void Init();
 		void Done();
@@ -817,10 +821,14 @@ namespace colibrichat
 		void OnLinkStart(SOCKET sock);
 		void OnNick(DWORD idOld, const std::tstring& oldname, DWORD idNew, const std::tstring& newname);
 
+		// --- Lua helper ---
+
+		void pushAlert(lua_State* L, const Alert& a);
+		void popAlert(lua_State* L, Alert& a);
+
 		// --- Lua gluer ---
 
 		int lua_regFuncs(lua_State *L);
-		DECLARE_LUAMETHOD(getGlobal);
 		DECLARE_LUAMETHOD(getVars);
 		DECLARE_LUAMETHOD(setVars);
 		DECLARE_LUAMETHOD(PlaySound);
@@ -845,6 +853,7 @@ namespace colibrichat
 		DECLARE_LUAMETHOD(PageEnable);
 		DECLARE_LUAMETHOD(PageDisable);
 		DECLARE_LUAMETHOD(PageAppendScript);
+		DECLARE_LUAMETHOD(PageAppendRtf);
 		DECLARE_LUAMETHOD(PageSetIcon);
 		DECLARE_LUAMETHOD(Say);
 		DECLARE_LUAMETHOD(Message);
@@ -881,7 +890,6 @@ namespace colibrichat
 		JPROPERTY_R(bool, bReconnect);
 		JPROPERTY_R(int, nConnectCount);
 
-		JPROPERTY_RREF_CONST(std::string, timeFormat);
 		JPROPERTY_R(bool, bSendByEnter);
 		JPROPERTY_R(bool, bCheatAnonymous);
 		Alert s_mapAlert[6];
@@ -907,8 +915,6 @@ namespace colibrichat
 
 		JPROPERTY_RREF_CONST(Metrics, metrics);
 		JPROPERTY_RREF_CONST(std::string, encryptorname);
-
-		JPROPERTY_R( lua_State*, luaVM ); // Lua virtual machine
 	};
 
 	class JClientApp : public JApplication // Singleton

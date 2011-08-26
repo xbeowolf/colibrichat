@@ -20,6 +20,8 @@
 
 #pragma endregion
 
+//-----------------------------------------------------------------------------
+
 using namespace colibrichat;
 
 //-----------------------------------------------------------------------------
@@ -57,6 +59,35 @@ static int setInt(lua_State *L)
 	return 0;
 }
 
+static int getStr(lua_State *L)
+{
+	if (lua_isstring(L, -3) && lua_isstring(L, -2) && lua_isstring(L, -1)) {
+		std::tstring section = ANSIToTstr(lua_tostring(L, -3));
+		std::tstring entry = ANSIToTstr(lua_tostring(L, -2));
+		std::tstring szDefault = ANSIToTstr(lua_tostring(L, -1));
+		std::tstring result = profile::getString(section, entry, szDefault);
+		lua_pushstring(L, tstrToANSI(result).c_str());
+	} else {
+		lua_pushstring(L, "incorrect argument in function \"getStr\"");
+		lua_error(L);
+	}
+	return 1;
+}
+
+static int setStr(lua_State *L)
+{
+	if (lua_isstring(L, -3) && lua_isstring(L, -2) && lua_isstring(L, -1)) {
+		std::tstring section = ANSIToTstr(lua_tostring(L, -3));
+		std::tstring entry = ANSIToTstr(lua_tostring(L, -2));
+		std::tstring szValue = ANSIToTstr(lua_tostring(L, -1));
+		profile::setString(section, entry, szValue);
+	} else {
+		lua_pushstring(L, "incorrect argument in function \"setStr\"");
+		lua_error(L);
+	}
+	return 0;
+}
+
 static int hasstr(lua_State *L)
 {
 	if (lua_isstring(L, -2) && lua_isstring(L, -1)) {
@@ -75,11 +106,58 @@ static int hasstr(lua_State *L)
 	return 1;
 }
 
+// --- Lua helper ---
+
+void JClient::pushAlert(lua_State* L, const Alert& a)
+{
+	lua_newtable(L);
+	lua_pushboolean(L, a.fFlashPageNew);
+	lua_setfield(L, -2, "fFlashPageNew");
+	lua_pushboolean(L, a.fFlashPageSayPrivate);
+	lua_setfield(L, -2, "fFlashPageSayPrivate");
+	lua_pushboolean(L, a.fFlahPageSayChannel);
+	lua_setfield(L, -2, "fFlahPageSayChannel");
+	lua_pushboolean(L, a.fFlashPageChangeTopic);
+	lua_setfield(L, -2, "fFlashPageChangeTopic");
+	lua_pushboolean(L, a.fCanOpenPrivate);
+	lua_setfield(L, -2, "fCanOpenPrivate");
+	lua_pushboolean(L, a.fCanAlert);
+	lua_setfield(L, -2, "fCanAlert");
+	lua_pushboolean(L, a.fCanMessage);
+	lua_setfield(L, -2, "fCanMessage");
+	lua_pushboolean(L, a.fCanSplash);
+	lua_setfield(L, -2, "fCanSplash");
+	lua_pushboolean(L, a.fCanSignal);
+	lua_setfield(L, -2, "fCanSignal");
+	lua_pushboolean(L, a.fCanRecvClipboard);
+	lua_setfield(L, -2, "fCanRecvClipboard");
+	lua_pushboolean(L, a.fPlayChatSounds);
+	lua_setfield(L, -2, "fPlayChatSounds");
+	lua_pushboolean(L, a.fPlayPrivateSounds);
+	lua_setfield(L, -2, "fPlayPrivateSounds");
+	lua_pushboolean(L, a.fPlayAlert);
+	lua_setfield(L, -2, "fPlayAlert");
+	lua_pushboolean(L, a.fPlayMessage);
+	lua_setfield(L, -2, "fPlayMessage");
+	lua_pushboolean(L, a.fPlayBeep);
+	lua_setfield(L, -2, "fPlayBeep");
+	lua_pushboolean(L, a.fPlayClipboard);
+	lua_setfield(L, -2, "fPlayClipboard");
+}
+
+void JClient::popAlert(lua_State* L, Alert& a)
+{
+}
+
+// --- Lua gluer ---
+
 int JClient::lua_regFuncs(lua_State *L)
 {
 	static luaL_Reg methods1[] = {
 		{"getInt", &getInt},
 		{"setInt", &setInt},
+		{"getStr", &getStr},
+		{"setStr", &setStr},
 		{0, 0}
 	};
 	static luaL_Reg methods2[] = {
@@ -98,7 +176,6 @@ const char JClient::className[] = "JClient";
 CLuaGluer<JClient>::RegType JClient::methods[] =
 {
 	RESPONSE_LUAMETHOD(regFuncs),
-	RESPONSE_LUAMETHOD(getGlobal),
 	RESPONSE_LUAMETHOD(getVars),
 	RESPONSE_LUAMETHOD(setVars),
 	RESPONSE_LUAMETHOD(PlaySound),
@@ -123,6 +200,7 @@ CLuaGluer<JClient>::RegType JClient::methods[] =
 	RESPONSE_LUAMETHOD(PageEnable),
 	RESPONSE_LUAMETHOD(PageDisable),
 	RESPONSE_LUAMETHOD(PageAppendScript),
+	RESPONSE_LUAMETHOD(PageAppendRtf),
 	RESPONSE_LUAMETHOD(PageSetIcon),
 	RESPONSE_LUAMETHOD(Say),
 	RESPONSE_LUAMETHOD(Message),
@@ -130,24 +208,6 @@ CLuaGluer<JClient>::RegType JClient::methods[] =
 	RESPONSE_LUAMETHOD(Beep),
 	{NULL, NULL}
 };
-
-IMPLEMENT_LUAMETHOD(JClient, getGlobal) {
-	// Register application waves
-	REGISTER_STRING(JClientApp::jpApp->strWavMeline, "wavMeline");
-	REGISTER_STRING(JClientApp::jpApp->strWavChatline, "wavChatline");
-	REGISTER_STRING(JClientApp::jpApp->strWavConfirm, "wavConfirm");
-	REGISTER_STRING(JClientApp::jpApp->strWavPrivateline, "wavPrivateline");
-	REGISTER_STRING(JClientApp::jpApp->strWavTopic, "wavTopic");
-	REGISTER_STRING(JClientApp::jpApp->strWavJoin, "wavJoin");
-	REGISTER_STRING(JClientApp::jpApp->strWavPart, "wavPart");
-	REGISTER_STRING(JClientApp::jpApp->strWavPrivate, "wavPrivate");
-	REGISTER_STRING(JClientApp::jpApp->strWavAlert, "wavAlert");
-	REGISTER_STRING(JClientApp::jpApp->strWavMessage, "wavMessage");
-	REGISTER_STRING(JClientApp::jpApp->strWavBeep, "wavBeep");
-	REGISTER_STRING(JClientApp::jpApp->strWavClipboard, "wavClipboard");
-	ASSERT(lua_gettop(L) == 0);
-	return 0;
-}
 
 IMPLEMENT_LUAMETHOD(JClient, getVars)
 {
@@ -335,6 +395,21 @@ IMPLEMENT_LUAMETHOD(JClient, PageAppendScript)
 		jp->AppendScript(ANSIToTstr(lua_tostring(L, -1)));
 	}
 	return 0;
+}
+
+IMPLEMENT_LUAMETHOD(JClient, PageAppendRtf)
+{
+	DWORD id;
+	std::string plain;
+	if (lua_isstring(L, -2)) id = tCRCJJ(ANSIToTstr(lua_tostring(L, -2)).c_str());
+	else if (lua_isnumber(L, -2)) id = (DWORD)lua_tointeger(L, -2);
+	else id = CRC_SERVER;
+	JPtr<JPageLog> jp = getPageLog(id);
+	if (jp && lua_isstring(L, -1)) {
+		plain = jp->AppendRtf(lua_tostring(L, -1));
+	}
+	lua_pushstring(L, plain.c_str());
+	return 1;
 }
 
 IMPLEMENT_LUAMETHOD(JClient, PageSetIcon)
