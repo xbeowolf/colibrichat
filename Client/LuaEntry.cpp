@@ -26,7 +26,7 @@ using namespace colibrichat;
 
 //-----------------------------------------------------------------------------
 
-#define REGISTER_STRING(val, name) lua_pushstring(L, tstrToANSI(val).c_str()), lua_setglobal(L, name)
+#define REGISTER_STRING(val, name) lua_pushstring(L, TstrToANSI(val).c_str()), lua_setglobal(L, name)
 
 //-----------------------------------------------------------------------------
 
@@ -66,7 +66,7 @@ static int getStr(lua_State *L)
 		std::tstring entry = ANSIToTstr(lua_tostring(L, -2));
 		std::tstring szDefault = ANSIToTstr(lua_tostring(L, -1));
 		std::tstring result = profile::getString(section, entry, szDefault);
-		lua_pushstring(L, tstrToANSI(result).c_str());
+		lua_pushstring(L, TstrToANSI(result).c_str());
 	} else {
 		lua_pushstring(L, "incorrect argument in function \"getStr\"");
 		lua_error(L);

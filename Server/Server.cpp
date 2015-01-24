@@ -130,7 +130,7 @@ void JServer::LoadState()
 	m_bShowIcon = profile::getInt(RF_SERVER, RK_SHOWICON, TRUE) != 0;
 
 	s_nCompression = profile::getInt(RF_SERVER, RK_COMPRESSION, -1);
-	m_encryptorname = tstrToANSI(profile::getString(RF_SERVER, RK_ENCRYPTALG, ANSIToTstr(ECRYPT_BINDEFAULT)));
+	m_encryptorname = TstrToANSI(profile::getString(RF_SERVER, RK_ENCRYPTALG, ANSIToTstr(ECRYPT_BINDEFAULT)));
 
 	m_metrics.uNameMaxLength = (size_t)profile::getInt(RF_METRICS, RK_NameMaxLength, 20);
 	m_metrics.uPassMaxLength = (size_t)profile::getInt(RF_METRICS, RK_PassMaxLength, 32);
@@ -675,13 +675,13 @@ void JServer::Recv_Cmd_NICK(SOCKET sock, io::mem& is)
 #endif
 			RenameContact(idBy, idOld, name);
 			// Report about message
-			EvLog(format("nickname renamed: %s", tstrToANSI(name).c_str()), elogInfo);
+			EvLog(format("nickname renamed: %s", TstrToANSI(name).c_str()), elogInfo);
 		}
 	} else if (idOld == CRC_NONAME) { // new user
 		ASSERT(idBy == idOld);
 		RenameContact((DWORD)sock, idOld, name);
 		// Report about message
-		EvLog(format("nickname added: %s", tstrToANSI(name).c_str()), elogInfo);
+		EvLog(format("nickname added: %s", TstrToANSI(name).c_str()), elogInfo);
 	} else {
 		MapChannel::const_iterator ic = m_mChannel.find(idOld);
 		if (ic != m_mChannel.end()) { // channel
@@ -692,7 +692,7 @@ void JServer::Recv_Cmd_NICK(SOCKET sock, io::mem& is)
 #endif
 				RenameContact(idBy, idOld, name);
 				// Report about message
-				EvLog(format("channel name modified to: %s", tstrToANSI(name).c_str()), elogInfo);
+				EvLog(format("channel name modified to: %s", TstrToANSI(name).c_str()), elogInfo);
 			}
 		}
 	}
@@ -845,7 +845,7 @@ void JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is, std::ostream
 	}
 
 	// Report about message
-	EvLog(format("joins %s to %s", tstrToANSI(m_mUser[idSrc].name).c_str(), tstrToANSI(name).c_str()), elogInfo);
+	EvLog(format("joins %s to %s", TstrToANSI(m_mUser[idSrc].name).c_str(), TstrToANSI(name).c_str()), elogInfo);
 }
 
 void JServer::Recv_Cmd_PART(SOCKET sock, io::mem& is)
@@ -879,7 +879,7 @@ void JServer::Recv_Cmd_PART(SOCKET sock, io::mem& is)
 	MapUser::iterator iu = m_mUser.find(idWhere);
 	if (iu != m_mUser.end()) { // private talk
 		// Report about message
-		EvLog(format("parts %s from %s", tstrToANSI(iuWho->second.name).c_str(), tstrToANSI(iu->second.name).c_str()), elogInfo);
+		EvLog(format("parts %s from %s", TstrToANSI(iuWho->second.name).c_str(), TstrToANSI(iu->second.name).c_str()), elogInfo);
 
 		PushTrn(m_mIdSocket[idWhere], Make_Notify_PART(idWho, idWho, idBy)); // recieves to close private with idWho
 		PushTrn(sock, Make_Notify_PART(idBy, idWhere, idBy));
@@ -895,7 +895,7 @@ void JServer::Recv_Cmd_PART(SOCKET sock, io::mem& is)
 			if (idWho == idBy || (isModer && canKick)) {
 #endif
 				// Report about message
-				EvLog(format("parts %s from %s", tstrToANSI(iuWho->second.name).c_str(), tstrToANSI(ic->second.name).c_str()), elogInfo);
+				EvLog(format("parts %s from %s", TstrToANSI(iuWho->second.name).c_str(), TstrToANSI(ic->second.name).c_str()), elogInfo);
 
 				ic = m_mChannel.find(idWhere);
 				if (ic != m_mChannel.end()) { // check that channel still exist

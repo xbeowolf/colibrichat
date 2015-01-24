@@ -297,8 +297,8 @@ void JClient::JPageLog::Say(DWORD idWho, std::string& content)
 	pNode->lua_getmethod(L, "onSay");
 	if (lua_isfunction(L, -1)) {
 		lua_insert(L, -2);
-		lua_pushstring(L, tstrToANSI(getSafeName(idWho)).c_str());
-		lua_pushstring(L, tstrToANSI(getname()).c_str());
+		lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
+		lua_pushstring(L, TstrToANSI(getname()).c_str());
 		lua_pushstring(L, content.c_str());
 		lua_call(L, 4, 0);
 	} else lua_pop(L, 2);
@@ -536,7 +536,7 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 			m_hostlist.clear();
 			int count = profile::getInt(RF_HOSTLIST, RK_HOSTCOUNT, 0);
 			for ( int i = 0; i < count; i++) {
-				std::string str = tstrToANSI(profile::getString(RF_HOSTLIST, tformat(TEXT("%02i"), i)));
+				std::string str = TstrToANSI(profile::getString(RF_HOSTLIST, tformat(TEXT("%02i"), i)));
 				m_hostlist.insert(str);
 				SendMessageA(m_hwndHost, CB_ADDSTRING, 0, (LPARAM)str.c_str());
 			}
@@ -1872,7 +1872,7 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 	case WM_DESTROY:
 		{
 			pNode->PushTrn(pNode->clientsock, pNode->Make_Cmd_PART(pNode->m_idOwn, m_ID));
-			pNode->EvLog(format("parts from [b]%s[/b] private talk", tstrToANSI(m_user.name).c_str()), elogInfo);
+			pNode->EvLog(format("parts from [b]%s[/b] private talk", TstrToANSI(m_user.name).c_str()), elogInfo);
 
 			__super::DlgProc(hWnd, message, wParam, lParam);
 			break;
@@ -2166,8 +2166,8 @@ void JClient::JPageChannel::Join(DWORD idWho)
 		pNode->lua_getmethod(L, "onJoinChannel");
 		if (lua_isfunction(L, -1)) {
 			lua_insert(L, -2);
-			lua_pushstring(L, tstrToANSI(getSafeName(idWho)).c_str());
-			lua_pushstring(L, tstrToANSI(m_channel.name).c_str());
+			lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
+			lua_pushstring(L, TstrToANSI(m_channel.name).c_str());
 			lua_call(L, 3, 0);
 		} else lua_pop(L, 2);
 	}
@@ -2183,9 +2183,9 @@ void JClient::JPageChannel::Part(DWORD idWho, DWORD idBy)
 	pNode->lua_getmethod(L, "onPartChannel");
 	if (lua_isfunction(L, -1)) {
 		lua_insert(L, -2);
-		lua_pushstring(L, tstrToANSI(getSafeName(idWho)).c_str());
-		lua_pushstring(L, tstrToANSI(getSafeName(idBy)).c_str());
-		lua_pushstring(L, tstrToANSI(m_channel.name).c_str());
+		lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
+		lua_pushstring(L, TstrToANSI(getSafeName(idBy)).c_str());
+		lua_pushstring(L, TstrToANSI(m_channel.name).c_str());
 		lua_call(L, 4, 0);
 	} else lua_pop(L, 2);
 }
@@ -2394,7 +2394,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			for each (SetId::value_type const& v in m_channel.opened) {
 				pNode->UnlinkUser(v, m_ID);
 			}
-			pNode->EvLog(format("parts from [b]#%s[/b] channel", tstrToANSI(m_channel.name).c_str()), elogInfo);
+			pNode->EvLog(format("parts from [b]#%s[/b] channel", TstrToANSI(m_channel.name).c_str()), elogInfo);
 
 			__super::DlgProc(hWnd, message, wParam, lParam);
 			break;
