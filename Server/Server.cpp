@@ -1279,7 +1279,7 @@ void JServer::Recv_Cmd_BEEP(SOCKET sock, io::mem& is)
 void JServer::Recv_Cmd_CLIPBOARD(SOCKET sock, io::mem& is)
 {
 	DWORD idWho;
-	const void* ptr;
+	const void* ptr = "";
 	size_t size;
 
 	try
@@ -1321,7 +1321,7 @@ void JServer::Recv_Cmd_CLIPBOARD(SOCKET sock, io::mem& is)
 void JServer::Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is, std::ostream& os)
 {
 	DWORD idWho;
-	const void* ptr;
+	const void* ptr = "";
 	size_t size;
 
 	try
@@ -1372,7 +1372,7 @@ void JServer::Recv_Quest_MESSAGE(SOCKET sock, WORD trnid, io::mem& is, std::ostr
 void JServer::Recv_Cmd_SPLASHRTF(SOCKET sock, io::mem& is)
 {
 	DWORD idWho;
-	const void* ptr;
+	const void* ptr = "";
 	size_t size;
 
 	try

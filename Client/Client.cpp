@@ -2248,6 +2248,7 @@ void JClient::Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 	case MESSAGE_SAVED:
 		msg = "message to [b]%s[/b] saved";
 		break;
+	default: return;
 	}
 	EvLog(format(msg, TstrToANSI(getSafeName(idWho)).c_str()), elogInfo);
 }
@@ -2257,7 +2258,7 @@ void JClient::Recv_Notify_MESSAGE(SOCKET sock, io::mem& is)
 	DWORD idBy;
 	FILETIME ft;
 	DWORD dwRtfSize;
-	const void* ptr;
+	const void* ptr = "";
 	bool bCloseOnDisconnect;
 	bool fAlert;
 	COLORREF crSheet;
@@ -2410,7 +2411,7 @@ void JClient::Recv_Notify_SPLASHRTF(SOCKET sock, io::mem& is)
 {
 	DWORD idBy;
 	DWORD dwRtfSize;
-	const void* ptr;
+	const void* ptr = "";
 	RECT rcPos;
 	bool bCloseOnDisconnect;
 	DWORD dwCanclose, dwAutoclose;

@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{3C0AE951-BBDF-4425-97FE-D33925E0FECB}"
 	ProjectSection(SolutionItems) = preProject
 		doc\Colibri chat.docx = doc\Colibri chat.docx
@@ -10,15 +10,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Client", "Client\Client.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Server", "Server\Server.vcxproj", "{B9D602C8-E96F-49A1-A5D7-85C1D7F08C51}"
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Setup", "Setup\Setup.vdproj", "{C9CAD87C-C4D9-4B76-B03B-7BAA15B1F3D7}"
-	ProjectSection(ProjectDependencies) = postProject
-		{B9D602C8-E96F-49A1-A5D7-85C1D7F08C51} = {B9D602C8-E96F-49A1-A5D7-85C1D7F08C51}
-		{DECB3A30-22EA-4CE6-A8FE-A083D33AE463} = {DECB3A30-22EA-4CE6-A8FE-A083D33AE463}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Lua", "..\SDK\Lua\Lua.VS2012.vcxproj", "{BB1B6B42-BD65-45BC-AE1D-847635689829}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Lua", "..\Sdk\Lua\Lua.VS2005.vcxproj", "{BB1B6B42-BD65-45BC-AE1D-847635689829}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\Sdk\zlib\zlib.VS2005.vcxproj", "{9AE71360-EBC8-44D3-912A-27B98FC2F376}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\SDK\zlib\zlib.VS2012.vcxproj", "{9AE71360-EBC8-44D3-912A-27B98FC2F376}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetEngineBin", "..\Common\bnb.vcxproj", "{4A9AC503-10D7-4B26-A4C0-213D28740397}"
 EndProject
@@ -36,8 +30,6 @@ Global
 		{B9D602C8-E96F-49A1-A5D7-85C1D7F08C51}.Debug|Win32.Build.0 = Debug|Win32
 		{B9D602C8-E96F-49A1-A5D7-85C1D7F08C51}.Release|Win32.ActiveCfg = Release|Win32
 		{B9D602C8-E96F-49A1-A5D7-85C1D7F08C51}.Release|Win32.Build.0 = Release|Win32
-		{C9CAD87C-C4D9-4B76-B03B-7BAA15B1F3D7}.Debug|Win32.ActiveCfg = Debug
-		{C9CAD87C-C4D9-4B76-B03B-7BAA15B1F3D7}.Release|Win32.ActiveCfg = Release
 		{BB1B6B42-BD65-45BC-AE1D-847635689829}.Debug|Win32.ActiveCfg = Debug|Win32
 		{BB1B6B42-BD65-45BC-AE1D-847635689829}.Debug|Win32.Build.0 = Debug|Win32
 		{BB1B6B42-BD65-45BC-AE1D-847635689829}.Release|Win32.ActiveCfg = Release|Win32
