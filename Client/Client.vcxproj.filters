@@ -87,9 +87,6 @@
     <ClInclude Include="..\..\Common\attachment.h">
       <Filter>Header Files\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\bnp.h">
-      <Filter>Header Files\Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\JObjects.h">
       <Filter>Header Files\Common</Filter>
     </ClInclude>
@@ -132,9 +129,6 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="iml_man.bmp">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="iml_mode.bmp">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="iml_status.bmp">

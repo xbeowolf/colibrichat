@@ -2247,7 +2247,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 			// Inits ReBars
 			REBARINFO rbi = {sizeof(REBARINFO), 0, 0};
-			int h = rcLog.bottom - rcLog.top;
+			UINT h = (UINT)(rcLog.bottom - rcLog.top);
 			/*int l = rcList.right - rcLog.left;
 
 			REBARBANDINFO rbb1[] = {
@@ -2313,7 +2313,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 						GetSysColor(COLOR_BTNTEXT), // clrFore
 						GetSysColor(COLOR_BTNFACE), // clrBack
 						TEXT("Log"), // lpText
-						-1, // cch
+						(UINT)-1, // cch
 						0, // iImage
 						m_hwndLog, // hwndChild
 						200, // cxMinChild
@@ -2337,7 +2337,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 						GetSysColor(COLOR_BTNTEXT), // clrFore
 						GetSysColor(COLOR_BTNFACE), // clrBack
 						TEXT("Users list"), // lpText
-						-1, // cch
+						(UINT)-1, // cch
 						0, // iImage
 						m_hwndList, // hwndChild
 						0, // cxMinChild
@@ -2417,7 +2417,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				cx - rcPage.right + rcList.right,
 				cy - rcPage.bottom + rcLog.bottom);
 			DeferWindowPos(hdwp, m_hwndReBar2, 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOREPOSITION | SWP_NOZORDER);
-			int h = rc.bottom - rc.top;
+			UINT h = (UINT)(rc.bottom - rc.top);
 			REBARBANDINFO rbb2[] = {
 				{
 					sizeof(REBARBANDINFO), // cbSize
@@ -2426,7 +2426,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 						0, // clrFore
 						0, // clrBack
 						TEXT("Log"), // lpText
-						-1, // cch
+						(UINT)-1, // cch
 						0, // iImage
 						0, // hwndChild
 						200, // cxMinChild
@@ -2450,7 +2450,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 						0, // clrFore
 						0, // clrBack
 						TEXT("Users list"), // lpText
-						-1, // cch
+						(UINT)-1, // cch
 						0, // iImage
 						0, // hwndChild
 						0, // cxMinChild

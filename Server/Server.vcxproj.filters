@@ -61,9 +61,6 @@
     <ClInclude Include="..\..\Common\attachment.h">
       <Filter>Header Files\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\bnp.h">
-      <Filter>Header Files\Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\JObjects.h">
       <Filter>Header Files\Common</Filter>
     </ClInclude>
@@ -85,9 +82,6 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="Colibri2.ico">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="Server.ico">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
