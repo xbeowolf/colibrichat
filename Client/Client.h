@@ -22,7 +22,6 @@
 
 // Lua
 #include "LuaGluer.h"
-#include "LuaBinder.h"
 #include "luanetengine.hpp"
 
 // Common
