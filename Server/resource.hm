@@ -1,0 +1,13 @@
+// Microsoft Visual C++ generated Help ID include file.
+// Used by Server.rc
+//
+#define HIDCANCEL                       0x80720002    // IDD_PASSWORDS [Neutral]
+#define HIDC_LIST                       0x80640064    // IDD_CONNECTIONS [English (United States)]
+#define HIDC_PASSWORDDEVIL1             0x807203ed    // IDD_PASSWORDS [Neutral]
+#define HIDC_PASSWORDDEVIL2             0x807203ee    // IDD_PASSWORDS [Neutral]
+#define HIDC_PASSWORDGOD1               0x807203eb    // IDD_PASSWORDS [Neutral]
+#define HIDC_PASSWORDGOD2               0x807203ec    // IDD_PASSWORDS [Neutral]
+#define HIDC_PASSWORDNET1               0x807203e9    // IDD_PASSWORDS [Neutral]
+#define HIDC_PASSWORDNET2               0x807203ea    // IDD_PASSWORDS [Neutral]
+#define HIDC_STATIC                     0x8072ffff    // IDD_PASSWORDS [Neutral]
+#define HIDOK                           0x80720001    // IDD_PASSWORDS [Neutral]
