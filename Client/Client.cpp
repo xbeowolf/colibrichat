@@ -8,14 +8,15 @@
 #pragma region Includes
 
 #include "stdafx.h"
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 
 // Common
+#include "protocol.h"
 #include "stylepr.h"
 //#include "CRC.h"
 #include "Profile.h"
 
 // Project
-#include "..\ColibriProtocol.h"
 #include "resource.h"
 #include "client.h"
 

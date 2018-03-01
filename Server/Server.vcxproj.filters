@@ -5,76 +5,83 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Source Files\Common">
-      <UniqueIdentifier>{e05e7883-2c0e-4493-9bb0-0fe584fdab7d}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="Header Files\Common">
-      <UniqueIdentifier>{7efc1956-b1ed-4845-9a89-bdfa78ee8dd4}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Header Files\common">
+      <UniqueIdentifier>{7efc1956-b1ed-4845-9a89-bdfa78ee8dd4}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Source Files\common">
+      <UniqueIdentifier>{e05e7883-2c0e-4493-9bb0-0fe584fdab7d}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files\bnb">
+      <UniqueIdentifier>{f9bc67e7-23d8-454a-9c93-42deabf95fdd}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\ColibriCommon.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="dialogs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\app.cpp">
-      <Filter>Source Files\Common</Filter>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\Profile.cpp">
-      <Filter>Source Files\Common</Filter>
+    <ClCompile Include="..\common\Profile.cpp">
+      <Filter>Source Files\common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\stdafx.cpp">
-      <Filter>Source Files\Common</Filter>
+    <ClCompile Include="..\common\colibri.cpp">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\app.cpp">
+      <Filter>Source Files\common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\ColibriCommon.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ColibriProtocol.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\app.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\attachment.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\JObjects.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="..\common\Profile.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\JService.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="..\common\stringutil.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\Profile.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="..\common\colibri.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\stdafx.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="..\common\protocol.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\stringutil.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="..\common\app.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\JObjects.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bnb\attachment.h">
+      <Filter>Header Files\bnb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bnb\JService.h">
+      <Filter>Header Files\bnb</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

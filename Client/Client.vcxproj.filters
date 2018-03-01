@@ -5,16 +5,8 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Source Files\Common">
-      <UniqueIdentifier>{a624ae07-d1bf-4dbb-8bff-fa008a9243f7}</UniqueIdentifier>
-      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="Header Files\Common">
-      <UniqueIdentifier>{cd69ac3f-d4e3-427e-95e2-165ca1c3029d}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
     <Filter Include="Resource Files">
@@ -32,12 +24,21 @@
       <UniqueIdentifier>{97c1565b-bb00-4012-857b-f5921dfad823}</UniqueIdentifier>
       <Extensions>lua;txt;ini;cfg</Extensions>
     </Filter>
+    <Filter Include="Header Files\common">
+      <UniqueIdentifier>{cd69ac3f-d4e3-427e-95e2-165ca1c3029d}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Source Files\common">
+      <UniqueIdentifier>{a624ae07-d1bf-4dbb-8bff-fa008a9243f7}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files\bnb">
+      <UniqueIdentifier>{3cda56d3-360a-43ad-8047-4efd42b2b7a8}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Client.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ColibriCommon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="dialogs.cpp">
@@ -49,73 +50,79 @@
     <ClCompile Include="pages.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\app.cpp">
-      <Filter>Source Files\Common</Filter>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\jrtf.cpp">
-      <Filter>Source Files\Common</Filter>
+    <ClCompile Include="..\common\Profile.cpp">
+      <Filter>Source Files\common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\luanetengine.cpp">
-      <Filter>Source Files\Common</Filter>
+    <ClCompile Include="jrtf.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\Profile.cpp">
-      <Filter>Source Files\Common</Filter>
+    <ClCompile Include="stylepr.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\stdafx.cpp">
-      <Filter>Source Files\Common</Filter>
+    <ClCompile Include="..\common\colibri.cpp">
+      <Filter>Source Files\common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\stylepr.c">
-      <Filter>Source Files\Common</Filter>
+    <ClCompile Include="..\common\app.cpp">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bnb\luanetengine.cpp">
+      <Filter>Source Files\common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\ColibriCommon.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ColibriProtocol.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\app.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\attachment.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\JObjects.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="..\common\Profile.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\jrtf.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="..\common\stringutil.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\JService.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="jrtf.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\LuaGluer.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="stylepr.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\luanetengine.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="..\common\colibri.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\luanetengine.hpp">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="..\common\protocol.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\Profile.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="..\common\app.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\stdafx.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="..\common\JObjects.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\stringutil.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="..\common\LuaGluer.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\stylepr.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="..\bnb\attachment.h">
+      <Filter>Header Files\bnb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bnb\JService.h">
+      <Filter>Header Files\bnb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bnb\luanetengine.h">
+      <Filter>Header Files\bnb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bnb\luanetengine.hpp">
+      <Filter>Header Files\bnb</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

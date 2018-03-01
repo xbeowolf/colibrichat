@@ -29,7 +29,7 @@
 #include "jrtf.h"
 
 // Project
-#include "..\ColibriCommon.h"
+#include "colibri.h"
 
 #pragma endregion
 

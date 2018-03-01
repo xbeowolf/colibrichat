@@ -10,12 +10,12 @@
 #include "stdafx.h"
 
 // Common
+#include "protocol.h"
 #include "stylepr.h"
 //#include "CRC.h"
 #include "Profile.h"
 
 // Project
-#include "..\ColibriProtocol.h"
 #include "resource.h"
 #include "client.h"
 

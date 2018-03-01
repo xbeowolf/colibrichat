@@ -14,7 +14,7 @@
 #include "Profile.h"
 
 // Project
-#include "..\ColibriProtocol.h"
+#include "protocol.h"
 #include "resource.h"
 #include "server.h"
 

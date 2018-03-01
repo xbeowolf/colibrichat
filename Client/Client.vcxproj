@@ -93,8 +93,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../SDK/lua-5.3.4/src;..\..\Common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../common;../bnb;../../SDK/lua-5.3.4/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -105,7 +105,7 @@
       <MinimalRebuild>true</MinimalRebuild>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;winmm.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -121,8 +121,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../SDK/lua-5.3.4/src;..\..\Common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../common;../bnb;../../SDK/lua-5.3.4/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -133,7 +133,7 @@
       <MinimalRebuild>true</MinimalRebuild>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;winmm.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
@@ -148,19 +148,19 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>../../SDK/lua-5.3.4/src;..\..\Common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../common;../bnb;../../SDK/lua-5.3.4/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <CallingConvention>FastCall</CallingConvention>
       <Optimization>MinSpace</Optimization>
       <OmitFramePointers>true</OmitFramePointers>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;winmm.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -178,8 +178,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>../../SDK/lua-5.3.4/src;..\..\Common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../common;../bnb;../../SDK/lua-5.3.4/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
@@ -191,7 +191,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;winmm.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -207,39 +207,40 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Client.cpp" />
-    <ClCompile Include="..\ColibriCommon.cpp" />
+    <ClCompile Include="..\common\colibri.cpp" />
     <ClCompile Include="dialogs.cpp" />
     <ClCompile Include="LuaEntry.cpp" />
     <ClCompile Include="pages.cpp" />
-    <ClCompile Include="..\..\Common\app.cpp" />
-    <ClCompile Include="..\..\Common\jrtf.cpp" />
-    <ClCompile Include="..\..\Common\luanetengine.cpp" />
-    <ClCompile Include="..\..\Common\Profile.cpp" />
-    <ClCompile Include="..\..\Common\stdafx.cpp" />
-    <ClCompile Include="..\..\Common\stylepr.c">
+    <ClCompile Include="..\common\app.cpp" />
+    <ClCompile Include="jrtf.cpp" />
+    <ClCompile Include="..\bnb\luanetengine.cpp" />
+    <ClCompile Include="..\common\Profile.cpp" />
+    <ClCompile Include="stylepr.c">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">CompileAsCpp</CompileAs>
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsCpp</CompileAs>
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CompileAsCpp</CompileAs>
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsCpp</CompileAs>
     </ClCompile>
+    <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client.h" />
-    <ClInclude Include="..\ColibriCommon.h" />
-    <ClInclude Include="..\ColibriProtocol.h" />
+    <ClInclude Include="..\common\colibri.h" />
+    <ClInclude Include="..\common\protocol.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="..\..\Common\app.h" />
-    <ClInclude Include="..\..\Common\attachment.h" />
-    <ClInclude Include="..\..\Common\JObjects.h" />
-    <ClInclude Include="..\..\Common\jrtf.h" />
-    <ClInclude Include="..\..\Common\JService.h" />
-    <ClInclude Include="..\..\Common\LuaGluer.h" />
-    <ClInclude Include="..\..\Common\luanetengine.h" />
-    <ClInclude Include="..\..\Common\luanetengine.hpp" />
-    <ClInclude Include="..\..\Common\Profile.h" />
-    <ClInclude Include="..\..\Common\stdafx.h" />
-    <ClInclude Include="..\..\Common\stringutil.h" />
-    <ClInclude Include="..\..\Common\stylepr.h" />
+    <ClInclude Include="..\common\app.h" />
+    <ClInclude Include="..\bnb\attachment.h" />
+    <ClInclude Include="..\common\JObjects.h" />
+    <ClInclude Include="jrtf.h" />
+    <ClInclude Include="..\bnb\JService.h" />
+    <ClInclude Include="..\common\LuaGluer.h" />
+    <ClInclude Include="..\bnb\luanetengine.h" />
+    <ClInclude Include="..\bnb\luanetengine.hpp" />
+    <ClInclude Include="..\common\Profile.h" />
+    <ClInclude Include="..\common\stringutil.h" />
+    <ClInclude Include="stylepr.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="chat.ico" />
@@ -289,12 +290,11 @@
     <Manifest Include="ColibriClient.exe.manifest" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Common\bnb.vcxproj">
-      <Project>{4a9ac503-10d7-4b26-a4c0-213d28740397}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\..\SDK\zlib\zlib.VS2015.vcxproj">
       <Project>{9ae71360-ebc8-44d3-912a-27b98fc2f376}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\bnb\bnb.vcxproj">
+      <Project>{442a6448-1b3e-4ee3-be91-d7dfb49a80bb}</Project>
     </ProjectReference>
     <ProjectReference Include="..\Lua\Lua.vcxproj">
       <Project>{de5a1d2c-0624-4753-89f1-1f137eee5c10}</Project>
