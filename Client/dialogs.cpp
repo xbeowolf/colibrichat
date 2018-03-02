@@ -566,7 +566,7 @@ INT_PTR WINAPI JClient::DlgProcHelper3(HWND hWnd, UINT message, WPARAM wParam, L
 						retval = -1;
 					} else {
 						// on OK
-						profile::setString(RF_CLIENT, RK_HOST, ANSIToTstr(host));
+						profile::setString(RF_CLIENT, RK_HOST, utf8_to_tstr(host));
 						profile::setInt(RF_CLIENT, RK_PORT, port);
 						retval = FALSE;
 					}
@@ -590,7 +590,7 @@ INT_PTR WINAPI JClient::DlgProcHelper3(HWND hWnd, UINT message, WPARAM wParam, L
 						retval = -1;
 					} else {
 						// on OK
-						profile::setString(RF_CLIENT, RK_HOST, ANSIToTstr(host));
+						profile::setString(RF_CLIENT, RK_HOST, utf8_to_tstr(host));
 						profile::setInt(RF_CLIENT, RK_PORT, port);
 						profile::setInt(RF_CLIENT, RK_STATE, TRUE);
 						retval = FALSE;
@@ -692,7 +692,7 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 				ListView_SetItemText(m_hwndList, i, 1, lvs[i][1]);
 				ListView_SetItemText(m_hwndList, i, 2, lvs[i][2]);
 				ListView_SetItemText(m_hwndList, i, 3, lvs[i][3]);
-				if (ANSIToTstr(pNode->getEncryptorName()) == lvs[i][0])
+				if (utf8_to_tstr(pNode->getEncryptorName()) == lvs[i][0])
 					ListView_SetItemState(m_hwndList, i, LVIS_SELECTED, LVIS_SELECTED);
 			}
 			SetDlgItemTextA(m_hwndPage, IDC_ENCRYPTSEL, pNode->getEncryptorName());
@@ -1720,10 +1720,10 @@ LRESULT WINAPI JClient::JMessageEditor::DlgProc(HWND hWnd, UINT message, WPARAM 
 
 					std::tstring nickbuf(pNode->m_metrics.uNameMaxLength, 0), nick;
 					const TCHAR* msg;
-					GetDlgItemText(hWnd, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
-					nick = nickbuf.c_str();
+					auto len = (size_t)GetDlgItemTextW(hWnd, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
+					nick = std::tstring(nickbuf.c_str(), len);
 					if (JClient::CheckNick(nick, msg)) { // check content
-						pNode->PushTrn(pNode->m_clientsock, pNode->Make_Quest_MESSAGE(tCRCJJ(nick.c_str()),
+						pNode->PushTrn(pNode->m_clientsock, pNode->Make_Quest_MESSAGE(CRCJJ(tstr_to_utf8(nick).c_str()),
 							content.c_str(), fAlert, crSheet));
 						DestroyWindow(hWnd);
 					} else {

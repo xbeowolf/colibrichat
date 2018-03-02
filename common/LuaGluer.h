@@ -11,6 +11,8 @@ extern "C"
 
 //-----------------------------------------------------------------------------
 
+#define luaL_assert(L, cond, msg) if (!(cond)) { return luaL_error(L, (msg)); }
+
 #if defined(_DEBUG) || defined (_ASSERTLUA)
 #define ASSERTLUAINT(pos) if (!lua_isnumber(L, pos)) {return luaL_error(L, "integer expected as an %d argument", pos);}
 #define ASSERTLUANUM(pos) if (!lua_isnumber(L, pos)) {return luaL_error(L, "number expected as an %d argument", pos);}

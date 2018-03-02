@@ -1,69 +1,13 @@
 #pragma once
+#ifndef __stringutil_h__
+#define __stringutil_h__
 
-#include <string>
-#include <functional>
+//-----------------------------------------------------------------------------
 
-#if _MSC_VER < 1300
-
-#include <afx.h>
-
-inline CString __cdecl Format(LPCTSTR lpszFormat, ...)
-{
-	CString res;
-	va_list argList;
-	va_start(argList, lpszFormat);
-	res.FormatV(lpszFormat, argList);
-	va_end(argList);
-
-	return res;
-};
-
-#else
-
-#include <malloc.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <windows.h>
+#include <tchar.h>
 #include <string.h>
 
-inline std::string __cdecl format(LPCSTR lpszFormat, ...)
-{
-	va_list argList;
-	va_start(argList, lpszFormat);
-
-	std::string res(_vscprintf(lpszFormat, argList), 0);
-	vsprintf_s((std::string::value_type*)res.data(), res.size()+1, lpszFormat, argList);
-
-	return res;
-};
-
-inline std::wstring __cdecl wformat(LPCWSTR lpszFormat, ...)
-{
-	va_list argList;
-	va_start(argList, lpszFormat);
-
-	std::wstring res(_vscwprintf(lpszFormat, argList), 0);
-	vswprintf_s((std::wstring::value_type*)res.data(), res.size()+1, lpszFormat, argList);
-
-	return res;
-};
-
-inline std::string correctSlashes(const std::string& inStr)
-{
-	std::string buf = inStr;
-	for (char* dest = &buf[0]; *dest; dest++) {
-		if (*dest == '/') *dest = '\\';
-	}
-	return buf;
-}
-
-#ifdef UNICODE
-#define tformat wformat
-#else
-#define tformat format
-#endif
-
-#endif
+#include <string>
 
 namespace std {
 
@@ -106,35 +50,50 @@ namespace std {
 
 };
 
-#ifdef FASTSTRINGCONVERT
-#define ANSIToUnicode(src) std::stringConvert<CHAR, WCHAR>(src)
-#define UnicodeToANSI(src) std::stringConvert<WCHAR, CHAR>(src)
-#else
-inline std::wstring ANSIToUnicode(const std::string& src, UINT CodePage = CP_ACP)
-{
-	std::wstring res((std::wstring::size_type)MultiByteToWideChar(CodePage, 0, src.c_str(), (int)src.size(), 0, 0), 0);
-	MultiByteToWideChar(CodePage, 0, src.c_str(), (int)src.size(), (LPWSTR)res.data(), (int)res.size() + 1);
-	return res;
-}
-inline std::string UnicodeToANSI(const std::wstring& src, UINT CodePage = CP_ACP)
-{
-	std::string res((std::string::size_type)WideCharToMultiByte(CodePage, 0, src.c_str(), (int)src.size(), 0, 0, 0, 0), 0);
-	WideCharToMultiByte(CodePage, 0, src.c_str(), (int)src.size(), (LPSTR)res.data(), (int)res.size() + 1, 0, 0);
-	return res;
-}
-#define MbToWide(src) ANSIToUnicode(src, CP_UTF8)
-#define WideToMb(src) UnicodeToANSI(src, CP_UTF8)
-#define CpToCp(src, from, to) UnicodeToANSI(ANSIToUnicode(src, from), to)
-#endif
+//-----------------------------------------------------------------------------
+
+std::string __cdecl format(const char* fmt, ...);
+std::wstring __cdecl wformat(const wchar_t* fmt, ...);
 
 #ifdef UNICODE
-#define TstrToUnicode(src) ((const std::wstring&)src)
-#define TstrToANSI(src) UnicodeToANSI(src)
-#define UnicodeToTstr(src) ((const std::tstring&)src)
-#define ANSIToTstr(src) ANSIToUnicode(src)
+#define tformat wformat
 #else
-#define TstrToUnicode(src) ANSIToUnicode(src)
-#define TstrToANSI(src) ((const std::string&)src)
-#define UnicodeToTstr(src) UnicodeToANSI(src)
-#define ANSIToTstr(src) ((const std::tstring&)src)
+#define tformat format
 #endif
+
+// bring filename to unix-compatible format
+template<typename T>
+void correctfilename(std::basic_string<T>& str) {
+	T c;
+	for (T* dest = (T*)str.data(); *dest; dest++) {
+		c = *dest;
+		if (c >= 'A' && c <= 'Z') *dest += 32;
+		else if (c == '\\') *dest = '/';
+		else if (c == '*' || c == '?' || c == '|' || c == '<' || c == '>') *dest = '_';
+	}
+}
+
+std::string wchar_to_utf8(const wchar_t* in, size_t len);
+std::wstring utf8_to_wchar(const char* in, size_t len);
+inline std::string wchar_to_utf8(const std::wstring& in) { return wchar_to_utf8(in.data(), in.size()); }
+inline std::wstring utf8_to_wchar(const std::string& in) { return utf8_to_wchar(in.data(), in.size()); }
+
+#ifdef UNICODE
+#define tstr_to_utf8 wchar_to_utf8
+inline std::wstring tstr_to_wchar(const TCHAR* in, size_t len) { return std::wstring(in, len); }
+inline std::wstring tstr_to_wchar(const std::tstring& in) { return in; }
+#define utf8_to_tstr utf8_to_wchar
+inline std::tstring wchar_to_tstr(const wchar_t* in, size_t len) { return std::wstring(in, len); }
+inline std::tstring wchar_to_tstr(const std::wstring& in) { return in; }
+#else
+inline std::string tstr_to_utf8(const TCHAR* in, size_t len) { return std::string(in, len); }
+inline std::string tstr_to_utf8(const std::tstring& in) { return in; }
+#define tstr_to_wchar utf8_to_wchar
+inline std::tstring utf8_to_tstr(const char* in, size_t len) { return std::string(in, len); }
+inline std::tstring utf8_to_tstr(const std::string& in) { return in; }
+#define wchar_to_tstr wchar_to_utf8
+#endif
+
+//-----------------------------------------------------------------------------
+
+#endif // __stringutil_h__

@@ -36,6 +36,10 @@
       <UniqueIdentifier>{3cda56d3-360a-43ad-8047-4efd42b2b7a8}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+    <Filter Include="Source Files\bnb">
+      <UniqueIdentifier>{b104d12e-9ae3-4493-8a7d-79f705012741}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Client.cpp">
@@ -69,7 +73,7 @@
       <Filter>Source Files\common</Filter>
     </ClCompile>
     <ClCompile Include="..\bnb\luanetengine.cpp">
-      <Filter>Source Files\common</Filter>
+      <Filter>Source Files\bnb</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -123,6 +127,12 @@
     </ClInclude>
     <ClInclude Include="..\bnb\luanetengine.hpp">
       <Filter>Header Files\bnb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Luna.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\luastrut.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

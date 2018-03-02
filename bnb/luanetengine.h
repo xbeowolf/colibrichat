@@ -19,7 +19,8 @@
 #pragma once
 
 // Lua
-#include "LuaGluer.h"
+//#include "LuaGluer.h"
+//#include "Luna.h"
 
 // Common
 #include "netengine.h"
@@ -29,8 +30,8 @@
 //-----------------------------------------------------------------------------
 
 #ifdef _DEBUG
-#define LUACALLMARK(pLuaVM) lua_State* L = pLuaVM; int _top = lua_gettop(L); ASSERT(_top >= 0);
-#define LUACALLCHECK ASSERT(lua_gettop(L) == _top);
+#define LUACALLMARK(pLuaVM) lua_State* L = pLuaVM; int _top = lua_gettop(L); _ASSERT(_top >= 0);
+#define LUACALLCHECK _ASSERT(lua_gettop(L) == _top);
 #else
 #define LUACALLMARK(pLuaVM) lua_State* L = pLuaVM;
 #define LUACALLCHECK

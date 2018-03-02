@@ -255,7 +255,7 @@ std::string JClient::JPageLog::AppendRtf(const std::string& content) const
 
 	SendMessage(m_hwndLog, EM_SETSEL, -1, -1);
 	SendMessage(m_hwndLog, EM_EXGETSEL, 0, (LPARAM)&crIns);
-	SendMessage(m_hwndLog, EM_REPLACESEL, FALSE, (LPARAM)ANSIToTstr(content).c_str());
+	SendMessage(m_hwndLog, EM_REPLACESEL, FALSE, (LPARAM)utf8_to_tstr(content).c_str());
 
 	crIns.cpMax = -1;
 	SendMessage(m_hwndLog, EM_EXSETSEL, 0, (LPARAM)&crIns);
@@ -297,8 +297,8 @@ void JClient::JPageLog::Say(DWORD idWho, std::string& content)
 	pNode->lua_getmethod(L, "onSay");
 	if (lua_isfunction(L, -1)) {
 		lua_insert(L, -2);
-		lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
-		lua_pushstring(L, TstrToANSI(getname()).c_str());
+		lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
+		lua_pushstring(L, tstr_to_utf8(getname()).c_str());
 		lua_pushstring(L, content.c_str());
 		lua_call(L, 4, 0);
 	} else lua_pop(L, 2);
@@ -536,7 +536,7 @@ LRESULT WINAPI JClient::JPageServer::DlgProc(HWND hWnd, UINT message, WPARAM wPa
 			m_hostlist.clear();
 			int count = profile::getInt(RF_HOSTLIST, RK_HOSTCOUNT, 0);
 			for ( int i = 0; i < count; i++) {
-				std::string str = TstrToANSI(profile::getString(RF_HOSTLIST, tformat(TEXT("%02i"), i)));
+				std::string str = tstr_to_utf8(profile::getString(RF_HOSTLIST, tformat(TEXT("%02i"), i)));
 				m_hostlist.insert(str);
 				SendMessageA(m_hwndHost, CB_ADDSTRING, 0, (LPARAM)str.c_str());
 			}
@@ -784,7 +784,7 @@ void JClient::JPageServer::OnLinkStart(SOCKET sock)
 		m_hostlist.insert(pNode->m_hostname);
 		int count = profile::getInt(RF_HOSTLIST, RK_HOSTCOUNT, 0);
 		profile::setInt(RF_HOSTLIST, RK_HOSTCOUNT, count + 1);
-		profile::setString(RF_HOSTLIST, tformat(TEXT("%02i"), count), ANSIToTstr(pNode->m_hostname));
+		profile::setString(RF_HOSTLIST, tformat(TEXT("%02i"), count), utf8_to_tstr(pNode->m_hostname));
 		if (m_hwndPage) SendMessageA(m_hwndHost, CB_ADDSTRING, 0, (LPARAM)pNode->m_hostname.c_str());
 	}
 }
@@ -981,7 +981,7 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 			{
 			case IDC_JOIN:
 				{
-					ASSERT(pNode->m_clientsock);
+					_ASSERT(pNode->m_clientsock);
 					std::tstring chanbuf(pNode->m_metrics.uNameMaxLength, 0), passbuf(pNode->m_metrics.uPassMaxLength, 0);
 					std::tstring chan, pass;
 					GetWindowText(m_hwndChan, &chanbuf[0], (int)chanbuf.size()+1);
@@ -999,7 +999,7 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 
 			case IDC_RENAME:
 				{
-					ASSERT(pNode->m_clientsock);
+					_ASSERT(pNode->m_clientsock);
 					int index = ListView_GetNextItem(m_hwndList, -1, LVNI_SELECTED);
 					if (index >= 0) {
 						ListView_EditLabel(m_hwndList, index);
@@ -1009,9 +1009,9 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 
 			case IDC_TOPIC:
 				{
-					ASSERT(pNode->m_clientsock);
+					_ASSERT(pNode->m_clientsock);
 					MapChannel::const_iterator ic = getSelChannel();
-					ASSERT(ic != m_mChannel.end());
+					_ASSERT(ic != m_mChannel.end());
 					if (ic->second.getStatus(pNode->m_idOwn) >= (ic->second.isOpened(pNode->m_idOwn) ? eMember : eAdmin) || pNode->isGod()) {
 						CreateDialogParam(
 							JClientApp::jpApp->hinstApp,
@@ -1025,7 +1025,7 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 
 			case IDC_REFRESHLIST:
 				{
-					ASSERT(pNode->m_clientsock);
+					_ASSERT(pNode->m_clientsock);
 					pNode->PushTrn(pNode->m_clientsock, Make_Quest_LIST());
 					break;
 				}
@@ -1051,7 +1051,7 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 						if (pnmv->item.mask & LVIF_TEXT)
 						{
 							MapChannel::const_iterator iter = m_mChannel.find((DWORD)pnmv->item.lParam);
-							ASSERT(iter != m_mChannel.end());
+							_ASSERT(iter != m_mChannel.end());
 							switch (pnmv->item.iSubItem)
 							{
 							case 0:
@@ -1103,7 +1103,7 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 					LPNMLISTVIEW pnmv = (LPNMLISTVIEW)lParam;
 					if (pnmh->idFrom == IDC_CHANLIST && pnmv->uChanged == LVIF_STATE) {
 						MapChannel::const_iterator ic = m_mChannel.find((DWORD)pnmv->lParam);
-						ASSERT(ic != m_mChannel.end());
+						_ASSERT(ic != m_mChannel.end());
 						if (pnmv->iItem >= 0 && (pnmv->uNewState & LVIS_SELECTED) != 0 && (pnmv->uOldState & LVIS_SELECTED) == 0)
 						{
 							SetWindowText(m_hwndChan, ic->second.name.c_str());
@@ -1118,7 +1118,7 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 					if (!pNode->m_clientsock) break;
 					if (pnmh->idFrom == IDC_CHANLIST) {
 						MapChannel::const_iterator ic = m_mChannel.find((DWORD)pdi->item.lParam);
-						ASSERT(ic != m_mChannel.end());
+						_ASSERT(ic != m_mChannel.end());
 						if (ic->second.getStatus(pNode->m_idOwn) == eFounder || pNode->isGod()) {
 							JClientApp::jpApp->haccelCurrent = 0; // disable accelerators
 							retval = FALSE;
@@ -1697,7 +1697,7 @@ LRESULT WINAPI JClient::JPageChat::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 								SetWindowTextA(m_hwndEdit, "");
 								CHARRANGE cr;
 								SendMessage(m_hwndEdit, EM_SETSEL, 0, 0);
-								SendMessage(m_hwndEdit, EM_REPLACESEL, FALSE, (LPARAM)ANSIToTstr(vecMsgSpinBlue[lpnmud->iPos - 1]).c_str());
+								SendMessage(m_hwndEdit, EM_REPLACESEL, FALSE, (LPARAM)utf8_to_tstr(vecMsgSpinBlue[lpnmud->iPos - 1]).c_str());
 								cr.cpMin = 0, cr.cpMax = -1;
 								SendMessage(m_hwndEdit, EM_EXSETSEL, 0, (LPARAM)&cr);
 								SendMessage(m_hwndEdit, EM_EXGETSEL, 0, (LPARAM)&cr);
@@ -1719,7 +1719,7 @@ LRESULT WINAPI JClient::JPageChat::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 								SetWindowTextA(m_hwndEdit, "");
 								CHARRANGE cr;
 								SendMessage(m_hwndEdit, EM_SETSEL, 0, 0);
-								SendMessage(m_hwndEdit, EM_REPLACESEL, FALSE, (LPARAM)ANSIToTstr(vecMsgSpinRed[lpnmud->iPos - 1]).c_str());
+								SendMessage(m_hwndEdit, EM_REPLACESEL, FALSE, (LPARAM)utf8_to_tstr(vecMsgSpinRed[lpnmud->iPos - 1]).c_str());
 								cr.cpMin = 0, cr.cpMax = -1;
 								SendMessage(m_hwndEdit, EM_EXSETSEL, 0, (LPARAM)&cr);
 								SendMessage(m_hwndEdit, EM_EXGETSEL, 0, (LPARAM)&cr);
@@ -1872,7 +1872,7 @@ LRESULT WINAPI JClient::JPageUser::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 	case WM_DESTROY:
 		{
 			pNode->PushTrn(pNode->clientsock, pNode->Make_Cmd_PART(pNode->m_idOwn, m_ID));
-			pNode->EvLog(format("parts from [b]%s[/b] private talk", TstrToANSI(m_user.name).c_str()), elogInfo);
+			pNode->EvLog(format("parts from [b]%s[/b] private talk", tstr_to_utf8(m_user.name).c_str()), elogInfo);
 
 			__super::DlgProc(hWnd, message, wParam, lParam);
 			break;
@@ -2166,8 +2166,8 @@ void JClient::JPageChannel::Join(DWORD idWho)
 		pNode->lua_getmethod(L, "onJoinChannel");
 		if (lua_isfunction(L, -1)) {
 			lua_insert(L, -2);
-			lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
-			lua_pushstring(L, TstrToANSI(m_channel.name).c_str());
+			lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
+			lua_pushstring(L, tstr_to_utf8(m_channel.name).c_str());
 			lua_call(L, 3, 0);
 		} else lua_pop(L, 2);
 	}
@@ -2183,9 +2183,9 @@ void JClient::JPageChannel::Part(DWORD idWho, DWORD idBy)
 	pNode->lua_getmethod(L, "onPartChannel");
 	if (lua_isfunction(L, -1)) {
 		lua_insert(L, -2);
-		lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
-		lua_pushstring(L, TstrToANSI(getSafeName(idBy)).c_str());
-		lua_pushstring(L, TstrToANSI(m_channel.name).c_str());
+		lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
+		lua_pushstring(L, tstr_to_utf8(getSafeName(idBy)).c_str());
+		lua_pushstring(L, tstr_to_utf8(m_channel.name).c_str());
 		lua_call(L, 4, 0);
 	} else lua_pop(L, 2);
 }
@@ -2394,7 +2394,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			for each (SetId::value_type const& v in m_channel.opened) {
 				pNode->UnlinkUser(v, m_ID);
 			}
-			pNode->EvLog(format("parts from [b]#%s[/b] channel", TstrToANSI(m_channel.name).c_str()), elogInfo);
+			pNode->EvLog(format("parts from [b]#%s[/b] channel", tstr_to_utf8(m_channel.name).c_str()), elogInfo);
 
 			__super::DlgProc(hWnd, message, wParam, lParam);
 			break;
@@ -2516,7 +2516,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			case IDC_CHANREADER:
 			case IDC_CHANPRIVATE:
 				if (m_channel.getStatus(pNode->m_idOwn) >= eAdmin || pNode->isGod()) {
-					ASSERT(pNode->m_clientsock);
+					_ASSERT(pNode->m_clientsock);
 
 					static const struct {UINT idc; EChanStatus stat;} cmp[] = {
 						{IDC_CHANPRIVATE, eOutsider},
@@ -2529,21 +2529,21 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					};
 					int i;
 					for (i = 0; cmp[i].idc != LOWORD(wParam); i++) {}
-					ASSERT(i < _countof(cmp));
+					_ASSERT(i < _countof(cmp));
 					pNode->PushTrn(pNode->m_clientsock, pNode->Make_Cmd_CHANOPTIONS(m_ID, CHANOP_AUTOSTATUS, cmp[i].stat));
 				}
 				break;
 
 			case IDC_CHANHIDDEN:
 				if (m_channel.getStatus(pNode->m_idOwn) >= eAdmin || pNode->isGod()) {
-					ASSERT(pNode->m_clientsock);
+					_ASSERT(pNode->m_clientsock);
 					pNode->PushTrn(pNode->m_clientsock, pNode->Make_Cmd_CHANOPTIONS(m_ID, CHANOP_HIDDEN, !m_channel.isHidden));
 				}
 				break;
 
 			case IDC_CHANANONYMOUS:
 				if (m_channel.getStatus(pNode->m_idOwn) >= eAdmin || pNode->isGod()) {
-					ASSERT(pNode->m_clientsock);
+					_ASSERT(pNode->m_clientsock);
 					pNode->PushTrn(pNode->m_clientsock, pNode->Make_Cmd_CHANOPTIONS(m_ID, CHANOP_ANONYMOUS, !m_channel.isAnonymous));
 				}
 				break;
@@ -2551,9 +2551,9 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			case IDC_PRIVATETALK:
 				{
 					MapUser::const_iterator iu = getSelUser();
-					ASSERT(iu != pNode->m_mUser.end());
+					_ASSERT(iu != pNode->m_mUser.end());
 					if ((!m_channel.isAnonymous && iu->second.accessibility.fCanOpenPrivate) || pNode->isGod()) {
-						ASSERT(pNode->m_clientsock);
+						_ASSERT(pNode->m_clientsock);
 						pNode->PushTrn(pNode->m_clientsock, pNode->Make_Quest_JOIN(iu->second.name));
 					} else BaloonShow(iu->first, MAKEINTRESOURCE(IDS_MSG_PRIVATETALK), (HICON)1);
 					break;
@@ -2562,9 +2562,9 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			case IDC_PRIVATEMESSAGE:
 				{
 					MapUser::const_iterator iu = getSelUser();
-					ASSERT(iu != pNode->m_mUser.end());
+					_ASSERT(iu != pNode->m_mUser.end());
 					if ((!m_channel.isAnonymous && iu->second.accessibility.fCanMessage) || pNode->isGod()) {
-						ASSERT(pNode->m_clientsock);
+						_ASSERT(pNode->m_clientsock);
 						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_MSGSEND), pNode->hwndPage, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JMessageEditor(pNode, iu->second.name, false));
 					} else BaloonShow(iu->first, MAKEINTRESOURCE(IDS_MSG_PRIVATEMESSAGE), (HICON)1);
 					break;
@@ -2573,9 +2573,9 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			case IDC_ALERT:
 				{
 					MapUser::const_iterator iu = getSelUser();
-					ASSERT(iu != pNode->m_mUser.end());
+					_ASSERT(iu != pNode->m_mUser.end());
 					if ((!m_channel.isAnonymous && iu->second.accessibility.fCanAlert) || pNode->isGod()) {
-						ASSERT(pNode->m_clientsock);
+						_ASSERT(pNode->m_clientsock);
 						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_MSGSEND), pNode->hwndPage, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JMessageEditor(pNode, iu->second.name, true));
 					} else BaloonShow(iu->first, MAKEINTRESOURCE(IDS_MSG_ALERT), (HICON)1);
 					break;
@@ -2584,9 +2584,9 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			case IDS_SOUNDSIGNAL:
 				{
 					MapUser::const_iterator iu = getSelUser();
-					ASSERT(iu != pNode->m_mUser.end());
+					_ASSERT(iu != pNode->m_mUser.end());
 					if (iu->second.accessibility.fCanSignal || pNode->isGod()) {
-						ASSERT(pNode->m_clientsock);
+						_ASSERT(pNode->m_clientsock);
 						pNode->PushTrn(pNode->m_clientsock, pNode->Make_Cmd_BEEP(iu->first));
 					} else BaloonShow(iu->first, MAKEINTRESOURCE(IDS_MSG_SOUNDSIGNAL), (HICON)1);
 					break;
@@ -2595,9 +2595,9 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			case IDC_CLIPBOARD:
 				{
 					MapUser::const_iterator iu = getSelUser();
-					ASSERT(iu != pNode->m_mUser.end());
+					_ASSERT(iu != pNode->m_mUser.end());
 					if ((pNode->m_metrics.flags.bTransmitClipboard && iu->second.accessibility.fCanRecvClipboard) || pNode->isGod()) {
-						ASSERT(pNode->m_clientsock);
+						_ASSERT(pNode->m_clientsock);
 						pNode->PushTrn(pNode->m_clientsock, pNode->Make_Cmd_CLIPBOARD(iu->first));
 					} else BaloonShow(iu->first, MAKEINTRESOURCE(IDS_MSG_CLIPBOARD), (HICON)1);
 					break;
@@ -2606,9 +2606,9 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			case IDC_SPLASHRTF:
 				{
 					MapUser::const_iterator iu = getSelUser();
-					ASSERT(iu != pNode->m_mUser.end());
+					_ASSERT(iu != pNode->m_mUser.end());
 					if (iu->second.accessibility.fCanSplash || pNode->isGod()) {
-						ASSERT(pNode->m_clientsock);
+						_ASSERT(pNode->m_clientsock);
 						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_SPLASHRTFEDITOR), pNode->hwndPage, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JSplashRtfEditor(pNode, iu->first));
 					} else BaloonShow(iu->first, MAKEINTRESOURCE(IDS_MSG_SPLASHRTF), (HICON)1);
 					break;
@@ -2616,7 +2616,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 			case IDC_RENAME:
 				{
-					ASSERT(pNode->m_clientsock);
+					_ASSERT(pNode->m_clientsock);
 					int index = ListView_GetNextItem(m_hwndList, -1, LVNI_SELECTED);
 					if (index >= 0) {
 						ListView_EditLabel(m_hwndList, index);
@@ -2627,12 +2627,12 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			case IDC_KICK:
 				{
 					MapUser::const_iterator iu = getSelUser();
-					ASSERT(iu != pNode->m_mUser.end());
+					_ASSERT(iu != pNode->m_mUser.end());
 
 					bool isModer = m_channel.getStatus(pNode->m_idOwn) >= eModerator;
 					bool canKick = m_channel.getStatus(pNode->m_idOwn) >= m_channel.getStatus(iu->first);
 					if (pNode->m_idOwn == iu->first || (isModer && canKick && !pNode->isDevil(iu->first)) || pNode->isDevil()) {
-						ASSERT(pNode->m_clientsock);
+						_ASSERT(pNode->m_clientsock);
 						pNode->PushTrn(pNode->clientsock, pNode->Make_Cmd_PART(iu->first, m_ID));
 					} else BaloonShow(iu->first, MAKEINTRESOURCE(IDS_MSG_KICK), (HICON)1);
 					break;
@@ -2647,7 +2647,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			case IDC_OUTSIDER:
 				{
 					MapUser::const_iterator iu = getSelUser();
-					ASSERT(iu != pNode->m_mUser.end());
+					_ASSERT(iu != pNode->m_mUser.end());
 
 					EChanStatus statOwn = m_channel.getStatus(pNode->m_idOwn), statUser = m_channel.getStatus(iu->first);
 					static const UINT idc[] = {
@@ -2655,10 +2655,10 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 					};
 					int i;
 					for (i = eOutsider; idc[i] != LOWORD(wParam); i++) {}
-					ASSERT(i <= eFounder);
+					_ASSERT(i <= eFounder);
 					bool canModer = (statOwn == eFounder) || ((pNode->m_idOwn == iu->first || statOwn > statUser) && statOwn > i);
 					if ((canModer || pNode->isGod()) && statUser != i) {
-						ASSERT(pNode->m_clientsock);
+						_ASSERT(pNode->m_clientsock);
 						pNode->PushTrn(pNode->m_clientsock, pNode->Make_Cmd_ACCESS(iu->first, m_ID, (EChanStatus)i));
 					}
 					break;
@@ -2823,7 +2823,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 							&& (pnmv->uNewState & LVIS_SELECTED) != 0 && (pnmv->uOldState & LVIS_SELECTED) == 0
 							&& !m_channel.isAnonymous)
 						{
-							ASSERT(pNode->m_clientsock);
+							_ASSERT(pNode->m_clientsock);
 
 							SYSTEMTIME st;
 							FileTimeToLocalTime(iu->second.ftCreation, st);

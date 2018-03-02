@@ -11,6 +11,10 @@
 
 #include "stdafx.h"
 
+// Lua
+#include "LuaGluer.h"
+//#include "Luna.h"
+
 // Project
 #include "luanetengine.h"
 

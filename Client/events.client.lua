@@ -22,12 +22,16 @@ NAME_NONAME = "Noname"
 NAME_ANONYMOUS = "Anonymous"
 
 -- auto opening channels only once at program start
-fAutoopen = true
+local Autoopen = true
 -- user nickname
-nickOwn = NAME_NONAME
+local nickOwn = NAME_NONAME
+-- chat state
+local Reconnect = true
+local SendByEnter = true
+local CheatAnonymous = false
 
 -- WSA error codes
-wsaErr = {
+local wsaErr = {
 	-- on FD_CONNECT
 	[10061] = "The attempt to connect was rejected.", -- WSAECONNREFUSED
 	[10051] = "The network cannot be reached from this host at this time.", -- WSAENETUNREACH
@@ -75,19 +79,19 @@ eYellow = 2
 eRed    = 3
 
 -- Wave sounds
-Wav = {
-	MeLine = profile.getStr(RF_SOUNDS,"MeLine","Sounds\\me_line.wav"),
-	ChatLine = profile.getStr(RF_SOUNDS,"ChatLine","Sounds\\chat_line.wav"),
-	Confirm = profile.getStr(RF_SOUNDS,"Confirm","Sounds\\confirm.wav"),
-	Privateline = profile.getStr(RF_SOUNDS,"PrivateLine","Sounds\\chat_line.wav"),
-	Topic = profile.getStr(RF_SOUNDS,"Topic","Sounds\\topic_change.wav"),
-	Join = profile.getStr(RF_SOUNDS,"Join","Sounds\\channel_join.wav"),
-	Part = profile.getStr(RF_SOUNDS,"Part","Sounds\\channel_leave.wav"),
-	Private = profile.getStr(RF_SOUNDS,"Private","Sounds\\private_start.wav"),
-	Alert = profile.getStr(RF_SOUNDS,"Alert","Sounds\\alert.wav"),
-	Message = profile.getStr(RF_SOUNDS,"Message","Sounds\\message.wav"),
-	Beep = profile.getStr(RF_SOUNDS,"Beep","Sounds\\beep.wav"),
-	Clipboard = profile.getStr(RF_SOUNDS,"Clipboard","Sounds\\clipboard.wav"),
+local wave = {
+	meline = profile.getStr(RF_SOUNDS,"MeLine","Sounds\\me_line.wav"),
+	chatline = profile.getStr(RF_SOUNDS,"ChatLine","Sounds\\chat_line.wav"),
+	confirm = profile.getStr(RF_SOUNDS,"Confirm","Sounds\\confirm.wav"),
+	privateline = profile.getStr(RF_SOUNDS,"PrivateLine","Sounds\\chat_line.wav"),
+	topic = profile.getStr(RF_SOUNDS,"Topic","Sounds\\topic_change.wav"),
+	join = profile.getStr(RF_SOUNDS,"Join","Sounds\\channel_join.wav"),
+	part = profile.getStr(RF_SOUNDS,"Part","Sounds\\channel_leave.wav"),
+	private = profile.getStr(RF_SOUNDS,"Private","Sounds\\private_start.wav"),
+	alert = profile.getStr(RF_SOUNDS,"Alert","Sounds\\alert.wav"),
+	message = profile.getStr(RF_SOUNDS,"Message","Sounds\\message.wav"),
+	beep = profile.getStr(RF_SOUNDS,"Beep","Sounds\\beep.wav"),
+	clipboard = profile.getStr(RF_SOUNDS,"Clipboard","Sounds\\clipboard.wav"),
 }
 
 Alert = {
@@ -251,17 +255,17 @@ end
 
 -- Success identification after established connection
 function JClient:onLinkStart()
-	if fAutoopen and profile.getInt(RF_AUTOOPEN,"UseAutoopen",0) ~= 0 then
+	if Autoopen and profile.getInt(RF_AUTOOPEN,"UseAutoopen",0) ~= 0 then
 		self:openAutoopen()
-		fAutoopen = false
+		Autoopen = false
 	end
 end
 
 -- Connection closed
 function JClient:onLinkClose(idErr)
-	self:setVars() -- from host to script
+	self:setVars(Reconnect,SendByEnter,CheatAnonymous) -- from host to script
 	self:Log("Disconnected. Reason: [i]"..wsaErr[idErr].."[/i]",elogMsg)
-	if idErr ~= 0 and bReconnect then
+	if idErr ~= 0 and Reconnect then
 		self:Connect(false) -- if not disconnected by user, try to reconnect again
 	else
 		self:checkConnectionButton(false)
@@ -270,9 +274,9 @@ end
 
 -- Connection failed
 function JClient:onLinkFail(idErr)
-	self:setVars() -- from host to script
+	self:setVars(Reconnect,SendByEnter,CheatAnonymous) -- from host to script
 	self:Log("Connecting failed. Reason: [i]"..wsaErr[idErr].."[/i]",elogMsg)
-	if idErr ~= 0 and bReconnect then
+	if idErr ~= 0 and Reconnect then
 		local v = profile.getInt(RF_CLIENT,"TimerConnect",30*1000)
 		self:WaitConnectStart(v) -- if not disconnected by user, try to reconnect again
 		self:Log("Waiting "..(v/1000).." seconds and try again (attempt #"..self:getConnectCount()..").",elogMsg)
@@ -347,7 +351,7 @@ end
 -- nickWho opened private talk with you
 function JClient:onJoinPrivate(nickWho)
 	self:PageAppendScript(nickWho,"[style=Info][b]"..nickWho.."[/b] call you to private talk[/style]")
-	if OwnAccess.fPlayMessage then self:PlaySound(Wav.Private) end
+	if OwnAccess.fPlayMessage then self:PlaySound(wave.private) end
 end
 
 -- You opens private talk with nickWho
@@ -410,20 +414,20 @@ end
 -- Channel topic was changed by nickWho
 function JClient:onTopic(nickWho,where,topic)
 	self:PageAppendScript(where,"[style=Descr][color="..colorNick(nickWho).."]"..nickWho.."[/color] changes topic to:\n[u]"..topic.."[/u][/style]")
-	if OwnAccess.fPlayChatSounds then self:PlaySound(Wav.Topic) end
+	if OwnAccess.fPlayChatSounds then self:PlaySound(wave.topic) end
 end
 
 -- Channel "autostatus" value was changed by nickWho
 -- "autostatus" can be: 0 - outsider, 1 - reader, 2 - writer, 3 - member, 4 - moderator, 5 - admin, 6 - founder
 function JClient:onChanAutostatus(nickWho,where,autostatus)
 	self:PageAppendScript(where,"[style=Descr][color="..colorNick(nickWho).."]"..nickWho.."[/color] changes channel users entry status to [b]"..chanStatName[autostatus].."[/b][/style]")
-	if OwnAccess.fPlayChatSounds then self:PlaySound(Wav.Topic) end
+	if OwnAccess.fPlayChatSounds then self:PlaySound(wave.topic) end
 end
 
 -- Channel "limit" integer value was changed by nickWho
 function JClient:onChanLimit(nickWho,where,limit)
 	self:PageAppendScript(where,"[style=Descr][color="..colorNick(nickWho).."]"..nickWho.."[/color] sets channel limit to "..limit.." users[/style]")
-	if OwnAccess.fPlayChatSounds then self:PlaySound(Wav.Topic) end
+	if OwnAccess.fPlayChatSounds then self:PlaySound(wave.topic) end
 end
 
 -- Channel "hidden" boolean state was changed by nickWho
@@ -431,7 +435,7 @@ function JClient:onChanHidden(nickWho,where,hidden)
 	self:PageAppendScript(where,hidden
 		and "[style=Descr][color="..colorNick(nickWho).."]"..nickWho.."[/color] sets channel as hidden[/style]"
 		or  "[style=Descr][color="..colorNick(nickWho).."]"..nickWho.."[/color] sets channel as visible[/style]")
-	if OwnAccess.fPlayChatSounds then self:PlaySound(Wav.Topic) end
+	if OwnAccess.fPlayChatSounds then self:PlaySound(wave.topic) end
 end
 
 -- Channel "anonymous" boolean state was changed by nickWho
@@ -439,14 +443,14 @@ function JClient:onChanAnonymous(nickWho,where,anonymous)
 	self:PageAppendScript(where,anonymous
 		and "[style=Descr][color="..colorNick(nickWho).."]"..nickWho.."[/color] sets channel as anonymous[/style]"
 		or  "[style=Descr][color="..colorNick(nickWho).."]"..nickWho.."[/color] sets channel as not anonymous[/style]")
-	if OwnAccess.fPlayChatSounds then self:PlaySound(Wav.Topic) end
+	if OwnAccess.fPlayChatSounds then self:PlaySound(wave.topic) end
 end
 
 -- Page sheet color at "where" was changed by nickWho
 -- red, green, blue values indicate RGB-color at range 0-255
 function JClient:onBackground(nickWho,where,red,green,blue)
 	self:PageAppendScript(where,"[style=Descr][color="..colorNick(nickWho).."]"..nickWho.."[/color] changes sheet color[/style]")
-	if OwnAccess.fPlayChatSounds then self:PlaySound(Wav.Topic) end
+	if OwnAccess.fPlayChatSounds then self:PlaySound(wave.topic) end
 end
 
 -- User channel status on "where" was changed by "nickBy"
@@ -457,14 +461,14 @@ end
 
 -- User sends sound signal
 function JClient:onBeep(nickWho)
-	if OwnAccess.fPlayBeep then self:PlaySound(Wav.Beep) end
+	if OwnAccess.fPlayBeep then self:PlaySound(wave.beep) end
 	--self:Alert(nickWho, "Yes, I'm listen")
 	self:Log("sound signal from [b]"..nickWho.."[/b]",elogInfo)
 end
 
 -- User sends Windows clipboard content
 function JClient:onClipboard(nickWho)
-	if OwnAccess.fPlayClipboard then self:PlaySound(Wav.Clipboard) end
+	if OwnAccess.fPlayClipboard then self:PlaySound(wave.clipboard) end
 	--self:Message(nickWho, "Thank you")
 end
 
@@ -484,7 +488,7 @@ end
 -- WM_DESTROY
 function JClient:wmDestroy()
 	profile.setInt(RF_CLIENT,"ConnectionState",self:getSocket())
-	if not fAutoopen then
+	if not Autoopen then
 		self:saveAutoopen() -- save the state of channels only if they were opened
 	end
 

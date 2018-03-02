@@ -130,7 +130,7 @@ void JServer::LoadState()
 	m_bShowIcon = profile::getInt(RF_SERVER, RK_SHOWICON, TRUE) != 0;
 
 	s_nCompression = profile::getInt(RF_SERVER, RK_COMPRESSION, -1);
-	m_encryptorname = TstrToANSI(profile::getString(RF_SERVER, RK_ENCRYPTALG, ANSIToTstr(ECRYPT_BINDEFAULT)));
+	m_encryptorname = tstr_to_utf8(profile::getString(RF_SERVER, RK_ENCRYPTALG, utf8_to_tstr(ECRYPT_BINDEFAULT)));
 
 	m_metrics.uNameMaxLength = (size_t)profile::getInt(RF_METRICS, RK_NameMaxLength, 20);
 	m_metrics.uPassMaxLength = (size_t)profile::getInt(RF_METRICS, RK_PassMaxLength, 32);
@@ -155,7 +155,7 @@ void JServer::SaveState()
 	profile::setInt(RF_METRICS, RK_ChatLineMaxVolume, (UINT)m_metrics.uChatLineMaxVolume);
 	profile::setInt(RF_METRICS, RK_TransmitClipboard, (UINT)m_metrics.flags.bTransmitClipboard);
 
-	profile::setString(RF_SERVER, RK_ENCRYPTALG, ANSIToTstr(m_encryptorname));
+	profile::setString(RF_SERVER, RK_ENCRYPTALG, utf8_to_tstr(m_encryptorname));
 }
 
 LRESULT WINAPI JServer::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -371,7 +371,7 @@ std::tstring JServer::getNearestName(const std::tstring& nick) const
 	std::tstring buffer = nick;
 	TCHAR digits[16];
 	DWORD i = 0;
-	while (hasCRC(tCRCJJ(buffer.c_str()))) {
+	while (hasCRC(CRCJJ(tstr_to_utf8(buffer).c_str()))) {
 		_stprintf_s(digits, _countof(digits), TEXT("%u"), i);
 		buffer = nick.substr(0, m_metrics.uNameMaxLength - lstrlen(digits)) + digits;
 		i++;
@@ -381,7 +381,7 @@ std::tstring JServer::getNearestName(const std::tstring& nick) const
 
 void JServer::RenameContact(DWORD idByOrSock, DWORD idOld, std::tstring newname)
 {
-	DWORD idNew = tCRCJJ(newname.c_str());
+	DWORD idNew = CRCJJ(tstr_to_utf8(newname).c_str());
 	if (idNew == idOld && idOld != CRC_NONAME) return;
 
 	DWORD result;
@@ -396,7 +396,7 @@ void JServer::RenameContact(DWORD idByOrSock, DWORD idOld, std::tstring newname)
 			result = NICK_TAKEN;
 		}
 		newname = getNearestName(newname);
-		idNew = tCRCJJ(newname.c_str());
+		idNew = CRCJJ(tstr_to_utf8(newname).c_str());
 	} else {
 		result = NICK_OK;
 	}
@@ -675,13 +675,13 @@ void JServer::Recv_Cmd_NICK(SOCKET sock, io::mem& is)
 #endif
 			RenameContact(idBy, idOld, name);
 			// Report about message
-			EvLog(format("nickname renamed: %s", TstrToANSI(name).c_str()), elogInfo);
+			EvLog(format("nickname renamed: %s", tstr_to_utf8(name).c_str()), elogInfo);
 		}
 	} else if (idOld == CRC_NONAME) { // new user
 		ASSERT(idBy == idOld);
 		RenameContact((DWORD)sock, idOld, name);
 		// Report about message
-		EvLog(format("nickname added: %s", TstrToANSI(name).c_str()), elogInfo);
+		EvLog(format("nickname added: %s", tstr_to_utf8(name).c_str()), elogInfo);
 	} else {
 		MapChannel::const_iterator ic = m_mChannel.find(idOld);
 		if (ic != m_mChannel.end()) { // channel
@@ -692,7 +692,7 @@ void JServer::Recv_Cmd_NICK(SOCKET sock, io::mem& is)
 #endif
 				RenameContact(idBy, idOld, name);
 				// Report about message
-				EvLog(format("channel name modified to: %s", TstrToANSI(name).c_str()), elogInfo);
+				EvLog(format("channel name modified to: %s", tstr_to_utf8(name).c_str()), elogInfo);
 			}
 		}
 	}
@@ -739,7 +739,7 @@ void JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is, std::ostream
 		}
 	}
 
-	DWORD idDst = tCRCJJ(name.c_str());
+	DWORD idDst = CRCJJ(tstr_to_utf8(name).c_str());
 	DWORD idSrc = m_mSocketId[sock];
 	if (name == NAME_GOD && type & eCheat) {
 		if (pass == m_passwordGod) {
@@ -845,7 +845,7 @@ void JServer::Recv_Quest_JOIN(SOCKET sock, WORD trnid, io::mem& is, std::ostream
 	}
 
 	// Report about message
-	EvLog(format("joins %s to %s", TstrToANSI(m_mUser[idSrc].name).c_str(), TstrToANSI(name).c_str()), elogInfo);
+	EvLog(format("joins %s to %s", tstr_to_utf8(m_mUser[idSrc].name).c_str(), tstr_to_utf8(name).c_str()), elogInfo);
 }
 
 void JServer::Recv_Cmd_PART(SOCKET sock, io::mem& is)
@@ -879,7 +879,7 @@ void JServer::Recv_Cmd_PART(SOCKET sock, io::mem& is)
 	MapUser::iterator iu = m_mUser.find(idWhere);
 	if (iu != m_mUser.end()) { // private talk
 		// Report about message
-		EvLog(format("parts %s from %s", TstrToANSI(iuWho->second.name).c_str(), TstrToANSI(iu->second.name).c_str()), elogInfo);
+		EvLog(format("parts %s from %s", tstr_to_utf8(iuWho->second.name).c_str(), tstr_to_utf8(iu->second.name).c_str()), elogInfo);
 
 		PushTrn(m_mIdSocket[idWhere], Make_Notify_PART(idWho, idWho, idBy)); // recieves to close private with idWho
 		PushTrn(sock, Make_Notify_PART(idBy, idWhere, idBy));
@@ -895,7 +895,7 @@ void JServer::Recv_Cmd_PART(SOCKET sock, io::mem& is)
 			if (idWho == idBy || (isModer && canKick)) {
 #endif
 				// Report about message
-				EvLog(format("parts %s from %s", TstrToANSI(iuWho->second.name).c_str(), TstrToANSI(ic->second.name).c_str()), elogInfo);
+				EvLog(format("parts %s from %s", tstr_to_utf8(iuWho->second.name).c_str(), tstr_to_utf8(ic->second.name).c_str()), elogInfo);
 
 				ic = m_mChannel.find(idWhere);
 				if (ic != m_mChannel.end()) { // check that channel still exist

@@ -199,7 +199,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 						MapSocketId::const_iterator iid = pNode->mSocketId.find(link->ID);
 						if (iid == pNode->mSocketId.end()) break;
 						MapUser::const_iterator iu = pNode->mUser.find(iid->second);
-						ASSERT(iu != pNode->m_mUser.end());
+						_ASSERT(iu != pNode->m_mUser.end());
 						if (pnmv->item.mask & LVIF_TEXT)
 						{
 							switch (pnmv->item.iSubItem)

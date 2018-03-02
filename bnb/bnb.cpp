@@ -139,16 +139,16 @@ unsigned Header::getIndexDimension(unsigned val) throw()
 size_t Header::getHeaderSize(const BNP_HDR2& hdr2) throw()
 {
 	unsigned szd = getIndexDimension(hdr2.m_sizedim);
-	return sizeof(CRC16) + sizeof(BNP_HDR2) + (hdr2.m_hasTrnid ? sizeof(WORD) : 0) + szd + (hdr2.m_isCompressed ? szd : 0);
+	return sizeof(crc16_t) + sizeof(BNP_HDR2) + (hdr2.m_hasTrnid ? sizeof(WORD) : 0) + szd + (hdr2.m_isCompressed ? szd : 0);
 }
 
 size_t Header::isComplete(const char* ptr, size_t size) throw()
 {
 	const char* ptr0 = ptr;
 
-	if (size < sizeof(CRC16)) return 0;
-	ptr += sizeof(CRC16);
-	size -= sizeof(CRC16);
+	if (size < sizeof(crc16_t)) return 0;
+	ptr += sizeof(crc16_t);
+	size -= sizeof(crc16_t);
 
 	if (size < sizeof(BNP_HDR2)) return 0;
 	BNP_HDR2 hdr2 = *((const BNP_HDR2*)ptr);
@@ -180,7 +180,8 @@ size_t Header::isComplete(const char* ptr, size_t size) throw()
 			size -= sizeof(BYTE);
 			ptr += compr;
 			size -= compr;
-		} else {
+		}
+		else {
 			compr = 0;
 			ptr += uncompr;
 			size -= uncompr;
@@ -198,7 +199,8 @@ size_t Header::isComplete(const char* ptr, size_t size) throw()
 			size -= sizeof(WORD);
 			ptr += compr;
 			size -= compr;
-		} else {
+		}
+		else {
 			compr = 0;
 			ptr += uncompr;
 			size -= uncompr;
@@ -217,7 +219,8 @@ size_t Header::isComplete(const char* ptr, size_t size) throw()
 			size -= sizeof(DWORD);
 			ptr += compr;
 			size -= compr;
-		} else {
+		}
+		else {
 			compr = 0;
 			ptr += uncompr;
 			size -= uncompr;
@@ -226,7 +229,7 @@ size_t Header::isComplete(const char* ptr, size_t size) throw()
 	}
 
 	// Checkup readed uncompressed data size
-	ASSERT(compr <= uncompr + 12 + (uncompr + 500)/1000);
+	ASSERT(compr <= uncompr + 12 + (uncompr + 500) / 1000);
 
 	return (int)size >= 0 ? ptr - ptr0 : 0;
 }
@@ -252,8 +255,8 @@ int Header::read(const char*& ptr) throw()
 {
 	const char* ptr0 = ptr;
 
-	m_crc = *((const CRC16*)ptr);
-	ptr += sizeof(CRC16);
+	m_crc = *((const crc16_t*)ptr);
+	ptr += sizeof(crc16_t);
 
 	BNP_HDR2 hdr2 = *((const BNP_HDR2*)ptr);
 	ptr += sizeof(BNP_HDR2);
@@ -265,7 +268,8 @@ int Header::read(const char*& ptr) throw()
 		ptr += sizeof(WORD);
 
 		if (!m_trnid) m_trnid = -1;
-	} else {
+	}
+	else {
 		m_trnid = 0;
 	}
 
@@ -281,7 +285,8 @@ int Header::read(const char*& ptr) throw()
 		if (hdr2.m_isCompressed) {
 			m_sizecompr = *((const BYTE*)ptr);
 			ptr += sizeof(BYTE);
-		} else {
+		}
+		else {
 			m_sizecompr = 0;
 		}
 		break;
@@ -291,7 +296,8 @@ int Header::read(const char*& ptr) throw()
 		if (hdr2.m_isCompressed) {
 			m_sizecompr = *((const WORD*)ptr);
 			ptr += sizeof(WORD);
-		} else {
+		}
+		else {
 			m_sizecompr = 0;
 		}
 		break;
@@ -302,14 +308,15 @@ int Header::read(const char*& ptr) throw()
 		if (hdr2.m_isCompressed) {
 			m_sizecompr = *((const DWORD*)ptr);
 			ptr += sizeof(DWORD);
-		} else {
+		}
+		else {
 			m_sizecompr = 0;
 		}
 		break;
 	}
 
 	// Checkup readed uncompressed data size
-	ASSERT(m_sizecompr <= m_sizeuncompr + 12 + (m_sizeuncompr + 500)/1000);
+	ASSERT(m_sizecompr <= m_sizeuncompr + 12 + (m_sizeuncompr + 500) / 1000);
 
 	return ptr - ptr0;
 }
@@ -318,8 +325,8 @@ size_t Header::write(char*& ptr) const throw()
 {
 	const char* ptr0 = ptr;
 
-	*((CRC16*)ptr) = m_crc;
-	ptr += sizeof(CRC16);
+	*((crc16_t*)ptr) = m_crc;
+	ptr += sizeof(crc16_t);
 
 	unsigned idxs = getDimensionIndex(getSizeDimension(max(m_sizeuncompr, m_sizecompr)));
 	ASSERT(idxs < 4);
@@ -376,15 +383,15 @@ size_t Header::write(char*& ptr) const throw()
 size_t Header::getSize() const throw()
 {
 	unsigned szd = getSizeDimension(max(m_sizeuncompr, m_sizecompr));
-	return sizeof(CRC16) + sizeof(BNP_HDR2) + (m_trnid ? sizeof(WORD) : 0) + szd + (m_sizecompr ? szd : 0);
+	return sizeof(crc16_t) + sizeof(BNP_HDR2) + (m_trnid ? sizeof(WORD) : 0) + szd + (m_sizecompr ? szd : 0);
 }
 
-CRC16  Header::realCRC() const throw()
+crc16_t Header::realCRC() const throw()
 {
 	char buffer[16];
 	char* ptr = buffer;
 	size_t hdrsz = write(ptr);
-	return CRC16CCITTtbl(buffer + sizeof(CRC16), hdrsz - sizeof(CRC16), 0xFFFF);
+	return CRC16CCITTtbl(buffer + sizeof(crc16_t), hdrsz - sizeof(crc16_t), 0xFFFF);
 }
 
 WORD __fastcall Header::getnativeAction() const
@@ -419,7 +426,7 @@ void __fastcall Header::setnativeMessage(WORD val)
 //
 
 JBTransaction::JBTransaction(WORD message, WORD ti) throw() :
-Header(message, ti)
+	Header(message, ti)
 {
 }
 
@@ -459,7 +466,7 @@ void JBTransaction::serialize(JPtr<JLink> link)
 	char hdrbuf[16], *ptr;
 	size_t pos0 = link->aBufferSend.size();
 
-	trnsz0 = sizeof(CRC16) + sizeof(BNP_HDR2);
+	trnsz0 = sizeof(crc16_t) + sizeof(BNP_HDR2);
 	// push header
 	ptr = hdrbuf;
 	trnsz1 = Header::write(ptr);
@@ -498,7 +505,7 @@ bool JBTransaction::unserialize(JPtr<JLink> link)
 	ASSERT(blink);
 
 	// Translate CRC & BNP_HDR2
-	trnsz0 = sizeof(CRC16) + sizeof(BNP_HDR2);
+	trnsz0 = sizeof(crc16_t) + sizeof(BNP_HDR2);
 	if (trnsz0 > bufsize - (ptr - ptr0)) return false;
 	if (!blink->bHalfTrnRecv && blink->ctxDecryptor) { // setup IV-key once for each transaction
 		Skein_256_Ctxt_t ctx;
@@ -516,7 +523,7 @@ bool JBTransaction::unserialize(JPtr<JLink> link)
 		blink->ctxDecryptor->decrypt_bytes((const u8*)hdrbuf, (u8*)hdrbuf, (u32)(trnsz0 - 0));
 	}
 	// Translate full header
-	trnsz1 = Header::getHeaderSize(*((const BNP_HDR2*)(hdrbuf + sizeof(CRC16))));
+	trnsz1 = Header::getHeaderSize(*((const BNP_HDR2*)(hdrbuf + sizeof(crc16_t))));
 	if (trnsz1 > bufsize - (ptr - ptr0)) return false;
 	memcpy(hdrbuf + trnsz0, ptr + trnsz0, trnsz1 - trnsz0);
 	if (blink->ctxDecryptor) {
@@ -552,7 +559,7 @@ void JBTransaction::setdataCompr(const std::string& str, DWORD ucsz) throw()
 	m_sizeuncompr = ucsz;
 	m_sizecompr = (DWORD)m_data.size();
 	// Checkup for correct data
-	ASSERT(m_sizecompr <= (m_sizeuncompr + 12 + (m_sizeuncompr+500)/1000));
+	ASSERT(m_sizecompr <= (m_sizeuncompr + 12 + (m_sizeuncompr + 500) / 1000));
 }
 
 bool JBTransaction::compress(int level) throw()
@@ -574,7 +581,7 @@ bool JBTransaction::compress(int level) throw()
 	stream.zfree = (free_func)Z_NULL;
 	stream.opaque = (voidpf)Z_NULL;
 
-	stream.next_in  = (Bytef*)uncompr.data();
+	stream.next_in = (Bytef*)uncompr.data();
 	stream.avail_in = uncomprLen;
 	stream.next_out = (Bytef*)compr.data();
 	stream.avail_out = comprLen;
@@ -584,7 +591,7 @@ bool JBTransaction::compress(int level) throw()
 	while (err == Z_OK && stream.total_in < uncomprLen) {
 		if (!stream.avail_out) {
 			uLong offset = comprLen - stream.avail_out;
-			comprLen = (comprLen/BNP_COMPRESS_STEP + 1)*BNP_COMPRESS_STEP;
+			comprLen = (comprLen / BNP_COMPRESS_STEP + 1)*BNP_COMPRESS_STEP;
 			compr.resize(comprLen);
 			stream.next_out = (Bytef*)(compr.data() + offset);
 			stream.avail_out = comprLen - offset;
@@ -598,7 +605,7 @@ bool JBTransaction::compress(int level) throw()
 #endif
 	while (err != Z_STREAM_END) {
 		uLong offset = comprLen - stream.avail_out;
-		comprLen = (comprLen/BNP_COMPRESS_STEP + 1)*BNP_COMPRESS_STEP;
+		comprLen = (comprLen / BNP_COMPRESS_STEP + 1)*BNP_COMPRESS_STEP;
 		compr.resize(comprLen);
 		stream.next_out = (Bytef*)(compr.data() + offset);
 		stream.avail_out = comprLen - offset;
@@ -617,7 +624,7 @@ bool JBTransaction::compress(int level) throw()
 	std::string& uncompr = m_data;
 	std::string compr;
 	uLong uncomprLen = (uLong)m_data.length();
-	uLong comprLen = uncomprLen + 12 + (uncomprLen + 500)/1000;
+	uLong comprLen = uncomprLen + 12 + (uncomprLen + 500) / 1000;
 
 	compr.resize(comprLen); // resize to possible size
 	int err = compress2((Bytef*)compr.data(), &comprLen, (const Bytef*)uncompr.data(), uncomprLen, level);
@@ -626,7 +633,8 @@ bool JBTransaction::compress(int level) throw()
 		compr.resize(comprLen); // resize to actual data size
 		setdataCompr(compr, uncomprLen);
 		return true;
-	} else {
+	}
+	else {
 		return false;
 	}
 }
@@ -649,7 +657,7 @@ bool JBTransaction::uncompress() throw()
 	stream.zfree = (free_func)Z_NULL;
 	stream.opaque = (voidpf)Z_NULL;
 
-	stream.next_in  = (Bytef*)compr.data();
+	stream.next_in = (Bytef*)compr.data();
 	stream.avail_in = comprLen;
 	stream.next_out = (Bytef*)uncompr.data();
 	stream.avail_out = uncomprLen;
@@ -660,11 +668,12 @@ bool JBTransaction::uncompress() throw()
 		if (err != Z_OK) break;
 		if (!stream.avail_out) {
 			uLong offset = uncomprLen - stream.avail_out;
-			uncomprLen = (uncomprLen/BNP_COMPRESS_STEP + 1)*BNP_COMPRESS_STEP;
+			uncomprLen = (uncomprLen / BNP_COMPRESS_STEP + 1)*BNP_COMPRESS_STEP;
 			uncompr.resize(uncomprLen);
 			stream.next_out = (Bytef*)(uncompr.data() + offset);
 			stream.avail_out = uncomprLen - offset;
-		} else {
+		}
+		else {
 			// No way to here at normal decompression!!!
 			err = inflate(&stream, Z_FINISH); // last try
 			ASSERT(err == Z_STREAM_END);
@@ -719,12 +728,12 @@ void JBTransaction::restore(const std::string& content, bool enctypted)
 	m_data = content;
 }
 
-CRC16  JBTransaction::realCRC() const throw()
+crc16_t JBTransaction::realCRC() const throw()
 {
 	return CRC16CCITTtbl(m_data.data(), m_data.size(), Header::realCRC());
 }
 
-void   JBTransaction::updateCRC() throw()
+void JBTransaction::updateCRC() throw()
 {
 	m_crc = realCRC();
 }
@@ -736,13 +745,13 @@ void   JBTransaction::updateCRC() throw()
 //
 
 JBLink::JBLink()
-: JLink()
+	: JLink()
 {
 	Clear();
 }
 
 JBLink::JBLink(SOCKET sock, const sockaddr_in& addr)
-: JLink(sock, addr)
+	: JLink(sock, addr)
 {
 	Clear();
 }
@@ -772,7 +781,7 @@ void JBLink::setDecryptor(const char* ciphername)
 void JBLink::keysetup(huge::number* key)
 {
 	memset(*m_key, 0, m_keysize);
-	memcpy(*m_key, key->m_digit, min(m_keysize, key->m_size*sizeof(huge::digit)));
+	memcpy(*m_key, key->m_digit, min(m_keysize, key->m_size * sizeof(huge::digit)));
 
 	// key size for encrypting is less then reserved for use
 	ASSERT(ctxDecryptor && ctxEncryptor);
@@ -803,7 +812,7 @@ CHAR JBNB::szSignature[16] = BNP_SIGNATURE;
 int JBNB::s_nCompression = Z_DEFAULT_COMPRESSION;
 
 JBNB::JBNB()
-: JEngine()
+	: JEngine()
 {
 }
 
@@ -880,15 +889,19 @@ bool JBNB::DispatchTrn(SOCKET sock, JTransaction* jpTrn)
 	JBTransaction* jpBTrn = dynamic_cast<JBTransaction*>(jpTrn);
 
 	if (!jpBTrn) {
-	} else if (jpBTrn->realCRC() != jpBTrn->crc) {
+	}
+	else if (jpBTrn->realCRC() != jpBTrn->crc) {
 		EvTrnBadCRC(sock);
-	} else if (!(link->bAccessAllowed || jpTrn->isPrimary())) {
+	}
+	else if (!(link->bAccessAllowed || jpTrn->isPrimary())) {
 		EvTrnIgnore(sock, jpBTrn->message, jpBTrn->trnid);
 		JEngine::Stat.dlRecvTrnIgnored++; // update statistics
-	} else if (!jpBTrn->uncompress() && jpBTrn->sizecompr > 0) {
+	}
+	else if (!jpBTrn->uncompress() && jpBTrn->sizecompr > 0) {
 		EvTrnIgnore(sock, jpBTrn->message, jpBTrn->trnid);
 		JEngine::Stat.dlRecvTrnIgnored++; // update statistics
-	} else {
+	}
+	else {
 		// Process expected transactions
 		ParseTransaction(sock, jpBTrn->message, jpBTrn->trnid, io::mem(jpBTrn->data.data(), jpBTrn->data.size()));
 		JEngine::Stat.dlRecvTrnProcessed++; // update statistics
@@ -902,44 +915,45 @@ void JBNB::ParseTransaction(SOCKET sock, WORD message, WORD trnid, io::mem is)
 	switch (NATIVEACTION(message))
 	{
 	case BNPM_COMMAND:
-		{
-			MapTrnCommand::const_iterator iter = m_mTrnCommand.find(NATIVEMESSAGE(message));
-			if (iter != m_mTrnCommand.end()) {
-				iter->second(sock, is);
-			}
-			break;
+	{
+		MapTrnCommand::const_iterator iter = m_mTrnCommand.find(NATIVEMESSAGE(message));
+		if (iter != m_mTrnCommand.end()) {
+			iter->second(sock, is);
 		}
+		break;
+	}
+
 	case BNPM_QUEST:
-		{
-			MapTrnQuest::const_iterator iter = m_mTrnQuest.find(NATIVEMESSAGE(message));
-			if (iter != m_mTrnQuest.end()) {
-				std::ostringstream os;
-				iter->second(sock, trnid, is, os);
-				PushTrn(sock, MakeTrn(REPLY(NATIVEMESSAGE(message)), trnid, os.str()));
-				if (message == QUEST(BNPM_IDENTIFY) && *(const LRESULT*)os.str().data() == 0) {
-					EvLinkStart(sock);
-				}
+	{
+		MapTrnQuest::const_iterator iter = m_mTrnQuest.find(NATIVEMESSAGE(message));
+		if (iter != m_mTrnQuest.end()) {
+			std::ostringstream os;
+			iter->second(sock, trnid, is, os);
+			PushTrn(sock, MakeTrn(REPLY(NATIVEMESSAGE(message)), trnid, os.str()));
+			if (message == QUEST(BNPM_IDENTIFY) && *(const LRESULT*)os.str().data() == 0) {
+				EvLinkStart(sock);
 			}
-			break;
 		}
+		break;
+	}
+
 	case BNPM_REPLY:
-		{
-			MapTrnReply::const_iterator iter = m_mTrnReply.find(NATIVEMESSAGE(message));
-			if (iter != m_mTrnReply.end()) {
-				iter->second(sock, trnid, is);
-			}
-			break;
+	{
+		MapTrnReply::const_iterator iter = m_mTrnReply.find(NATIVEMESSAGE(message));
+		if (iter != m_mTrnReply.end()) {
+			iter->second(sock, trnid, is);
 		}
 		break;
+	}
+
 	case BNPM_NOTIFY:
-		{
-			MapTrnNotify::const_iterator iter = m_mTrnNotify.find(NATIVEMESSAGE(message));
-			if (iter != m_mTrnNotify.end()) {
-				iter->second(sock, is);
-			}
-			break;
+	{
+		MapTrnNotify::const_iterator iter = m_mTrnNotify.find(NATIVEMESSAGE(message));
+		if (iter != m_mTrnNotify.end()) {
+			iter->second(sock, is);
 		}
 		break;
+	}
 	}
 }
 
@@ -1006,21 +1020,25 @@ void JBNB::Recv_Quest_Identify(SOCKET sock, WORD trnid, io::mem& is, std::ostrea
 		{
 			// Bad signature
 			result = 4;
-		} else if (blink->m_dwProtocolVers < getMinVersion())
+		}
+		else if (blink->m_dwProtocolVers < getMinVersion())
 		{
 			// Version not supported
 			result = 5;
-		} else if (blink->m_dwProtocolVers > getCurVersion())
+		}
+		else if (blink->m_dwProtocolVers > getCurVersion())
 		{
 			// Version not implimented
 			result = 6;
-		} else if (!isSupportedCipher(ciphername))
+		}
+		else if (!isSupportedCipher(ciphername))
 		{
 			result = 7;
-		} else
+		}
+		else
 		{
 			// Success access
-			numptr a(256/8/sizeof(digit));
+			numptr a(256 / 8 / sizeof(digit));
 			Skein_256_Ctxt_t ctx;
 			Skein_256_Init(&ctx, 256);
 			Skein_256_Update(&ctx, (const u08b_t*)m_passwordNet.data(), sizeof(TCHAR)*m_passwordNet.length());
@@ -1080,7 +1098,7 @@ void JBNB::Recv_Reply_Identify(SOCKET sock, WORD trnid, io::mem& is)
 
 		if (!result)
 		{
-			numptr a(256/8/sizeof(digit));
+			numptr a(256 / 8 / sizeof(digit));
 			Skein_256_Ctxt_t ctx;
 			Skein_256_Init(&ctx, 256);
 			Skein_256_Update(&ctx, (const u08b_t*)m_passwordNet.data(), sizeof(TCHAR)*m_passwordNet.length());
@@ -1144,7 +1162,7 @@ JPtr<JBTransaction> JBNB::Make_Quest_Identify(const char* ciphername) const
 {
 	using namespace huge;
 
-	numptr a(256/8/sizeof(digit));
+	numptr a(256 / 8 / sizeof(digit));
 	Skein_256_Ctxt_t ctx;
 	Skein_256_Init(&ctx, 256);
 	Skein_256_Update(&ctx, (const u08b_t*)m_passwordNet.data(), sizeof(TCHAR)*m_passwordNet.length());
@@ -1164,7 +1182,7 @@ void JBNB::Form_Reply_Identify(std::ostream& os, LRESULT result, const char* cip
 {
 	using namespace huge;
 
-	numptr a(256/8/sizeof(digit));
+	numptr a(256 / 8 / sizeof(digit));
 	Skein_256_Ctxt_t ctx;
 	Skein_256_Init(&ctx, 256);
 	Skein_256_Update(&ctx, (const u08b_t*)m_passwordNet.data(), sizeof(TCHAR)*m_passwordNet.length());

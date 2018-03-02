@@ -14,6 +14,9 @@
 // Common
 #include "attachment.h"
 
+// Windows
+#include <commdlg.h>
+
 #pragma endregion
 
 //------------------------------------------------------------------------------

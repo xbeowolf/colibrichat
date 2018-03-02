@@ -22,6 +22,7 @@
 
 // Lua
 #include "LuaGluer.h"
+//#include "Luna.h"
 #include "luanetengine.hpp"
 
 // Common

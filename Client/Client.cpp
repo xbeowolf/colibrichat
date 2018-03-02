@@ -81,12 +81,12 @@ void JClient::initclass()
 	JClient::s_mapWsaErr[WSAECONNABORTED] = "The connection was terminated due to a time-out or other failure.";
 
 	// Create baloon tool tip for users list
-	ASSERT(JClientApp::jpApp);
+	_ASSERT(JClientApp::jpApp);
 	m_hwndBaloon = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, 0,
 		WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP | TTS_BALLOON,
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
 		0, 0, JClientApp::jpApp->hinstApp, 0);
-	ASSERT(m_hwndBaloon);
+	_ASSERT(m_hwndBaloon);
 	SendMessage(m_hwndBaloon, TTM_SETMAXTIPWIDTH, 0, 300);
 }
 
@@ -103,7 +103,7 @@ JClient::JClient(lua_State* L)
 : JLuaEngine<JBNB>(), JDialog(),
 jpOnline(0)
 {
-	ASSERT(L == 0);
+	_ASSERT(L == 0);
 
 	m_clientsock = 0;
 	m_bReconnect = true;
@@ -173,14 +173,14 @@ void JClient::lua_openVM()
 	__super::lua_openVM();
 
 	lua_State* L = *jpLuaVM;
-	ASSERT(L);
+	_ASSERT(L);
 	// register Lua data
 	lunareg_colibri(L);
 	CLuaGluer<JClient>::Register(L);
 	if (luaL_dofile(L, "events.client.lua") && lua_isstring(L, -1)) {
 		throw std::exception(lua_tostring(L, -1));
 	}
-	ASSERT(lua_gettop(L) == 0); // Lua stack must be empty
+	_ASSERT(lua_gettop(L) == 0); // Lua stack must be empty
 }
 
 void JClient::Init()
@@ -224,7 +224,7 @@ void JClient::LoadState()
 	user.nStatusImg = profile::getInt(RF_CLIENT, RK_STATUSIMG, 0);
 	user.strStatus = profile::getString(RF_CLIENT, RK_STATUSMSG, TEXT("ready to talk"));
 
-	std::string name = TstrToANSI(getSafeName(m_idOwn));
+	std::string name = tstr_to_utf8(getSafeName(m_idOwn));
 	// Lua response
 	{
 		DOLUACS;
@@ -260,15 +260,15 @@ void JClient::LoadState()
 		if (lua_isfunction(L, -1)) {
 			lua_insert(L, -2);
 			lua_pushstring(L, name.c_str());
-			lua_pushstring(L, TstrToANSI(user.strStatus).c_str());
+			lua_pushstring(L, tstr_to_utf8(user.strStatus).c_str());
 			lua_call(L, 3, 0);
 		} else lua_pop(L, 2);
 	}
 
 	s_nCompression = profile::getInt(RF_CLIENT, RK_COMPRESSION, -1);
-	m_encryptorname = TstrToANSI(profile::getString(RF_CLIENT, RK_ENCRYPTALG, ANSIToTstr(ECRYPT_BINDEFAULT)));
+	m_encryptorname = tstr_to_utf8(profile::getString(RF_CLIENT, RK_ENCRYPTALG, utf8_to_tstr(ECRYPT_BINDEFAULT)));
 
-	m_hostname = TstrToANSI(profile::getString(RF_CLIENT, RK_HOST, TEXT("127.0.0.1")));
+	m_hostname = tstr_to_utf8(profile::getString(RF_CLIENT, RK_HOST, TEXT("127.0.0.1")));
 	m_port = (u_short)profile::getInt(RF_CLIENT, RK_PORT, CCP_PORT);
 	m_passwordNet = profile::getString(RF_CLIENT, RK_PASSWORDNET, TEXT("beowolf"));
 	m_bSendByEnter = profile::getInt(RF_CLIENT, RK_SENDBYENTER, true) != 0;
@@ -277,7 +277,7 @@ void JClient::LoadState()
 
 void JClient::SaveState()
 {
-	profile::setString(RF_CLIENT, RK_HOST, ANSIToTstr(m_hostname));
+	profile::setString(RF_CLIENT, RK_HOST, utf8_to_tstr(m_hostname));
 	profile::setInt(RF_CLIENT, RK_PORT, m_port);
 	profile::setString(RF_CLIENT, RK_PASSWORDNET, m_passwordNet);
 	profile::setInt(RF_CLIENT, RK_SENDBYENTER, m_bSendByEnter);
@@ -288,7 +288,7 @@ void JClient::SaveState()
 	profile::setInt(RF_CLIENT, RK_STATUSIMG, user.nStatusImg);
 	profile::setString(RF_CLIENT, RK_STATUSMSG, user.strStatus);
 
-	profile::setString(RF_CLIENT, RK_ENCRYPTALG, ANSIToTstr(m_encryptorname));
+	profile::setString(RF_CLIENT, RK_ENCRYPTALG, utf8_to_tstr(m_encryptorname));
 }
 
 LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -540,7 +540,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 							GetDlgItemText(jpPageServer->hwndPage, IDC_NICK, &nickbuf[0], (int)nickbuf.size()+1);
 							nick = nickbuf.c_str();
 							if (JClient::CheckNick(nick, msg)) { // check content
-								ASSERT(!m_clientsock); // only for disconnected
+								_ASSERT(!m_clientsock); // only for disconnected
 								SendMessage(jpPageServer->hwndPage, WM_COMMAND, IDC_CONNECT, 0);
 							} else {
 								BaloonShow(jpPageServer->hwndNick, msg, MAKEINTRESOURCE(IDS_MSG_NICKERROR), 2);
@@ -682,7 +682,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 				VERIFY(!mciSendCommand((MCIDEVICEID)lParam, MCI_CLOSE, MCI_WAIT, (DWORD_PTR)&mci));
 				m_wDeviceID.erase((MCIDEVICEID)lParam);
 			} else {
-				ASSERT(false); // no way to here
+				_ASSERT(false); // no way to here
 			}
 			break;
 		}
@@ -696,7 +696,7 @@ void JClient::Connect(bool getsetting)
 {
 	if (getsetting && jpPageServer) {
 		char host[128];
-		ASSERT(jpPageServer);
+		_ASSERT(jpPageServer);
 		GetDlgItemTextA(jpPageServer->hwndPage, IDC_HOST, host, _countof(host));
 		m_hostname = host;
 		m_port = (u_short)GetDlgItemInt(jpPageServer->hwndPage, IDC_PORT, FALSE, FALSE);
@@ -786,7 +786,7 @@ int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 	if (jp) {
 		pos = getTabIndex(id);
 	} else {
-		ASSERT(getTabIndex(id) < 0);
+		_ASSERT(getTabIndex(id) < 0);
 
 		switch (type)
 		{
@@ -820,7 +820,7 @@ int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 			return -1;
 		}
 
-		ASSERT(jp);
+		_ASSERT(jp);
 		jp->SetNode(this, false, true);
 		CreateDialogParam(JClientApp::jpApp->hinstApp, jp->Template(), m_hwndPage, (DLGPROC)JDialog::DlgProcStub, (LPARAM)(JDialog*)jp);
 
@@ -880,7 +880,7 @@ void CALLBACK JClient::ContactDel(DWORD id)
 
 void CALLBACK JClient::ContactSel(int index)
 {
-	ASSERT(index >= 0 && index < TabCtrl_GetItemCount(m_hwndTab));
+	_ASSERT(index >= 0 && index < TabCtrl_GetItemCount(m_hwndTab));
 
 	TabCtrl_SetCurSel(m_hwndTab, index);
 
@@ -1086,7 +1086,7 @@ void CALLBACK JClient::PlaySound(const TCHAR* snd)
 		mci2.dwTo = 0;
 		if (!mciSendCommand(mci1.wDeviceID, MCI_PLAY, MCI_NOTIFY, (DWORD_PTR)&mci2))
 		{
-			ASSERT(m_wDeviceID.find(mci1.wDeviceID) == m_wDeviceID.end()); // ID must be unical
+			_ASSERT(m_wDeviceID.find(mci1.wDeviceID) == m_wDeviceID.end()); // ID must be unical
 			m_wDeviceID.insert(mci1.wDeviceID);
 		} else {
 			MCI_GENERIC_PARMS mci3;
@@ -1356,7 +1356,7 @@ void JClient::Recv_Notify_NICK(SOCKET sock, io::mem& is)
 		}
 	}
 
-	ASSERT(idOld != idNew);
+	_ASSERT(idOld != idNew);
 	bool isOwn = idOld == m_idOwn || idOld == CRC_NONAME;
 	oldname = getSafeName(idOld);
 
@@ -1383,7 +1383,7 @@ void JClient::Recv_Notify_NICK(SOCKET sock, io::mem& is)
 			msg = "nickname is taken by channel";
 			break;
 		}
-		EvLog(format("%s, now nickname is [b]%s[/b]", msg, TstrToANSI(newname).c_str()), elogInfo);
+		EvLog(format("%s, now nickname is [b]%s[/b]", msg, tstr_to_utf8(newname).c_str()), elogInfo);
 	}
 
 	// Lua response
@@ -1392,7 +1392,7 @@ void JClient::Recv_Notify_NICK(SOCKET sock, io::mem& is)
 		lua_getmethod(L, "onNickOwn");
 		if (lua_isfunction(L, -1)) {
 			lua_insert(L, -2);
-			lua_pushstring(L, TstrToANSI(newname).c_str());
+			lua_pushstring(L, tstr_to_utf8(newname).c_str());
 			lua_call(L, 2, 0);
 		} else lua_pop(L, 2);
 	}
@@ -1401,8 +1401,8 @@ void JClient::Recv_Notify_NICK(SOCKET sock, io::mem& is)
 		lua_getmethod(L, "onNick");
 		if (lua_isfunction(L, -1)) {
 			lua_insert(L, -2);
-			lua_pushstring(L, TstrToANSI(oldname).c_str());
-			lua_pushstring(L, TstrToANSI(newname).c_str());
+			lua_pushstring(L, tstr_to_utf8(oldname).c_str());
+			lua_pushstring(L, tstr_to_utf8(newname).c_str());
 			lua_call(L, 3, 0);
 		} else lua_pop(L, 2);
 	}
@@ -1434,7 +1434,7 @@ void JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 					int pos = ContactAdd(user.name, ID, type);
 
 					JPtr<JPageUser> jp = mPageUser[ID];
-					ASSERT(jp);
+					_ASSERT(jp);
 					jp->setuser(user);
 
 					ContactSel(pos);
@@ -1445,12 +1445,12 @@ void JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 						lua_getmethod(L, "onOpenPrivate");
 						if (lua_isfunction(L, -1)) {
 							lua_insert(L, -2);
-							lua_pushstring(L, TstrToANSI(getSafeName(ID)).c_str());
+							lua_pushstring(L, tstr_to_utf8(getSafeName(ID)).c_str());
 							lua_call(L, 2, 0);
 						} else lua_pop(L, 2);
 					}
 
-					EvLog(format("opened private talk with [b]%s[/b]", TstrToANSI(user.name).c_str()), elogInfo);
+					EvLog(format("opened private talk with [b]%s[/b]", tstr_to_utf8(user.name).c_str()), elogInfo);
 					break;
 				}
 
@@ -1472,7 +1472,7 @@ void JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 					int pos = ContactAdd(chan.name, ID, type);
 
 					JPtr<JPageChannel> jp = mPageChannel[ID];
-					ASSERT(jp);
+					_ASSERT(jp);
 					jp->setchannel(chan);
 
 					ContactSel(pos);
@@ -1485,12 +1485,12 @@ void JClient::Recv_Reply_JOIN(SOCKET sock, WORD trnid, io::mem& is)
 						lua_getmethod(L, "onOpenChannel");
 						if (lua_isfunction(L, -1)) {
 							lua_insert(L, -2);
-							lua_pushstring(L, TstrToANSI(chan.name).c_str());
+							lua_pushstring(L, tstr_to_utf8(chan.name).c_str());
 							lua_call(L, 2, 0);
 						} else lua_pop(L, 2);
 					}
 
-					EvLog(format("joins to [b]#%s[/b] channel", TstrToANSI(chan.name).c_str()), elogInfo);
+					EvLog(format("joins to [b]#%s[/b] channel", tstr_to_utf8(chan.name).c_str()), elogInfo);
 					break;
 				}
 			}
@@ -1568,13 +1568,13 @@ void JClient::Recv_Notify_JOIN(SOCKET sock, io::mem& is)
 			lua_getmethod(L, "onJoinPrivate");
 			if (lua_isfunction(L, -1)) {
 				lua_insert(L, -2);
-				lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
+				lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
 				lua_call(L, 2, 0);
 			} else lua_pop(L, 2);
 		}
 
 		EvLog(format("[b]%s[/b] opens private talk",
-			TstrToANSI(user.name).c_str()),
+			tstr_to_utf8(user.name).c_str()),
 			elogInfo);
 	} else { // channel
 		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
@@ -1585,8 +1585,8 @@ void JClient::Recv_Notify_JOIN(SOCKET sock, io::mem& is)
 				PlaySound(JClientApp::jpApp->strWavJoin.c_str());
 
 			EvLog(format("[b]%s[/b] joins to [b]%s[/b]",
-				TstrToANSI(getSafeName(idWho)).c_str(),
-				TstrToANSI(ipc->second->m_channel.name).c_str()),
+				tstr_to_utf8(getSafeName(idWho)).c_str(),
+				tstr_to_utf8(ipc->second->m_channel.name).c_str()),
 				elogInfo);
 		} else {
 			PushTrn(sock, Make_Cmd_PART(m_idOwn, idWhere));
@@ -1630,13 +1630,13 @@ void JClient::Recv_Notify_PART(SOCKET sock, io::mem& is)
 			lua_getmethod(L, "onPartPrivate");
 			if (lua_isfunction(L, -1)) {
 				lua_insert(L, -2);
-				lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
-				lua_pushstring(L, TstrToANSI(getSafeName(idBy)).c_str());
+				lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
+				lua_pushstring(L, tstr_to_utf8(getSafeName(idBy)).c_str());
 				lua_call(L, 3, 0);
 			} else lua_pop(L, 2);
 		}
 
-		EvLog(format("[style=Info]private with [b]%s[/b] closed[/style]", TstrToANSI(getSafeName(idWho)).c_str()), elogInfo);
+		EvLog(format("[style=Info]private with [b]%s[/b] closed[/style]", tstr_to_utf8(getSafeName(idWho)).c_str()), elogInfo);
 	} else { // channel
 		MapPageChannel::iterator ipc = mPageChannel.find(idWhere);
 		if (ipc != mPageChannel.end()) {
@@ -1726,7 +1726,7 @@ void JClient::Recv_Notify_ONLINE(SOCKET sock, io::mem& is)
 			lua_getmethod(L, "onOnline");
 			if (lua_isfunction(L, -1)) {
 				lua_insert(L, -2);
-				lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
+				lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
 				lua_pushinteger(L, isOnline);
 				lua_call(L, 3, 0);
 			} else lua_pop(L, 2);
@@ -1734,7 +1734,7 @@ void JClient::Recv_Notify_ONLINE(SOCKET sock, io::mem& is)
 	}
 
 	// Report about message
-	EvLog(format("user %s is %s", iu != m_mUser.end() ? TstrToANSI(iu->second.name).c_str() : "unknown", isOnline ? "online" : "offline"), elogItrn);
+	EvLog(format("user %s is %s", iu != m_mUser.end() ? tstr_to_utf8(iu->second.name).c_str() : "unknown", isOnline ? "online" : "offline"), elogItrn);
 }
 
 void JClient::Recv_Notify_STATUS(SOCKET sock, io::mem& is)
@@ -1793,7 +1793,7 @@ void JClient::Recv_Notify_STATUS(SOCKET sock, io::mem& is)
 				lua_getmethod(L, "onStatusMode");
 				if (lua_isfunction(L, -1)) {
 					lua_insert(L, -2);
-					lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
+					lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
 					lua_pushinteger(L, stat);
 					pushAlert(L, a);
 					lua_call(L, 4, 0);
@@ -1809,7 +1809,7 @@ void JClient::Recv_Notify_STATUS(SOCKET sock, io::mem& is)
 				lua_getmethod(L, "onStatusImage");
 				if (lua_isfunction(L, -1)) {
 					lua_insert(L, -2);
-					lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
+					lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
 					lua_pushinteger(L, img);
 					lua_call(L, 3, 0);
 				} else lua_pop(L, 2);
@@ -1824,8 +1824,8 @@ void JClient::Recv_Notify_STATUS(SOCKET sock, io::mem& is)
 				lua_getmethod(L, "onStatusMessage");
 				if (lua_isfunction(L, -1)) {
 					lua_insert(L, -2);
-					lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
-					lua_pushstring(L, TstrToANSI(msg).c_str());
+					lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
+					lua_pushstring(L, tstr_to_utf8(msg).c_str());
 					lua_call(L, 3, 0);
 				} else lua_pop(L, 2);
 			}
@@ -1839,7 +1839,7 @@ void JClient::Recv_Notify_STATUS(SOCKET sock, io::mem& is)
 				lua_getmethod(L, "onStatusGod");
 				if (lua_isfunction(L, -1)) {
 					lua_insert(L, -2);
-					lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
+					lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
 					lua_pushboolean(L, god);
 					lua_call(L, 3, 0);
 				} else lua_pop(L, 2);
@@ -1854,7 +1854,7 @@ void JClient::Recv_Notify_STATUS(SOCKET sock, io::mem& is)
 				lua_getmethod(L, "onStatusDevil");
 				if (lua_isfunction(L, -1)) {
 					lua_insert(L, -2);
-					lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
+					lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
 					lua_pushboolean(L, devil);
 					lua_call(L, 3, 0);
 				} else lua_pop(L, 2);
@@ -1969,9 +1969,9 @@ void JClient::Recv_Notify_TOPIC(SOCKET sock, io::mem& is)
 				lua_getmethod(L, "onTopic");
 				if (lua_isfunction(L, -1)) {
 					lua_insert(L, -2);
-					lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
-					lua_pushstring(L, TstrToANSI(ipc->second->m_channel.name).c_str());
-					lua_pushstring(L, TstrToANSI(topic).c_str());
+					lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
+					lua_pushstring(L, tstr_to_utf8(ipc->second->m_channel.name).c_str());
+					lua_pushstring(L, tstr_to_utf8(topic).c_str());
 					lua_call(L, 4, 0);
 				} else lua_pop(L, 2);
 			}
@@ -2025,7 +2025,7 @@ void JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, io::mem& is)
 	if (ipu != mPageUser.end()) { // private talk
 		jp = ipu->second;
 
-		ASSERT(op == CHANOP_BACKGROUND);
+		_ASSERT(op == CHANOP_BACKGROUND);
 		SendMessage(ipu->second->hwndEdit, EM_SETBKGNDCOLOR, FALSE, (LPARAM)val);
 		SendMessage(ipu->second->hwndLog, EM_SETBKGNDCOLOR, FALSE, (LPARAM)val);
 
@@ -2035,8 +2035,8 @@ void JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, io::mem& is)
 			lua_getmethod(L, "onBackground");
 			if (lua_isfunction(L, -1)) {
 				lua_insert(L, -2);
-				lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
-				lua_pushstring(L, TstrToANSI(getSafeName(idWhere)).c_str());
+				lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
+				lua_pushstring(L, tstr_to_utf8(getSafeName(idWhere)).c_str());
 				lua_pushinteger(L, GetRValue(val));
 				lua_pushinteger(L, GetGValue(val));
 				lua_pushinteger(L, GetBValue(val));
@@ -2060,8 +2060,8 @@ void JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, io::mem& is)
 						lua_getmethod(L, "onChanAutostatus");
 						if (lua_isfunction(L, -1)) {
 							lua_insert(L, -2);
-							lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
-							lua_pushstring(L, TstrToANSI(ipc->second->m_channel.name).c_str());
+							lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
+							lua_pushstring(L, tstr_to_utf8(ipc->second->m_channel.name).c_str());
 							lua_pushinteger(L, val);
 							lua_call(L, 4, 0);
 						} else lua_pop(L, 2);
@@ -2078,8 +2078,8 @@ void JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, io::mem& is)
 						lua_getmethod(L, "onChanLimit");
 						if (lua_isfunction(L, -1)) {
 							lua_insert(L, -2);
-							lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
-							lua_pushstring(L, TstrToANSI(ipc->second->m_channel.name).c_str());
+							lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
+							lua_pushstring(L, tstr_to_utf8(ipc->second->m_channel.name).c_str());
 							lua_pushinteger(L, val);
 							lua_call(L, 4, 0);
 						} else lua_pop(L, 2);
@@ -2096,8 +2096,8 @@ void JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, io::mem& is)
 						lua_getmethod(L, "onChanHidden");
 						if (lua_isfunction(L, -1)) {
 							lua_insert(L, -2);
-							lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
-							lua_pushstring(L, TstrToANSI(ipc->second->m_channel.name).c_str());
+							lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
+							lua_pushstring(L, tstr_to_utf8(ipc->second->m_channel.name).c_str());
 							lua_pushboolean(L, val != 0);
 							lua_call(L, 4, 0);
 						} else lua_pop(L, 2);
@@ -2115,8 +2115,8 @@ void JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, io::mem& is)
 						lua_getmethod(L, "onChanAnonymous");
 						if (lua_isfunction(L, -1)) {
 							lua_insert(L, -2);
-							lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
-							lua_pushstring(L, TstrToANSI(ipc->second->m_channel.name).c_str());
+							lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
+							lua_pushstring(L, tstr_to_utf8(ipc->second->m_channel.name).c_str());
 							lua_pushboolean(L, val != 0);
 							lua_call(L, 4, 0);
 						} else lua_pop(L, 2);
@@ -2138,8 +2138,8 @@ void JClient::Recv_Notify_CHANOPTIONS(SOCKET sock, io::mem& is)
 						lua_getmethod(L, "onBackground");
 						if (lua_isfunction(L, -1)) {
 							lua_insert(L, -2);
-							lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
-							lua_pushstring(L, TstrToANSI(ipc->second->m_channel.name).c_str());
+							lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
+							lua_pushstring(L, tstr_to_utf8(ipc->second->m_channel.name).c_str());
 							lua_pushinteger(L, GetRValue(val));
 							lua_pushinteger(L, GetGValue(val));
 							lua_pushinteger(L, GetBValue(val));
@@ -2199,10 +2199,10 @@ void JClient::Recv_Notify_ACCESS(SOCKET sock, io::mem& is)
 				lua_getmethod(L, "onAccess");
 				if (lua_isfunction(L, -1)) {
 					lua_insert(L, -2);
-					lua_pushstring(L, TstrToANSI(getSafeName(idWho)).c_str());
-					lua_pushstring(L, TstrToANSI(ipc->second->m_channel.name).c_str());
+					lua_pushstring(L, tstr_to_utf8(getSafeName(idWho)).c_str());
+					lua_pushstring(L, tstr_to_utf8(ipc->second->m_channel.name).c_str());
 					lua_pushinteger(L, stat);
-					lua_pushstring(L, TstrToANSI(getSafeName(idBy)).c_str());
+					lua_pushstring(L, tstr_to_utf8(getSafeName(idBy)).c_str());
 					lua_call(L, 5, 0);
 				} else lua_pop(L, 2);
 			}
@@ -2251,7 +2251,7 @@ void JClient::Recv_Reply_MESSAGE(SOCKET sock, WORD trnid, io::mem& is)
 		break;
 	default: return;
 	}
-	EvLog(format(msg, TstrToANSI(getSafeName(idWho)).c_str()), elogInfo);
+	EvLog(format(msg, tstr_to_utf8(getSafeName(idWho)).c_str()), elogInfo);
 }
 
 void JClient::Recv_Notify_MESSAGE(SOCKET sock, io::mem& is)
@@ -2307,7 +2307,7 @@ void JClient::Recv_Notify_MESSAGE(SOCKET sock, io::mem& is)
 		PostMessage(m_hwndPage, BEM_JDIALOG, IDD_MSGRECV, (LPARAM)(JDialog*)jp);
 	}
 	// Report about message
-	EvLog(format("%s from [b]%s[/b]", fAlert ? "alert" : "message", TstrToANSI(getSafeName(idBy)).c_str()), elogInfo);
+	EvLog(format("%s from [b]%s[/b]", fAlert ? "alert" : "message", tstr_to_utf8(getSafeName(idBy)).c_str()), elogInfo);
 }
 
 void JClient::Recv_Notify_BEEP(SOCKET sock, io::mem& is)
@@ -2335,7 +2335,7 @@ void JClient::Recv_Notify_BEEP(SOCKET sock, io::mem& is)
 		lua_getmethod(L, "onBeep");
 		if (lua_isfunction(L, -1)) {
 			lua_insert(L, -2);
-			lua_pushstring(L, TstrToANSI(getSafeName(idBy)).c_str());
+			lua_pushstring(L, tstr_to_utf8(getSafeName(idBy)).c_str());
 			lua_call(L, 2, 0);
 		} else lua_pop(L, 2);
 	}
@@ -2384,16 +2384,16 @@ void JClient::Recv_Notify_CLIPBOARD(SOCKET sock, io::mem& is)
 				lua_getmethod(L, "onClipboard");
 				if (lua_isfunction(L, -1)) {
 					lua_insert(L, -2);
-					lua_pushstring(L, TstrToANSI(getSafeName(idBy)).c_str());
+					lua_pushstring(L, tstr_to_utf8(getSafeName(idBy)).c_str());
 					lua_call(L, 2, 0);
 				} else lua_pop(L, 2);
 			}
 
 			// Report about message
-			EvLog(format("recieve clipboard content from [b]%s[/b]", TstrToANSI(getSafeName(idBy)).c_str()), elogInfo);
+			EvLog(format("recieve clipboard content from [b]%s[/b]", tstr_to_utf8(getSafeName(idBy)).c_str()), elogInfo);
 		} else {
 			// Report about message
-			EvLog(format("can not paste recieved clipboard content from [b]%s[/b]", TstrToANSI(getSafeName(idBy)).c_str()), elogError);
+			EvLog(format("can not paste recieved clipboard content from [b]%s[/b]", tstr_to_utf8(getSafeName(idBy)).c_str()), elogError);
 		}
 	}
 	catch (io::exception e)
@@ -2470,7 +2470,7 @@ void JClient::Recv_Notify_SPLASHRTF(SOCKET sock, io::mem& is)
 		PostMessage(m_hwndPage, BEM_JDIALOG, IDD_SPLASHRTF, (LPARAM)(JDialog*)jp);
 	}
 	// Report about message
-	EvLog(format("splash text from [b]%s[/b]", TstrToANSI(getSafeName(idBy)).c_str()), elogInfo);
+	EvLog(format("splash text from [b]%s[/b]", tstr_to_utf8(getSafeName(idBy)).c_str()), elogInfo);
 }
 
 //
@@ -2741,7 +2741,7 @@ void JClientApp::Init()
 
 bool JClientApp::InitInstance()
 {
-	ASSERT(jpClient);
+	_ASSERT(jpClient);
 #ifdef _DEBUG
 	jpClient->DoHelper();
 #else

@@ -65,7 +65,7 @@ namespace netengine
 		int    read(const char*& ptr) throw();
 		size_t write(char*& ptr) const throw();
 		size_t getSize() const throw();
-		CRC16  realCRC() const throw();
+		crc16_t realCRC() const throw();
 
 		__declspec(property(get=getnativeAction,put=setnativeAction)) WORD nativeAction;
 		WORD __fastcall getnativeAction() const;
@@ -77,7 +77,7 @@ namespace netengine
 
 	protected:
 
-		JPROPERTY_R(CRC16, crc);
+		JPROPERTY_R(crc16_t, crc);
 		JPROPERTY_RW(WORD, message);
 		JPROPERTY_RW(WORD, trnid);
 		JPROPERTY_R(DWORD, sizeuncompr);
@@ -112,8 +112,8 @@ namespace netengine
 		void decrypt(ecrypt::JCipher* ctx, const u8* iv) throw();
 		void restore(const std::string& content, bool enctypted);
 
-		CRC16  realCRC() const throw();
-		void   updateCRC() throw();
+		crc16_t realCRC() const throw();
+		void    updateCRC() throw();
 
 	protected:
 

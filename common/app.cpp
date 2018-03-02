@@ -14,6 +14,9 @@
 // Common
 #include "app.h"
 
+// Windows
+#include <commdlg.h>
+
 #pragma endregion
 
 //-----------------------------------------------------------------------------

@@ -12,7 +12,7 @@
 
 // calculate a 32 bit crc of a string
 // featuring Julio Jerez
-static CRC32 tableJJ[] = {
+static crc32_t tableJJ[] = {
 	0x00000001, 0x2C11F801, 0xDFD8F60E, 0x6C8FA2B7, 
 	0xB573754C, 0x1522DCDD, 0x21615D3A, 0xE1B307F3, 
 	0x12AFA158, 0x53D18179, 0x70950126, 0x941702EF, 
@@ -80,7 +80,7 @@ static CRC32 tableJJ[] = {
 	0xF567104f, 0x47289407, 0x25683fa6, 0x2fde5836, 
 };
 
-CRC32 CRCJJ(const char *name, CRC32 crc)
+crc32_t CRCJJ(const char *name, crc32_t crc)
 {
 	if (!name) return crc;
 
@@ -90,23 +90,11 @@ CRC32 CRCJJ(const char *name, CRC32 crc)
 	return crc;
 }
 
-CRC32 wCRCJJ(const wchar_t *name, CRC32 crc)
-{
-	if (!name) return crc;
-
-	unsigned char c;
-	for (TCHAR *ptr = (TCHAR*)name; *ptr; ptr++) {
-		c = (unsigned char)(*ptr ^ (*ptr >> 8));
-		crc = tableJJ[(crc >> 24) ^ c] ^ (crc << 8);
-	}
-	return crc;
-}
-
 #define DO1 crc = table[(unsigned char)(crc) ^ *data++] ^ (crc >> 8)
 #define DO8 DO1; DO1; DO1; DO1; DO1; DO1; DO1; DO1
 
 struct watchdog {
-	watchdog(const CRC32 CRC_POLY, CRC32* table) {
+	watchdog(const crc32_t CRC_POLY, crc32_t* table) {
 		unsigned i, j;
 		unsigned r;
 		for (i = 0; i < 256; i++){
@@ -118,7 +106,7 @@ struct watchdog {
 	};
 };
 
-static CRC32 _CRC32(const unsigned char* data, size_t len, CRC32 crc, const CRC32* table)
+static crc32_t _CRC32(const unsigned char* data, size_t len, crc32_t crc, const crc32_t* table)
 {
 	if (!data) return crc;
 
@@ -132,7 +120,7 @@ static CRC32 _CRC32(const unsigned char* data, size_t len, CRC32 crc, const CRC3
 	return crc;
 }
 
-static CRC16 _CRC16(const unsigned char* data, size_t len, CRC16 crc, const CRC16* table)
+static crc16_t _CRC16(const unsigned char* data, size_t len, crc16_t crc, const crc16_t* table)
 {
 	if (!data) return crc;
 
@@ -147,41 +135,41 @@ static CRC16 _CRC16(const unsigned char* data, size_t len, CRC16 crc, const CRC1
 	return crc;
 }
 
-CRC32 CRC32IEEE(const void* data, size_t len, CRC32 crc)
+crc32_t CRC32IEEE(const void* data, size_t len, crc32_t crc)
 {
-	static CRC32 table[256];
+	static crc32_t table[256];
 	static const watchdog wd(0xEDB88320, table);
 
 	return _CRC32((const unsigned char*)data, len, crc, table);
 }
 
-CRC32 CRC32C(const void* data, size_t len, CRC32 crc)
+crc32_t CRC32C(const void* data, size_t len, crc32_t crc)
 {
-	static CRC32 table[256];
+	static crc32_t table[256];
 	static const watchdog wd(0x82F63B78, table);
 
 	return _CRC32((const unsigned char*)data, len, crc, table);
 }
 
-CRC32 CRC32K(const void* data, size_t len, CRC32 crc)
+crc32_t CRC32K(const void* data, size_t len, crc32_t crc)
 {
-	static CRC32 table[256];
+	static crc32_t table[256];
 	static const watchdog wd(0xEB31D82E, table);
 
 	return _CRC32((const unsigned char*)data, len, crc, table);
 }
 
-CRC32 CRC32Q(const void* data, size_t len, CRC32 crc)
+crc32_t CRC32Q(const void* data, size_t len, crc32_t crc)
 {
-	static CRC32 table[256];
+	static crc32_t table[256];
 	static const watchdog wd(0xD5828281, table);
 
 	return _CRC32((const unsigned char*)data, len, crc, table);
 }
 
-CRC32 CRC32IEEEtbl(const void* data, size_t len, CRC32 crc)
+crc32_t CRC32IEEEtbl(const void* data, size_t len, crc32_t crc)
 {
-	static CRC32 table[256] = {
+	static crc32_t table[256] = {
 		0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
 		0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
 		0x0EDB8832, 0x79DCB8A4, 0xE0D5E91E, 0x97D2D988,
@@ -266,9 +254,9 @@ CRC32 CRC32IEEEtbl(const void* data, size_t len, CRC32 crc)
 	return _CRC32((const unsigned char*)data, len, crc, table);
 }
 
-CRC16 CRC16CCITTtbl(const void* data, size_t len, CRC16 crc)
+crc16_t CRC16CCITTtbl(const void* data, size_t len, crc16_t crc)
 {
-	static CRC16 table[256] = {
+	static crc16_t table[256] = {
 		0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf,
 		0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c, 0xdbe5, 0xe97e, 0xf8f7,
 		0x1081, 0x0108, 0x3393, 0x221a, 0x56a5, 0x472c, 0x75b7, 0x643e,

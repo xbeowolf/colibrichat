@@ -47,7 +47,7 @@ template<typename T>
 void netengine::JLuaWrapper::getNumArr(int index, std::vector<T>& arr) const
 {
 	DoLuaCS _cs(m_luaVM); LUACALLMARK(m_luaVM);
-	ASSERT(lua_istable(L, index));
+	_ASSERT(lua_istable(L, index));
 
 	int count = lua_objlen(L, index);
 	for (int i = 1; i <= count; i++) {
@@ -75,7 +75,7 @@ template<typename T>
 void netengine::JLuaWrapper::getNumSet(int index, std::set<T>& arr) const
 {
 	DoLuaCS _cs(m_luaVM); LUACALLMARK(m_luaVM);
-	ASSERT(lua_istable(L, index));
+	_ASSERT(lua_istable(L, index));
 	lua_pushnil(L);
 	while (lua_next(L, index > 0 ? index : index - 1) != 0) {
 		if (lua_isnumber(L, -1)) {
@@ -100,7 +100,7 @@ template<typename T>
 void netengine::JLuaWrapper::getMapStrNum(int index, std::map<std::string, T>& map) const
 {
 	DoLuaCS _cs(m_luaVM); LUACALLMARK(m_luaVM);
-	ASSERT(lua_istable(L, index));
+	_ASSERT(lua_istable(L, index));
 	lua_pushnil(L);
 	while (lua_next(L, index > 0 ? index : index - 1) != 0) {
 		if (lua_isstring(L, -2) && lua_isnumber(L, -1))
