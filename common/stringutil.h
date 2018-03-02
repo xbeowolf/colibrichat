@@ -79,19 +79,23 @@ inline std::string wchar_to_utf8(const std::wstring& in) { return wchar_to_utf8(
 inline std::wstring utf8_to_wchar(const std::string& in) { return utf8_to_wchar(in.data(), in.size()); }
 
 #ifdef UNICODE
+
 #define tstr_to_utf8 wchar_to_utf8
 inline std::wstring tstr_to_wchar(const TCHAR* in, size_t len) { return std::wstring(in, len); }
 inline std::wstring tstr_to_wchar(const std::tstring& in) { return in; }
 #define utf8_to_tstr utf8_to_wchar
 inline std::tstring wchar_to_tstr(const wchar_t* in, size_t len) { return std::wstring(in, len); }
 inline std::tstring wchar_to_tstr(const std::wstring& in) { return in; }
+
 #else
+
 inline std::string tstr_to_utf8(const TCHAR* in, size_t len) { return std::string(in, len); }
 inline std::string tstr_to_utf8(const std::tstring& in) { return in; }
 #define tstr_to_wchar utf8_to_wchar
 inline std::tstring utf8_to_tstr(const char* in, size_t len) { return std::string(in, len); }
 inline std::tstring utf8_to_tstr(const std::string& in) { return in; }
 #define wchar_to_tstr wchar_to_utf8
+
 #endif
 
 //-----------------------------------------------------------------------------

@@ -125,7 +125,7 @@ unsigned Header::getDimensionIndex(unsigned val) throw()
 
 unsigned Header::getIndexDimension(unsigned val) throw()
 {
-	ASSERT(val < 4);
+	_ASSERT(val < 4);
 	switch (val)
 	{
 	case 0: return 0;
@@ -229,7 +229,7 @@ size_t Header::isComplete(const char* ptr, size_t size) throw()
 	}
 
 	// Checkup readed uncompressed data size
-	ASSERT(compr <= uncompr + 12 + (uncompr + 500) / 1000);
+	_ASSERT(compr <= uncompr + 12 + (uncompr + 500) / 1000);
 
 	return (int)size >= 0 ? ptr - ptr0 : 0;
 }
@@ -316,7 +316,7 @@ int Header::read(const char*& ptr) throw()
 	}
 
 	// Checkup readed uncompressed data size
-	ASSERT(m_sizecompr <= m_sizeuncompr + 12 + (m_sizeuncompr + 500) / 1000);
+	_ASSERT(m_sizecompr <= m_sizeuncompr + 12 + (m_sizeuncompr + 500) / 1000);
 
 	return ptr - ptr0;
 }
@@ -329,7 +329,7 @@ size_t Header::write(char*& ptr) const throw()
 	ptr += sizeof(crc16_t);
 
 	unsigned idxs = getDimensionIndex(getSizeDimension(max(m_sizeuncompr, m_sizecompr)));
-	ASSERT(idxs < 4);
+	_ASSERT(idxs < 4);
 
 	BNP_HDR2 hdr2;
 	hdr2.m_sizedim = idxs;
@@ -477,8 +477,8 @@ void JBTransaction::serialize(JPtr<JLink> link)
 
 	if (!isPrimary()) {
 		JPtr<JBLink> blink = jdynamic_cast<JBLink, JLink>(link);
-		ASSERT(blink);
-		ASSERT(blink->ctxEncryptor);
+		_ASSERT(blink);
+		_ASSERT(blink->ctxEncryptor);
 		Skein_256_Ctxt_t ctx;
 		blink->m_uEncryptCount++;
 		Skein_256_InitExt(&ctx, 256, blink->m_uEncryptCount, *blink->m_key, blink->m_keysize);
@@ -502,7 +502,7 @@ bool JBTransaction::unserialize(JPtr<JLink> link)
 	char hdrbuf[16];
 
 	JPtr<JBLink> blink = jdynamic_cast<JBLink, JLink>(link);
-	ASSERT(blink);
+	_ASSERT(blink);
 
 	// Translate CRC & BNP_HDR2
 	trnsz0 = sizeof(crc16_t) + sizeof(BNP_HDR2);
@@ -559,7 +559,7 @@ void JBTransaction::setdataCompr(const std::string& str, DWORD ucsz) throw()
 	m_sizeuncompr = ucsz;
 	m_sizecompr = (DWORD)m_data.size();
 	// Checkup for correct data
-	ASSERT(m_sizecompr <= (m_sizeuncompr + 12 + (m_sizeuncompr + 500) / 1000));
+	_ASSERT(m_sizecompr <= (m_sizeuncompr + 12 + (m_sizeuncompr + 500) / 1000));
 }
 
 bool JBTransaction::compress(int level) throw()
@@ -613,13 +613,13 @@ bool JBTransaction::compress(int level) throw()
 		err = deflate(&stream, Z_FINISH);
 #ifdef _DEBUG
 		finishiter++;
-		ASSERT(finishiter < 10); // ensure that not cycled
+		_ASSERT(finishiter < 10); // ensure that not cycled
 #endif
 	}
 
 	comprLen = stream.total_out; // set to real size
 	err = deflateEnd(&stream);
-	ASSERT(err == Z_OK);
+	_ASSERT(err == Z_OK);
 #else
 	std::string& uncompr = m_data;
 	std::string compr;
@@ -676,7 +676,7 @@ bool JBTransaction::uncompress() throw()
 		else {
 			// No way to here at normal decompression!!!
 			err = inflate(&stream, Z_FINISH); // last try
-			ASSERT(err == Z_STREAM_END);
+			_ASSERT(err == Z_STREAM_END);
 			break;
 		}
 		err = inflate(&stream, Z_SYNC_FLUSH);
@@ -688,7 +688,7 @@ bool JBTransaction::uncompress() throw()
 
 	uncomprLen = stream.total_out; // set to real size
 	err = inflateEnd(&stream);
-	ASSERT(err == Z_OK);
+	_ASSERT(err == Z_OK);
 
 #else
 	std::string& compr = m_data;
@@ -707,7 +707,7 @@ bool JBTransaction::uncompress() throw()
 
 void JBTransaction::encrypt(ecrypt::JCipher* ctx, const u8* iv) throw()
 {
-	ASSERT(ctx);
+	_ASSERT(ctx);
 	std::string ciphertext(m_data.size(), 0);
 	ctx->ivsetup(iv);
 	ctx->encrypt_bytes((const u8*)m_data.data(), (u8*)ciphertext.data(), (u32)m_data.size());
@@ -716,7 +716,7 @@ void JBTransaction::encrypt(ecrypt::JCipher* ctx, const u8* iv) throw()
 
 void JBTransaction::decrypt(ecrypt::JCipher* ctx, const u8* iv) throw()
 {
-	ASSERT(ctx);
+	_ASSERT(ctx);
 	std::string plaintext(m_data.size(), 0);
 	ctx->ivsetup(iv);
 	ctx->decrypt_bytes((const u8*)m_data.data(), (u8*)plaintext.data(), (u32)m_data.size());
@@ -758,7 +758,7 @@ JBLink::JBLink(SOCKET sock, const sockaddr_in& addr)
 
 const char* JBLink::getEncryptorName() const
 {
-	ASSERT(ctxEncryptor);
+	_ASSERT(ctxEncryptor);
 	return ctxEncryptor->name();
 }
 
@@ -769,7 +769,7 @@ void JBLink::setEncryptor(const char* ciphername)
 
 const char* JBLink::getDecryptorName() const
 {
-	ASSERT(ctxDecryptor);
+	_ASSERT(ctxDecryptor);
 	return ctxDecryptor->name();
 }
 
@@ -784,7 +784,7 @@ void JBLink::keysetup(huge::number* key)
 	memcpy(*m_key, key->m_digit, min(m_keysize, key->m_size * sizeof(huge::digit)));
 
 	// key size for encrypting is less then reserved for use
-	ASSERT(ctxDecryptor && ctxEncryptor);
+	_ASSERT(ctxDecryptor && ctxEncryptor);
 	ctxDecryptor->keysetup(*m_key, ctxDecryptor->maxkeysize(), ctxDecryptor->maxivsize());
 	ctxEncryptor->keysetup(*m_key, ctxEncryptor->maxkeysize(), ctxEncryptor->maxivsize());
 	// inits "Skein" pseudorandom number generator
@@ -845,7 +845,7 @@ bool JBNB::MakeAndPushTrn(SOCKET sock, WORD message, WORD trnid, const std::stri
 JPtr<JBTransaction> JBNB::MakeTrn(WORD message, WORD trnid, const std::string& str) const throw()
 {
 	JPtr<JBTransaction> jpTrn = jdynamic_cast<JBTransaction, JTransaction>(createTrn());
-	ASSERT(jpTrn != 0);
+	_ASSERT(jpTrn != 0);
 
 	jpTrn->init(message, trnid);
 	jpTrn->setdataUncompr(str);
@@ -1001,7 +1001,7 @@ void JBNB::Recv_Quest_Identify(SOCKET sock, WORD trnid, io::mem& is, std::ostrea
 {
 	using namespace huge;
 	JPtr<JBLink> blink = JBLink::get(sock);
-	ASSERT(blink);
+	_ASSERT(blink);
 
 	LRESULT result;
 	char signature[16];
@@ -1106,7 +1106,7 @@ void JBNB::Recv_Reply_Identify(SOCKET sock, WORD trnid, io::mem& is)
 			numptr K(number::powmod(B, a, mod));
 
 			JPtr<JBLink> blink = JBLink::get(sock);
-			ASSERT(blink);
+			_ASSERT(blink);
 			blink->setDecryptor(ciphername);
 			blink->keysetup(K);
 			EvLinkIdentify(sock); // user can check access outside of engine
@@ -1278,7 +1278,7 @@ void JBNB::UnregHandlers(JNode* src)
 void JBNB::OnLinkEstablished(SOCKET sock)
 {
 	JPtr<JBLink> blink = JBLink::get(sock);
-	ASSERT(blink);
+	_ASSERT(blink);
 	blink->setEncryptor(getEncryptorName());
 }
 
@@ -1289,7 +1289,7 @@ void JBNB::OnTrnIgnore(SOCKET sock, WORD message, WORD trnid)
 
 void JBNB::OnTrnBadCRC(SOCKET sock)
 {
-	ASSERT(sock);
+	_ASSERT(sock);
 	EvLinkClose(sock, WSABADCRC);
 }
 

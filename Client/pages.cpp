@@ -185,7 +185,7 @@ void JClient::JPage::setAlert(EAlert a)
 		TCITEM tci;
 		tci.mask = TCIF_IMAGE;
 		tci.iImage = ImageIndex();
-		VERIFY(TabCtrl_SetItem(pNode->m_hwndTab, pNode->getTabIndex(getID()), &tci));
+		_VERIFY(TabCtrl_SetItem(pNode->m_hwndTab, pNode->getTabIndex(getID()), &tci));
 	}
 }
 
@@ -397,7 +397,7 @@ LRESULT WINAPI JClient::JPageLog::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 								{
 									WORD prefix = 0xFEFF;
 									DWORD cb;
-									VERIFY(WriteFile(hFile, &prefix, 2, &cb, 0));
+									_VERIFY(WriteFile(hFile, &prefix, 2, &cb, 0));
 									mode = SF_TEXTIZED | SF_UNICODE;
 									break;
 								}
@@ -407,7 +407,7 @@ LRESULT WINAPI JClient::JPageLog::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 							es.dwError = 0;
 							es.pfnCallback = rtf::StreamToHandle;
 							SendMessage(m_hwndLog, EM_STREAMOUT, mode, (LPARAM)&es);
-							VERIFY(CloseHandle(hFile));
+							_VERIFY(CloseHandle(hFile));
 						}
 					}
 					break;
@@ -1187,7 +1187,7 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 				MapChannel::const_iterator ic = getSelChannel();
 				bool valid = ic != m_mChannel.end();
 
-				VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_JOIN, FALSE));
+				_VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_JOIN, FALSE));
 				EnableMenuItem((HMENU)wParam, IDC_RENAME,
 					MF_BYCOMMAND | (ic->second.getStatus(pNode->m_idOwn) == eFounder || pNode->isGod() ? MF_ENABLED : MF_GRAYED));
 				EnableMenuItem((HMENU)wParam, IDC_TOPIC,
@@ -1323,7 +1323,7 @@ void JClient::JPageList::OnTopic(DWORD idWho, DWORD idWhere, const std::tstring&
 		lvfi.flags = LVFI_PARAM;
 		lvfi.lParam = (LPARAM)idWhere;
 		int index = ListView_FindItem(m_hwndList, -1, &lvfi);
-		if (index != -1) VERIFY(ListView_RedrawItems(m_hwndList, index, index));
+		if (index != -1) _VERIFY(ListView_RedrawItems(m_hwndList, index, index));
 		else AddLine(idWhere);
 	}
 }
@@ -1347,8 +1347,8 @@ void JClient::JPageList::OnNick(DWORD idOld, const std::tstring& oldname, DWORD 
 				lvi.iItem = index;
 				lvi.iSubItem = 0;
 				lvi.lParam = (LPARAM)idNew;
-				VERIFY(ListView_SetItem(m_hwndList, &lvi));
-				VERIFY(ListView_RedrawItems(m_hwndList, index, index));
+				_VERIFY(ListView_SetItem(m_hwndList, &lvi));
+				_VERIFY(ListView_RedrawItems(m_hwndList, index, index));
 			} else AddLine(idNew);
 		}
 	}
@@ -1767,7 +1767,7 @@ LRESULT WINAPI JClient::JPageChat::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 		{
 			if ((HMENU)wParam == GetSubMenu(JClientApp::jpApp->hmenuRichEdit, 0))
 			{
-				VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_SEND, FALSE));
+				_VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_SEND, FALSE));
 				CheckMenuRadioItem((HMENU)wParam,
 					IDC_SENDBYENTER, IDC_SENDBYCTRLENTER,
 					pNode->bSendByEnter ? IDC_SENDBYENTER : IDC_SENDBYCTRLENTER,
@@ -2021,7 +2021,7 @@ std::tstring JClient::JPageChannel::gettopic() const
 void CALLBACK JClient::JPageChannel::BaloonShow(DWORD idUser, const TCHAR* msg, HICON hicon, COLORREF cr)
 {
 	POINT p;
-	VERIFY(GetCursorPos(&p));
+	_VERIFY(GetCursorPos(&p));
 	RECT r0, r;
 	GetWindowRect(m_hwndList, &r0);
 	LVFINDINFO lvfi;
@@ -2098,8 +2098,8 @@ bool JClient::JPageChannel::replace(DWORD idOld, DWORD idNew)
 				lvi.iItem = index;
 				lvi.iSubItem = 0;
 				lvi.lParam = (LPARAM)idNew;
-				VERIFY(ListView_SetItem(m_hwndList, &lvi));
-				VERIFY(ListView_RedrawItems(m_hwndList, index, index));
+				_VERIFY(ListView_SetItem(m_hwndList, &lvi));
+				_VERIFY(ListView_RedrawItems(m_hwndList, index, index));
 			} else AddLine(idNew);
 		}
 	}
@@ -2147,7 +2147,7 @@ void JClient::JPageChannel::redrawUser(DWORD idUser)
 	lvfi.flags = LVFI_PARAM;
 	lvfi.lParam = (LPARAM)idUser;
 	int index = ListView_FindItem(m_hwndList, -1, &lvfi);
-	if (index != -1) VERIFY(ListView_RedrawItems(m_hwndList, index, index));
+	if (index != -1) _VERIFY(ListView_RedrawItems(m_hwndList, index, index));
 }
 
 void JClient::JPageChannel::Join(DWORD idWho)
@@ -2300,9 +2300,9 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 #endif
 				},
 			};
-			VERIFY(SendMessage(m_hwndReBar1, RB_SETBARINFO, 0, (LPARAM)&rbi));
+			_VERIFY(SendMessage(m_hwndReBar1, RB_SETBARINFO, 0, (LPARAM)&rbi));
 			for (int i = 0; i < _countof(rbb1); i++) {
-				VERIFY(SendMessage(m_hwndReBar1, RB_INSERTBAND, i, (LPARAM)&rbb1[i]));
+				_VERIFY(SendMessage(m_hwndReBar1, RB_INSERTBAND, i, (LPARAM)&rbb1[i]));
 			}*/
 
 			REBARBANDINFO rbb2[] = {
@@ -2355,9 +2355,9 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 #endif
 				},
 			};
-			VERIFY(SendMessage(m_hwndReBar2, RB_SETBARINFO, 0, (LPARAM)&rbi));
+			_VERIFY(SendMessage(m_hwndReBar2, RB_SETBARINFO, 0, (LPARAM)&rbi));
 			for (int i = 0; i < _countof(rbb2); i++) {
-				VERIFY(SendMessage(m_hwndReBar2, RB_INSERTBAND, i, (LPARAM)&rbb2[i]));
+				_VERIFY(SendMessage(m_hwndReBar2, RB_INSERTBAND, i, (LPARAM)&rbb2[i]));
 			}
 
 			// Inits Users list
@@ -2469,7 +2469,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				},
 			};
 			for (int i = 0; i < _countof(rbb2); i++) {
-				VERIFY(SendMessage(hwndReBar2, RB_SETBANDINFO, i, (LPARAM)&rbb2[i]));
+				_VERIFY(SendMessage(hwndReBar2, RB_SETBANDINFO, i, (LPARAM)&rbb2[i]));
 			}
 			SetRect(&rc,
 				cx - rcPage.right + rcMsgSpinBlue.left,
@@ -2930,7 +2930,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 			if ((HMENU)wParam == GetSubMenu(JClientApp::jpApp->hmenuChannel, 0)) {
 				bool canAdmin = m_channel.getStatus(pNode->m_idOwn) >= eAdmin || pNode->isGod();
 				bool canMember = m_channel.getStatus(pNode->m_idOwn) >= (m_channel.isOpened(pNode->m_idOwn) ? eMember : eAdmin) || pNode->isGod();
-				VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_CHANTOPIC, FALSE));
+				_VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_CHANTOPIC, FALSE));
 				EnableMenuItem((HMENU)wParam, IDC_CHANTOPIC,
 					MF_BYCOMMAND | (canMember ? MF_ENABLED : MF_GRAYED));
 				EnableMenuItem((HMENU)wParam, IDC_CHANHIDDEN,
@@ -2972,7 +2972,7 @@ LRESULT WINAPI JClient::JPageChannel::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 				pNode->BaloonHide(m_hwndList);
 
-				VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_PRIVATETALK, FALSE));
+				_VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_PRIVATETALK, FALSE));
 				EnableMenuItem((HMENU)wParam, IDC_PRIVATETALK,
 					MF_BYCOMMAND | (valid && ((!m_channel.isAnonymous && iu->second.accessibility.fCanOpenPrivate) || pNode->isGod()) ? MF_ENABLED : MF_GRAYED));
 				EnableMenuItem((HMENU)wParam, IDC_PRIVATEMESSAGE,

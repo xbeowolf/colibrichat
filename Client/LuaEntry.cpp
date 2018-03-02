@@ -38,7 +38,8 @@ static int getInt(lua_State *L) {
 		UINT nDefault = (UINT)lua_tointeger(L, -1);
 		UINT result = profile::getInt(section, entry, nDefault);
 		lua_pushinteger(L, result);
-	} else {
+	}
+	else {
 		lua_pushstring(L, "incorrect argument in function \"getInt\"");
 		lua_error(L);
 	}
@@ -51,7 +52,8 @@ static int setInt(lua_State *L) {
 		std::tstring entry = utf8_to_tstr(lua_tostring(L, -2));
 		UINT nValue = (UINT)lua_tointeger(L, -1);
 		profile::setInt(section, entry, nValue);
-	} else {
+	}
+	else {
 		lua_pushstring(L, "incorrect argument in function \"setInt\"");
 		lua_error(L);
 	}
@@ -65,7 +67,8 @@ static int getStr(lua_State *L) {
 		std::tstring szDefault = utf8_to_tstr(lua_tostring(L, -1));
 		std::tstring result = profile::getString(section, entry, szDefault);
 		lua_pushstring(L, tstr_to_utf8(result).c_str());
-	} else {
+	}
+	else {
 		lua_pushstring(L, "incorrect argument in function \"getStr\"");
 		lua_error(L);
 	}
@@ -78,7 +81,8 @@ static int setStr(lua_State *L) {
 		std::tstring entry = utf8_to_tstr(lua_tostring(L, -2));
 		std::tstring szValue = utf8_to_tstr(lua_tostring(L, -1));
 		profile::setString(section, entry, szValue);
-	} else {
+	}
+	else {
 		lua_pushstring(L, "incorrect argument in function \"setStr\"");
 		lua_error(L);
 	}
@@ -95,7 +99,8 @@ static int hasstr(lua_State *L) {
 			i++;
 		}
 		lua_pushinteger(L, i);
-	} else {
+	}
+	else {
 		lua_pushstring(L, "incorrect argument in function \"hasstr\"");
 		lua_error(L);
 	}
@@ -288,7 +293,7 @@ IMPLEMENT_LUAMETHOD(JClient, checkConnectionButton) {
 }
 
 IMPLEMENT_LUAMETHOD(JClient, WaitConnectStart) {
-	auto wait = (UINT)luaL_optinteger(L, 1, 30*1000);
+	auto wait = (UINT)luaL_optinteger(L, 1, 30 * 1000);
 
 	SetTimer(m_hwndPage, IDT_CONNECT, wait, nullptr);
 	return 0;

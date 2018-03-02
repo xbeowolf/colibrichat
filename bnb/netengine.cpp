@@ -62,21 +62,21 @@ WORD JLink::getNextQuestId()
 {
 	s_wQuestCount++;
 	if (!s_wQuestCount) s_wQuestCount++;
-	ASSERT(s_wQuestCount != 0);
+	_ASSERT(s_wQuestCount != 0);
 	return s_wQuestCount;
 }
 
 JLink::JLink()
 : JIDClass(WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED))
 {
-	ASSERT(m_ID && m_ID != INVALID_SOCKET);
+	_ASSERT(m_ID && m_ID != INVALID_SOCKET);
 	Clear();
 }
 
 JLink::JLink(SOCKET sock, const sockaddr_in& addr)
 : JIDClass(sock)
 {
-	ASSERT(m_ID && m_ID != INVALID_SOCKET);
+	_ASSERT(m_ID && m_ID != INVALID_SOCKET);
 	m_saAddr = addr;
 	Clear();
 }
@@ -132,7 +132,7 @@ void JLink::Accepted()
 
 int JLink::SelectEvent(long ne, HANDLE hevent)
 {
-	ASSERT(m_ID); // only established connections can be selected
+	_ASSERT(m_ID); // only established connections can be selected
 
 	m_Mode = eEvent;
 	m_lNetworkEvents = ne;
@@ -146,8 +146,8 @@ int JLink::SelectEvent(long ne, HANDLE hevent)
 
 int JLink::SelectWindow(long ne, HWND hwnd, WORD msg)
 {
-	ASSERT(m_ID); // only established connections can be selected
-	ASSERT(hwnd != 0 && msg != 0);
+	_ASSERT(m_ID); // only established connections can be selected
+	_ASSERT(hwnd != 0 && msg != 0);
 
 	m_Mode = eAsync;
 	m_lNetworkEvents = ne;
@@ -218,11 +218,11 @@ void JLink::Clear()
 	int sz;
 	m_nSreamable = 4096;
 	sz = sizeof(m_nSreamable);
-	VERIFY(getsockopt(m_ID, SOL_SOCKET, SO_SNDBUF, (char*)&m_nSreamable, &sz) != SOCKET_ERROR);
+	_VERIFY(getsockopt(m_ID, SOL_SOCKET, SO_SNDBUF, (char*)&m_nSreamable, &sz) != SOCKET_ERROR);
 
 	int rcvlen = 4096;
 	sz = sizeof(rcvlen);
-	VERIFY(getsockopt(m_ID, SOL_SOCKET, SO_RCVBUF, (char*)&rcvlen, &sz) != SOCKET_ERROR);
+	_VERIFY(getsockopt(m_ID, SOL_SOCKET, SO_RCVBUF, (char*)&rcvlen, &sz) != SOCKET_ERROR);
 	recvbuf.resize(max(4096, rcvlen));
 }
 
@@ -246,7 +246,7 @@ void JLink::AddRecv(const char* data, size_t len) throw()
 
 void JLink::AddSend(JPtr<JTransaction> jpTrn, size_t ssi) throw()
 {
-	ASSERT(m_aStorage.size() > 0);
+	_ASSERT(m_aStorage.size() > 0);
 	if (ssi >= m_aStorage.size()) ssi = m_aStorage.size() - 1;
 	m_aStorage[ssi].push_back(jpTrn);
 }
@@ -320,7 +320,7 @@ size_t JLink::SendData() throw()
 	m_dwLastTransmission = GetTickCount();
 
 	if (err == ERROR_SUCCESS || err == WSA_IO_PENDING) {
-		ASSERT(err != ERROR_SUCCESS || dwNumberOfBytes == ioSend.buf.len);
+		_ASSERT(err != ERROR_SUCCESS || dwNumberOfBytes == ioSend.buf.len);
 		SubSend(ioSend.buf.len);
 		JEngine::Stat.dlSentBytes += ioSend.buf.len; // update statistics
 	} else {
@@ -371,7 +371,7 @@ DWORD JEngine::JEventSock::ThreadProc()
 		DWORD count;
 		WSANETWORKEVENTS wneGet;
 
-		ASSERT(!m_hSleep);
+		_ASSERT(!m_hSleep);
 		m_hSleep = CreateEvent(0, TRUE, FALSE, 0);
 		while (m_aLinks.size() && m_State == eRunning || m_State == eSuspended) {
 			// --- Prepare socks & events arrays ---
@@ -382,7 +382,7 @@ DWORD JEngine::JEventSock::ThreadProc()
 				for each (SetJID::value_type const& v in m_aLinks) {
 					if (count >= _countof(aSock)) break;
 					JPtr<JLink> link = JLink::get(v);
-					ASSERT(link);
+					_ASSERT(link);
 					aSock[count] = v;
 					aEvent[count] = link->Event;
 					count++;
@@ -390,7 +390,7 @@ DWORD JEngine::JEventSock::ThreadProc()
 			}
 
 			// --- Wait and process socket's event ---
-			ASSERT(count > 1);
+			_ASSERT(count > 1);
 
 			// Get some socket's event
 			DWORD dwEvent = WSAWaitForMultipleEvents(count, aEvent, FALSE, m_dwSleepStep, FALSE);
@@ -412,7 +412,7 @@ DWORD JEngine::JEventSock::ThreadProc()
 				Sleep(0); // give opportunity for other threads
 			}
 		} // Return to new iteration
-		VERIFY(CloseHandle(m_hSleep));
+		_VERIFY(CloseHandle(m_hSleep));
 		m_hSleep = 0;
 
 		retval = 0;
@@ -443,7 +443,7 @@ DWORD JEngine::JManager::ThreadProc()
 	int retval;
 	try
 	{
-		ASSERT(!m_hSleep);
+		_ASSERT(!m_hSleep);
 		m_hSleep = CreateEvent(0, TRUE, FALSE, 0);
 		while (m_State == eRunning || m_State == eSuspended) {
 			DWORD dwEvent = WaitForSingleObject(m_hSleep, m_dwSleepStep);
@@ -483,7 +483,7 @@ DWORD JEngine::JManager::ThreadProc()
 				}
 			}
 		} // Return to new iteration
-		VERIFY(CloseHandle(m_hSleep));
+		_VERIFY(CloseHandle(m_hSleep));
 		m_hSleep = 0;
 
 		retval = 0;
@@ -518,7 +518,7 @@ DWORD JEngine::JIocpListener::ThreadProc()
 		HANDLE listenevent[MAXIMUM_WAIT_OBJECTS];
 		int count;
 
-		ASSERT(!m_hSleep);
+		_ASSERT(!m_hSleep);
 		m_hSleep = CreateEvent(0, TRUE, FALSE, 0);
 
 		while (m_State == eRunning || m_State == eSuspended) {
@@ -573,7 +573,7 @@ DWORD JEngine::JIocpListener::ThreadProc()
 				Sleep(0); // give opportunity for other threads
 			}
 		} // Return to new iteration
-		VERIFY(CloseHandle(m_hSleep));
+		_VERIFY(CloseHandle(m_hSleep));
 		m_hSleep = 0;
 
 		retval = 0;
@@ -616,18 +616,18 @@ DWORD JEngine::JIocpSock::ThreadProc()
 					pNode->EvLinkClose(sock, 0);
 					continue;
 				} else if (err == ERROR_INVALID_HANDLE) { // completion port is closed
-					ASSERT(!dwNumberOfBytes);
+					_ASSERT(!dwNumberOfBytes);
 					break;
 				}
 			}
-			ASSERT(io && sock);
+			_ASSERT(io && sock);
 			switch (io->op) {
 		case eRecv:
 			{
 				DoCS cs(&pNode->m_csLinks);
 
 				JPtr<JLink> link = JLink::get(sock);
-				ASSERT_MSG(link, format("tries to read from a nonexistent link %u", sock).c_str());
+				_ASSERT(link);
 
 				link->AddRecv(io->buf.buf, dwNumberOfBytes);
 				JEngine::Stat.dlRecvBytes += dwNumberOfBytes; // update statistics
@@ -642,7 +642,7 @@ DWORD JEngine::JIocpSock::ThreadProc()
 				DoCS cs(&pNode->m_csLinks);
 
 				JPtr<JLink> link = JLink::get(sock);
-				ASSERT_MSG(link, format("tries to write to a nonexistent link %u", sock).c_str());
+				_ASSERT(link);
 
 				link->bReadyWrite = true;
 				link->SendData();
@@ -688,7 +688,7 @@ bool JEngine::IPFilter::operator>(const IPFilter& r) const
 
 void JEngine::IPFilter::setCIDR(in_addr sa, u_short m)
 {
-	ASSERT(m <= 32);
+	_ASSERT(m <= 32);
 	m_addr.S_un.S_addr = ntohl(sa.S_un.S_addr);
 	m_mask.S_un.S_addr = 0xFFFFFFFF << (32 - m);
 }
@@ -732,7 +732,7 @@ JEngine::~JEngine()
 
 void JEngine::Init()
 {
-	VERIFY(!WSAStartup(MAKEWORD(2, 2), &wsaData));
+	_VERIFY(!WSAStartup(MAKEWORD(2, 2), &wsaData));
 
 	SetNode(this, false, false);
 	__super::Init();
@@ -746,7 +746,7 @@ void JEngine::Done()
 
 	__super::Done();
 
-	VERIFY(!WSACleanup());
+	_VERIFY(!WSACleanup());
 }
 
 bool JEngine::HasLink(SOCKET sock) const
@@ -856,10 +856,10 @@ void JEngine::DeleteLink(SOCKET sock)
 				if (HASMAP(v->m_aLinks, sock)) {
 					jp = m_aEventSock.back();
 					if (v != jp) {
-						ASSERT(jp->m_aLinks.size());
+						_ASSERT(jp->m_aLinks.size());
 						JID sockm = *jp->m_aLinks.begin();
 						jp->m_aLinks.erase(sockm);
-						VERIFY(v->m_aLinks.insert(sockm).second);
+						_VERIFY(v->m_aLinks.insert(sockm).second);
 						jp->Wakeup();
 					}
 					v->m_aLinks.erase(sock);
@@ -871,7 +871,7 @@ void JEngine::DeleteLink(SOCKET sock)
 					break;
 				}
 			}
-			ASSERT(jp);
+			_ASSERT(jp);
 		} else if (link->Mode == eAsync) {
 			m_aLinksAsync.erase(sock);
 		} else if (link->Mode == eIocp) {
@@ -964,7 +964,7 @@ int JEngine::DispatchLoop(SOCKET sock)
 
 void JEngine::EventSelector(SOCKET sock, UINT ev, UINT err) throw()
 {
-	ASSERT(sock);
+	_ASSERT(sock);
 	switch (ev)
 	{
 	case FD_ACCEPT:
@@ -1019,7 +1019,7 @@ void JEngine::EventSelector(SOCKET sock, UINT ev, UINT err) throw()
 		{
 			DoCS cs(&m_csLinks);
 			JPtr<JLink> link = JLink::get(sock);
-			ASSERT_MSG(link, format("tries to read from a nonexistent link %u", sock).c_str());
+			_ASSERT(link);
 			if (link) {
 				// Recieve data from given socket
 				if (link->RecvData()) {
@@ -1033,7 +1033,7 @@ void JEngine::EventSelector(SOCKET sock, UINT ev, UINT err) throw()
 		{
 			DoCS cs(&m_csLinks);
 			JPtr<JLink> link = JLink::get(sock);
-			ASSERT_MSG(link, format("tries to write to a nonexistent link %u", sock).c_str());
+			_ASSERT(link);
 			if (link) {
 				link->m_bReadyWrite = true;
 				link->SendData();
@@ -1096,7 +1096,7 @@ void JEngine::OnLinkAccess(SOCKET sock, bool access)
 {
 	DoCS cs(&m_csLinks);
 	JPtr<JLink> link = JLink::get(sock);
-	ASSERT(link);
+	_ASSERT(link);
 	link->m_bAccessAllowed = access;
 	if (access) {
 		ValidateOff(sock);
@@ -1107,7 +1107,7 @@ void JEngine::OnLinkIdentify(SOCKET sock)
 {
 	DoCS cs(&m_csLinks);
 	JPtr<JLink> link = JLink::get(sock);
-	ASSERT(link);
+	_ASSERT(link);
 	link->m_bAccessAllowed = true;
 	ValidateOff(sock);
 }

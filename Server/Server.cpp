@@ -96,7 +96,7 @@ void JServer::Init()
 		} else
 			JLink::destroy(link->ID);
 	}
-	ASSERT(l > 0);
+	_ASSERT(l > 0);
 }
 
 void JServer::Done()
@@ -255,11 +255,11 @@ LRESULT WINAPI JServer::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 					HMENU hmenu = LoadMenu(JServerApp::jpApp->hinstApp, MAKEINTRESOURCE(IDM_SHELL));
 					POINT p;
 					SetForegroundWindow(hWnd);
-					VERIFY(GetCursorPos(&p));
-					VERIFY(SetMenuDefaultItem(GetSubMenu(hmenu, 0), IDC_SHELL_CONNECTIONS, FALSE));
+					_VERIFY(GetCursorPos(&p));
+					_VERIFY(SetMenuDefaultItem(GetSubMenu(hmenu, 0), IDC_SHELL_CONNECTIONS, FALSE));
 					TrackPopupMenu(GetSubMenu(hmenu, 0), TPM_RIGHTALIGN | TPM_BOTTOMALIGN | TPM_RIGHTBUTTON,
 						p.x, p.y, 0, hWnd, 0);
-					VERIFY(DestroyMenu(hmenu));
+					_VERIFY(DestroyMenu(hmenu));
 					break;
 				}
 
@@ -452,7 +452,7 @@ void JServer::RenameContact(DWORD idByOrSock, DWORD idOld, std::tstring newname)
 			m_mChannel.erase(idOld);
 			opened.insert(idByOrSock); // send reply to sender
 		} else {
-			ASSERT(false); // no valid way to here
+			_ASSERT(false); // no valid way to here
 		}
 	}
 	BroadcastTrn(opened, true, Make_Notify_NICK(result, idOld, idNew, newname));
@@ -678,7 +678,7 @@ void JServer::Recv_Cmd_NICK(SOCKET sock, io::mem& is)
 			EvLog(format("nickname renamed: %s", tstr_to_utf8(name).c_str()), elogInfo);
 		}
 	} else if (idOld == CRC_NONAME) { // new user
-		ASSERT(idBy == idOld);
+		_ASSERT(idBy == idOld);
 		RenameContact((DWORD)sock, idOld, name);
 		// Report about message
 		EvLog(format("nickname added: %s", tstr_to_utf8(name).c_str()), elogInfo);
@@ -873,8 +873,8 @@ void JServer::Recv_Cmd_PART(SOCKET sock, io::mem& is)
 
 	DWORD idBy = m_mSocketId[sock];
 	MapUser::iterator iuWho = m_mUser.find(idWho), iuBy = m_mUser.find(idBy);
-	ASSERT(iuWho != m_mUser.end());
-	ASSERT(iuBy != m_mUser.end());
+	_ASSERT(iuWho != m_mUser.end());
+	_ASSERT(iuBy != m_mUser.end());
 
 	MapUser::iterator iu = m_mUser.find(idWhere);
 	if (iu != m_mUser.end()) { // private talk
@@ -1153,7 +1153,7 @@ void JServer::Recv_Cmd_CHANOPTIONS(SOCKET sock, io::mem& is)
 	DWORD idSrc = m_mSocketId[sock];
 	MapUser::const_iterator iu = m_mUser.find(idWhere);
 	if (iu != m_mUser.end()) { // private talk
-		ASSERT(op == CHANOP_BACKGROUND);
+		_ASSERT(op == CHANOP_BACKGROUND);
 		PushTrn(m_mIdSocket[idWhere], Make_Notify_CHANOPTIONS(idSrc, idSrc, op, val));
 	} else {
 		MapChannel::iterator ic = m_mChannel.find(idWhere);
@@ -1698,7 +1698,7 @@ void JServerApp::Init()
 		WC_MSG                    // lpszClassName - name of window class.
 	};
 	// Register the window RH-server classes.
-	VERIFY(RegisterClass(&MsgClass));
+	_VERIFY(RegisterClass(&MsgClass));
 
 	profile::setKey(TEXT("BEOWOLF"), APPNAME);
 
@@ -1722,9 +1722,9 @@ void JServerApp::Done()
 	if (jpServer->State != JService::eStopped) jpServer->Stop();
 	jpServer->Done();
 	// Free associated resources
-	VERIFY(DestroyMenu(m_hmenuConnections));
+	_VERIFY(DestroyMenu(m_hmenuConnections));
 	// Unregister the window RH-server classes.
-	VERIFY(UnregisterClass(WC_MSG, hinstApp));
+	_VERIFY(UnregisterClass(WC_MSG, hinstApp));
 }
 
 //-----------------------------------------------------------------------------

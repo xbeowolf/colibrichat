@@ -12,7 +12,13 @@
 #include <comutil.h>
 #endif
 
-#include "AssertMsg.h"
+#ifndef _VERIFY
+#ifdef _DEBUG
+#define _VERIFY(expr) _ASSERT(expr)
+#else
+#define _VERIFY(expr) (expr)
+#endif
+#endif
 
 #define JPTR_ALLOW_PTR_CAST
 #undef JPTR_CLEAR_METHOD
@@ -93,7 +99,7 @@ public:
 #endif
 	}
 	virtual ~JClass() { 
-		//ASSERT(m_RefCount == 0);
+		//_ASSERT(m_RefCount == 0);
 #ifdef _DEBUG
 		InterlockedDecrement(&NumJObjects);
 #endif
@@ -133,7 +139,7 @@ public:
 			JAddRef();
 			return S_OK;
 		} else if(iid == __uuidof(JClass)) {
-			ASSERT(ppvObject == NULL);
+			_ASSERT(ppvObject == NULL);
 			return S_OK;
 		} else
 			return E_NOINTERFACE;
@@ -166,7 +172,7 @@ public:
 	JPtr(int null)
 		: objectRef(NULL)
 	{
-		ASSERT(null == 0);
+		_ASSERT(null == 0);
 	}
 	JPtr(T* init) : objectRef(init) {
 		if(objectRef)
@@ -220,7 +226,7 @@ public:
 
 	JPtr& __fastcall operator=(int null)
 	{
-		ASSERT(null == 0);
+		_ASSERT(null == 0);
 
 		if(objectRef) {
 			objectRef->JRelease();
@@ -379,7 +385,7 @@ public:
 		}
 	}
 	T* __fastcall operator->() const {
-		ASSERT(arrayRef);
+		_ASSERT(arrayRef);
 		return arrayRef;
 	}
 #ifdef JPTR_ALLOW_PTR_CAST
@@ -388,7 +394,7 @@ public:
 	}
 #else
 	T& __fastcall operator*() const {
-		ASSERT(arrayRef);
+		_ASSERT(arrayRef);
 		return *arrayRef;
 	}
 
@@ -400,7 +406,7 @@ public:
 	}
 #endif
 	T& __fastcall operator[](int elem) const {
-		ASSERT(arrayRef);
+		_ASSERT(arrayRef);
 		return arrayRef[elem];
 	}
 
@@ -426,13 +432,13 @@ private:
 	// Disable those operations
 	JArrayRef(const JArrayRef& init) : arrayRef(0)
 	{
-		ASSERT(false);
+		_ASSERT(false);
 	}
 	JArrayRef& __fastcall operator=(const JArrayRef& right)
 	{
 		if (&right != this)
 		{
-			ASSERT(false);
+			_ASSERT(false);
 		}
 		return *this;
 	}
@@ -456,7 +462,7 @@ protected:
 public:
 	CIDClass( id_type id ) : m_ID(id)
 	{
-		VERIFY( s_IDs.insert( IDS::value_type( id, (T*)this ) ).second );
+		_VERIFY( s_IDs.insert( IDS::value_type( id, (T*)this ) ).second );
 	}
 
 	static const IDS& getIDs()

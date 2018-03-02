@@ -412,7 +412,7 @@ CALLBACK Editor::Editor()
 
 DWORD CALLBACK rtf::StreamToHandle(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb)
 {
-	VERIFY(WriteFile((HANDLE)dwCookie, pbBuff, cb, (LPDWORD)pcb, 0));
+	_VERIFY(WriteFile((HANDLE)dwCookie, pbBuff, cb, (LPDWORD)pcb, 0));
 	return cb == *pcb;
 }
 

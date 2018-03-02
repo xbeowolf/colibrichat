@@ -316,7 +316,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			ti.uId = (UINT_PTR)hWnd;
 			ti.hinst = JClientApp::jpApp->hinstApp;
 			ti.lpszText = 0;
-			VERIFY(SendMessage(m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
+			_VERIFY(SendMessage(m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
 
 			// Inits Tab control
 			TabCtrl_SetImageList(m_hwndTab, JClientApp::jpApp->himlTab);
@@ -366,7 +366,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			MCI_GENERIC_PARMS mci;
 			mci.dwCallback = MAKELONG(m_hwndPage, 0);
 			for each (MCIDEVICEID const& v in m_wDeviceID) {
-				VERIFY(!mciSendCommand(v, MCI_CLOSE, MCI_WAIT, (DWORD_PTR)&mci));
+				_VERIFY(!mciSendCommand(v, MCI_CLOSE, MCI_WAIT, (DWORD_PTR)&mci));
 			}
 
 			Stop();
@@ -588,7 +588,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 						TCITEM tci;
 						sel = TabCtrl_GetCurSel(m_hwndTab);
 						tci.mask = TCIF_PARAM;
-						VERIFY(TabCtrl_GetItem(m_hwndTab, sel, &tci));
+						_VERIFY(TabCtrl_GetItem(m_hwndTab, sel, &tci));
 						ContactDel((DWORD)tci.lParam);
 						ContactSel(min(sel, TabCtrl_GetItemCount(m_hwndTab) - 1));
 					}
@@ -679,7 +679,7 @@ LRESULT WINAPI JClient::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			if (m_wDeviceID.find((MCIDEVICEID)lParam) != m_wDeviceID.end()) {
 				MCI_GENERIC_PARMS mci;
 				mci.dwCallback = MAKELONG(m_hwndPage, 0);
-				VERIFY(!mciSendCommand((MCIDEVICEID)lParam, MCI_CLOSE, MCI_WAIT, (DWORD_PTR)&mci));
+				_VERIFY(!mciSendCommand((MCIDEVICEID)lParam, MCI_CLOSE, MCI_WAIT, (DWORD_PTR)&mci));
 				m_wDeviceID.erase((MCIDEVICEID)lParam);
 			} else {
 				_ASSERT(false); // no way to here
@@ -846,7 +846,7 @@ int  CALLBACK JClient::ContactAdd(const std::tstring& name, DWORD id, EContact t
 		tci.iImage = jp->ImageIndex();
 		tci.lParam = jp->getID();
 		TabCtrl_InsertItem(m_hwndTab, pos, &tci);
-		if (jpOnline) VERIFY(InvalidateRect(jpOnline->hwndPage, 0, TRUE));
+		if (jpOnline) _VERIFY(InvalidateRect(jpOnline->hwndPage, 0, TRUE));
 	}
 
 	jp->setAlert(eRed);
@@ -886,7 +886,7 @@ void CALLBACK JClient::ContactSel(int index)
 
 	TCITEM tci;
 	tci.mask = TCIF_PARAM;
-	VERIFY(TabCtrl_GetItem(m_hwndTab, index, &tci));
+	_VERIFY(TabCtrl_GetItem(m_hwndTab, index, &tci));
 	JPtr<JPage> jp = getPage((DWORD)tci.lParam);
 	ShowWindow(jp->hwndPage, SW_SHOW);
 	if (jpOnline && jpOnline != jp) ShowWindow(jpOnline->hwndPage, SW_HIDE);
@@ -945,8 +945,8 @@ void CALLBACK JClient::ContactRename(DWORD idOld, const std::tstring& oldname, D
 		tci.pszText = (TCHAR*)newname.c_str();
 		tci.cchTextMax = (int)newname.length();
 		tci.lParam = idNew;
-		VERIFY(TabCtrl_SetItem(m_hwndTab, i, &tci));
-		if (jpOnline) VERIFY(InvalidateRect(jpOnline->hwndPage, 0, TRUE));
+		_VERIFY(TabCtrl_SetItem(m_hwndTab, i, &tci));
+		if (jpOnline) _VERIFY(InvalidateRect(jpOnline->hwndPage, 0, TRUE));
 	}
 	for each (MapPageChannel::value_type const& v in mPageChannel) {
 		if (v.second->replace(idOld, idNew)) {
@@ -961,7 +961,7 @@ int  CALLBACK JClient::getTabIndex(DWORD id)
 	int i;
 	for (i = TabCtrl_GetItemCount(m_hwndTab) - 1; i >= 0; i--) {
 		tci.mask = TCIF_PARAM;
-		VERIFY(TabCtrl_GetItem(m_hwndTab, i, &tci));
+		_VERIFY(TabCtrl_GetItem(m_hwndTab, i, &tci));
 		if (tci.lParam == id) break;
 	}
 	return i;
@@ -1022,7 +1022,7 @@ void CALLBACK JClient::BaloonShow(HWND hwndCtrl, const TCHAR* msg, const TCHAR* 
 void CALLBACK JClient::BaloonShow(HWND hwndId, HWND hwndCtrl, const TCHAR* msg, const TCHAR* title, int icon, COLORREF cr)
 {
 	RECT r;
-	VERIFY(GetWindowRect(hwndCtrl, &r));
+	_VERIFY(GetWindowRect(hwndCtrl, &r));
 	POINT p;
 	p.x = (r.left + r.right)/2, p.y = (r.top + r.bottom)/2;
 	BaloonShow(hwndId, p, msg, title, (HICON)(INT_PTR)icon, cr);
@@ -1033,7 +1033,7 @@ void CALLBACK JClient::BaloonShow(HWND hwndId, const POINT& p, const TCHAR* msg,
 	static TCHAR buftitle[256];
 	if (HIWORD(title)) _tcscpy_s(buftitle, _countof(buftitle), title);
 	else LoadString(JClientApp::jpApp->hinstApp, LOWORD(title), buftitle, _countof(buftitle));
-	VERIFY(SendMessage(m_hwndBaloon, TTM_SETTITLE, (WPARAM)hicon, (LPARAM)buftitle));
+	_VERIFY(SendMessage(m_hwndBaloon, TTM_SETTITLE, (WPARAM)hicon, (LPARAM)buftitle));
 
 	static TCHAR bufmsg[1024]; // resorce string may be greater than 80 chars
 	if (HIWORD(msg)) _tcscpy_s(bufmsg, _countof(bufmsg), msg);
@@ -2376,7 +2376,7 @@ void JClient::Recv_Notify_CLIPBOARD(SOCKET sock, io::mem& is)
 					io::skip(is, size);
 				}
 			}
-			VERIFY(CloseClipboard());
+			_VERIFY(CloseClipboard());
 
 			// Lua response
 			{
@@ -2633,7 +2633,7 @@ JPtr<JBTransaction> JClient::Make_Cmd_CLIPBOARD(DWORD idWho) const
 		}
 	}
 	io::pack(os, (UINT)0); // write end marker
-	VERIFY(CloseClipboard());
+	_VERIFY(CloseClipboard());
 	return MakeTrn(COMMAND(CCPM_CLIPBOARD), 0, os.str());
 }
 
@@ -2684,14 +2684,14 @@ void JClientApp::Init()
 		ICC_COOL_CLASSES |
 		ICC_LINK_CLASS
 	};
-	VERIFY(InitCommonControlsEx(&InitCtrls));
+	_VERIFY(InitCommonControlsEx(&InitCtrls));
 	// Ensure that the RichEdit library is loaded
-	VERIFY(false
+	_VERIFY(false
 		//|| (hinstRichEdit = LoadLibrary(TEXT("Msftedit.dll"))) != 0 // version 4.1
 		|| (hinstRichEdit = LoadLibrary(TEXT("Riched20.dll"))) != 0 // version 2.0 or 3.0
 		|| (hinstRichEdit = LoadLibrary(TEXT("Riched32.dll"))) != 0 // version 1.0
 		);
-	VERIFY(!WSAStartup(MAKEWORD(2, 2), &wsaData));
+	_VERIFY(!WSAStartup(MAKEWORD(2, 2), &wsaData));
 
 	profile::setKey(TEXT("BEOWOLF"), APPNAME);
 
@@ -2763,30 +2763,30 @@ void JClientApp::Done()
 	if (jpClient->State != JService::eStopped) jpClient->Stop();
 	jpClient->Done();
 	// Free associated resources
-	VERIFY(DestroyMenu(m_hmenuTab));
-	VERIFY(DestroyMenu(m_hmenuLog));
-	VERIFY(DestroyMenu(m_hmenuChannel));
-	VERIFY(DestroyMenu(m_hmenuList));
-	VERIFY(DestroyMenu(m_hmenuRichEdit));
-	VERIFY(DestroyMenu(m_hmenuUser));
-	VERIFY(DestroyMenu(m_hmenuUserGod));
+	_VERIFY(DestroyMenu(m_hmenuTab));
+	_VERIFY(DestroyMenu(m_hmenuLog));
+	_VERIFY(DestroyMenu(m_hmenuChannel));
+	_VERIFY(DestroyMenu(m_hmenuList));
+	_VERIFY(DestroyMenu(m_hmenuRichEdit));
+	_VERIFY(DestroyMenu(m_hmenuUser));
+	_VERIFY(DestroyMenu(m_hmenuUserGod));
 	// Destroy the image list
-	VERIFY(ImageList_Destroy(m_himlEdit));
-	VERIFY(ImageList_Destroy(m_himlTab));
-	VERIFY(ImageList_Destroy(m_himlMan));
-	VERIFY(ImageList_Destroy(m_himlStatus));
-	VERIFY(ImageList_Destroy(m_himlStatusImg));
-	VERIFY(DeleteObject(m_himgSend));
-	VERIFY(DeleteObject(m_himgULBG));
-	VERIFY(DeleteObject(m_himgULFoc));
-	VERIFY(DeleteObject(m_himgULSel));
-	VERIFY(DeleteObject(m_himgULHot));
+	_VERIFY(ImageList_Destroy(m_himlEdit));
+	_VERIFY(ImageList_Destroy(m_himlTab));
+	_VERIFY(ImageList_Destroy(m_himlMan));
+	_VERIFY(ImageList_Destroy(m_himlStatus));
+	_VERIFY(ImageList_Destroy(m_himlStatusImg));
+	_VERIFY(DeleteObject(m_himgSend));
+	_VERIFY(DeleteObject(m_himgULBG));
+	_VERIFY(DeleteObject(m_himgULFoc));
+	_VERIFY(DeleteObject(m_himgULSel));
+	_VERIFY(DeleteObject(m_himgULHot));
 	// Close all MCI devices
-	VERIFY(!mciSendCommand(MCI_ALL_DEVICE_ID, MCI_CLOSE, MCI_WAIT, NULL));
+	_VERIFY(!mciSendCommand(MCI_ALL_DEVICE_ID, MCI_CLOSE, MCI_WAIT, NULL));
 	// Free RichEdit library
-	VERIFY(FreeLibrary(hinstRichEdit));
+	_VERIFY(FreeLibrary(hinstRichEdit));
 
-	VERIFY(!WSACleanup());
+	_VERIFY(!WSACleanup());
 	CoUninitialize();
 }
 

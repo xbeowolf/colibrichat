@@ -84,17 +84,17 @@ namespace profile
 		float CALLBACK putFloat(float value) {return setFloat() = value;}
 		float& CALLBACK setFloat();
 		__declspec(property(get=getString,put=putString)) TString& valString;
-		TString& CALLBACK getString() const {ASSERT(type == edtString); return *data.str;}
+		TString& CALLBACK getString() const {_ASSERT(type == edtString); return *data.str;}
 		TString& CALLBACK putString(const TString& value) {return setString() = value;}
 		TString& CALLBACK setString();
 		__declspec(property(get=getBin,put=putBin)) TBin& valBin;
 		UINT CALLBACK getBin(void* ptr, UINT size);
-		TBin& CALLBACK getBin() const {ASSERT(type == edtBin); return *data.bin;}
+		TBin& CALLBACK getBin() const {_ASSERT(type == edtBin); return *data.bin;}
 		TBin& CALLBACK putBin(const TBin& value) {return setBin() = value;}
 		void CALLBACK putBin(const void* ptr, UINT size);
 		TBin& CALLBACK setBin();
 		__declspec(property(get=getList,put=putList)) TList& valList;
-		TList& CALLBACK getList() const {ASSERT(type == edtFolder); return *data.list;}
+		TList& CALLBACK getList() const {_ASSERT(type == edtFolder); return *data.list;}
 		TList& CALLBACK putList(const TList& value) {return setList() = value;}
 		TList& CALLBACK setList();
 

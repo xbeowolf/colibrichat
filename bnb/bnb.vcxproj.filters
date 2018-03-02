@@ -21,6 +21,14 @@
       <UniqueIdentifier>{aa7842e8-4043-4d10-ba53-d07553ede32f}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+    <Filter Include="Header Files\common">
+      <UniqueIdentifier>{6daaa705-66a5-4827-acaf-4ec257214067}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Source Files\common">
+      <UniqueIdentifier>{1a644dbd-c1c1-407f-a1ca-f2c49ff32d85}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -38,28 +46,10 @@
     <ClInclude Include="CRC.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FastDelegate.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FastDelegateBind.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FastDelegateList.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="iomem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="JObjects.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="JService.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="patterns.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AssertMsg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="attachment.h">
@@ -116,14 +106,32 @@
     <ClInclude Include="crypto\salsa20.h">
       <Filter>Header Files\Crypto</Filter>
     </ClInclude>
-    <ClInclude Include="sysexcept.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="netengine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\common\sysexcept.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
     <ClInclude Include="..\common\stringutil.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\patterns.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\JObjects.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\FastDelegateList.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\FastDelegateBind.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\FastDelegate.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\AssertMsg.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -191,7 +199,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\common\stringutil.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\common</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

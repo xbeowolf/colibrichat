@@ -146,7 +146,7 @@ INT_PTR WINAPI JClient::DlgProcHelper0(HWND hWnd, UINT message, WPARAM wParam, L
 			ti.uId = (UINT_PTR)hWnd;
 			ti.hinst = JClientApp::jpApp->hinstApp;
 			ti.lpszText = 0;
-			VERIFY(SendMessage(m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
+			_VERIFY(SendMessage(m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
 
 			break;
 		}
@@ -239,7 +239,7 @@ INT_PTR WINAPI JClient::DlgProcHelper1(HWND hWnd, UINT message, WPARAM wParam, L
 			ti.uId = (UINT_PTR)hWnd;
 			ti.hinst = JClientApp::jpApp->hinstApp;
 			ti.lpszText = 0;
-			VERIFY(SendMessage(m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
+			_VERIFY(SendMessage(m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
 
 			SetDlgItemText(hWnd, IDC_NICK, profile::getString(RF_CLIENT, RK_NICK, NAME_NONAME).c_str());
 			break;
@@ -347,7 +347,7 @@ INT_PTR WINAPI JClient::DlgProcHelper2(HWND hWnd, UINT message, WPARAM wParam, L
 			ti.uId = (UINT_PTR)hWnd;
 			ti.hinst = JClientApp::jpApp->hinstApp;
 			ti.lpszText = 0;
-			VERIFY(SendMessage(m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
+			_VERIFY(SendMessage(m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
 
 			std::tstring pass = profile::getString(RF_CLIENT, RK_PASSWORDNET, TEXT("beowolf"));
 			SetDlgItemText(hWnd, IDC_PASS1, pass.c_str());
@@ -512,7 +512,7 @@ INT_PTR WINAPI JClient::DlgProcHelper3(HWND hWnd, UINT message, WPARAM wParam, L
 			ti.uId = (UINT_PTR)hWnd;
 			ti.hinst = JClientApp::jpApp->hinstApp;
 			ti.lpszText = 0;
-			VERIFY(SendMessage(m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
+			_VERIFY(SendMessage(m_hwndBaloon, TTM_ADDTOOL, 0, (LPARAM)&ti));
 
 			SetDlgItemText(hWnd, IDC_HOST, profile::getString(RF_CLIENT, RK_HOST, TEXT("127.0.0.1")).c_str());
 			SendDlgItemMessage(hWnd, IDC_HOST, CB_LIMITTEXT, 128, 0);
@@ -630,7 +630,7 @@ INT_PTR WINAPI JClient::DlgProcHelper3(HWND hWnd, UINT message, WPARAM wParam, L
 JClient::JPassword::JPassword(JClient* p)
 : JNode(p, false), JDialog()
 {
-	ASSERT(p);
+	_ASSERT(p);
 	SetupHooks();
 }
 
@@ -687,7 +687,7 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 				lvi.iItem = i;
 				lvi.iSubItem = 0;
 				lvi.mask = 0;
-				VERIFY(ListView_InsertItem(m_hwndList, &lvi) >= 0);
+				_VERIFY(ListView_InsertItem(m_hwndList, &lvi) >= 0);
 				ListView_SetItemText(m_hwndList, i, 0, lvs[i][0]);
 				ListView_SetItemText(m_hwndList, i, 1, lvs[i][1]);
 				ListView_SetItemText(m_hwndList, i, 2, lvs[i][2]);
@@ -834,7 +834,7 @@ LRESULT WINAPI JClient::JPassword::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 JClient::JTopic::JTopic(JClient* p, DWORD id, const std::tstring& n, const std::tstring& t)
 : JNode(p, false), JDialog()
 {
-	ASSERT(p);
+	_ASSERT(p);
 	SetupHooks();
 
 	m_idChannel = id;
@@ -1262,7 +1262,7 @@ void JClient::JSplashRtfEditor::doneclass()
 JClient::JSplashRtfEditor::JSplashRtfEditor(JClient* p, DWORD who)
 : JNode(p, false), JDialog(), rtf::Editor()
 {
-	ASSERT(p);
+	_ASSERT(p);
 	SetupHooks();
 
 	idWho = who;
@@ -1325,7 +1325,7 @@ LRESULT WINAPI JClient::JSplash::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 
 			dwStarted = GetTickCount();
 			if (m_dwAutoclose != INFINITE)
-				VERIFY(SetTimer(hWnd, 100, m_dwAutoclose, 0));
+				_VERIFY(SetTimer(hWnd, 100, m_dwAutoclose, 0));
 
 			retval = TRUE;
 			break;
@@ -1334,7 +1334,7 @@ LRESULT WINAPI JClient::JSplash::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 	case WM_DESTROY:
 		{
 			if (m_dwAutoclose != INFINITE)
-				VERIFY(KillTimer(hWnd, 100));
+				_VERIFY(KillTimer(hWnd, 100));
 			break;
 		}
 
@@ -1510,7 +1510,7 @@ LRESULT WINAPI JClient::JSplashRtf::DlgProc(HWND hWnd, UINT message, WPARAM wPar
 JClient::JSplashRtf::JSplashRtf(JClient* p, const char* text, size_t size)
 : JNode(p, false), JClient::JSplash(p), content(text, size)
 {
-	ASSERT(p);
+	_ASSERT(p);
 	SetupHooks();
 }
 
@@ -1810,7 +1810,7 @@ void JClient::JMessageEditor::doneclass()
 JClient::JMessageEditor::JMessageEditor(JClient* p, const std::tstring& who, bool alert)
 : JNode(p, false), JDialog(), rtf::Editor()
 {
-	ASSERT(p);
+	_ASSERT(p);
 	SetupHooks();
 
 	strWho = who;
@@ -1980,7 +1980,7 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 					MapUser::const_iterator iu = pNode->m_mUser.find(m_idWho);
 					if (iu == pNode->m_mUser.end()) break;
 					if (iu->second.accessibility.fCanMessage) {
-						ASSERT(pNode->m_clientsock);
+						_ASSERT(pNode->m_clientsock);
 						CreateDialogParam(JClientApp::jpApp->hinstApp, MAKEINTRESOURCE(IDD_MSGSEND), pNode->hwndPage, JClient::JSplashRtfEditor::DlgProcStub, (LPARAM)(JDialog*)new JClient::JMessageEditor(pNode, iu->second.name, false));
 						DestroyWindow(hWnd);
 					} else pNode->BaloonShow(m_hwndPage, MAKEINTRESOURCE(IDS_MSG_PRIVATEMESSAGE), pNode->getSafeName(m_idWho).c_str(), 1);
@@ -1992,7 +1992,7 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 					MapUser::const_iterator iu = pNode->m_mUser.find(m_idWho);
 					if (iu == pNode->m_mUser.end()) break;
 					if (iu->second.accessibility.fCanOpenPrivate) {
-						ASSERT(pNode->m_clientsock);
+						_ASSERT(pNode->m_clientsock);
 						pNode->PushTrn(pNode->m_clientsock, pNode->Make_Quest_JOIN(iu->second.name));
 						DestroyWindow(hWnd);
 					} else pNode->BaloonShow(m_hwndPage, MAKEINTRESOURCE(IDS_MSG_PRIVATETALK), pNode->getSafeName(m_idWho).c_str(), 1);
@@ -2018,7 +2018,7 @@ LRESULT WINAPI JClient::JMessage::DlgProc(HWND hWnd, UINT message, WPARAM wParam
 JClient::JMessage::JMessage(JClient* p)
 : JNode(p, false), JDialog()
 {
-	ASSERT(p);
+	_ASSERT(p);
 	SetupHooks();
 
 	m_idWho = CRC_ANONYMOUS;

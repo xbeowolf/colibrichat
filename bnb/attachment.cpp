@@ -45,7 +45,7 @@ void JNode::beforeDestruct() {
 
 void JNode::SetNode(JNode* p, bool lock, bool hook)
 {
-	ASSERT(p);
+	_ASSERT(p);
 	opt& o = m_mNode[p];
 	if (o.lock != lock) {
 		if (lock) p->JAddRef();
@@ -61,7 +61,7 @@ void JNode::SetNode(JNode* p, bool lock, bool hook)
 
 void JNode::DelNode(JNode* p)
 {
-	ASSERT(p);
+	_ASSERT(p);
 	MapNode::iterator iter = m_mNode.find(p);
 	if (iter != m_mNode.end()) {
 		if (iter->second.hook) EvUnhook.Invoke(p);

@@ -377,7 +377,7 @@ TString& CALLBACK JEntry::setString()
 	{
 		Clear();
 		data.str = new TString();
-		ASSERT(data.str);
+		_ASSERT(data.str);
 		type = edtString;
 	}
 	return *data.str;
@@ -405,7 +405,7 @@ TBin& CALLBACK JEntry::setBin()
 	{
 		Clear();
 		data.bin = new TBin();
-		ASSERT(data.bin);
+		_ASSERT(data.bin);
 		type = edtBin;
 	}
 	return *data.bin;
@@ -417,7 +417,7 @@ TList& CALLBACK JEntry::setList()
 	{
 		Clear();
 		data.list = new TList();
-		ASSERT(data.list);
+		_ASSERT(data.list);
 		type = edtFolder;
 	}
 	return *data.list;
@@ -435,7 +435,7 @@ JEntry* CALLBACK JEntry::operator [] (const TCHAR* path)
 		JPtr<JEntry>& v = entry->valList[name];
 		if (!v) v = new JEntry();
 		entry = v;
-		ASSERT(entry);
+		_ASSERT(entry);
 		if (*(path + end)) end++;
 	}
 	return entry;
@@ -794,9 +794,9 @@ void CALLBACK CStream::WriteEntry(const JEntry& entry)
 CALLBACK CFile::CFile(const TCHAR* file) : CStream(), sFile(file)
 {
 	is = new std::basic_ifstream<TCHAR>();
-	ASSERT(is);
+	_ASSERT(is);
 	os = new std::basic_ofstream<TCHAR>();
-	ASSERT(os);
+	_ASSERT(os);
 }
 
 void CALLBACK CFile::OpenRead()
@@ -830,9 +830,9 @@ void CALLBACK CFile::CloseWrite()
 CALLBACK CStrBuffer::CStrBuffer(TString& str) : string(str)
 {
 	is = new std::basic_istringstream<TCHAR>(string);
-	ASSERT(is);
+	_ASSERT(is);
 	os = new std::basic_ostringstream<TCHAR>(string);
-	ASSERT(os);
+	_ASSERT(os);
 }
 
 //-----------------------------------------------------------------------------

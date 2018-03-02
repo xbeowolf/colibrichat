@@ -46,7 +46,7 @@ namespace attachment {
 
 #define GETJNODE(JT) \
 	__declspec(property(get=getpNode)) JT* pNode; \
-	JT* getpNode() const { ASSERT(m_mNode.size()); return dynamic_cast<JT*>(m_mNode.begin()->first); }
+	JT* getpNode() const { _ASSERT(m_mNode.size()); return dynamic_cast<JT*>(m_mNode.begin()->first); }
 #define JNODE(JT, node, src) JT* node = dynamic_cast<JT*>(src)
 
 	class __declspec(uuid("{EE1AE68C-8B75-4743-88BF-F76D2BCA3268}"))

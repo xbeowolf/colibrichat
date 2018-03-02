@@ -188,22 +188,22 @@
     <ClInclude Include="crypto\skein\skein.h" />
     <ClInclude Include="crypto\skein\skein_port.h" />
     <ClInclude Include="crypto\trivium.h" />
-    <ClInclude Include="AssertMsg.h" />
+    <ClInclude Include="..\common\AssertMsg.h" />
     <ClInclude Include="attachment.h" />
     <ClInclude Include="bnb.h" />
     <ClInclude Include="bnbp.h" />
     <ClInclude Include="CRC.h" />
-    <ClInclude Include="FastDelegate.h" />
-    <ClInclude Include="FastDelegateBind.h" />
-    <ClInclude Include="FastDelegateList.h" />
+    <ClInclude Include="..\common\FastDelegate.h" />
+    <ClInclude Include="..\common\FastDelegateBind.h" />
+    <ClInclude Include="..\common\FastDelegateList.h" />
     <ClInclude Include="iomem.h" />
-    <ClInclude Include="JObjects.h" />
+    <ClInclude Include="..\common\JObjects.h" />
     <ClInclude Include="JService.h" />
     <ClInclude Include="netengine.h" />
-    <ClInclude Include="patterns.h" />
+    <ClInclude Include="..\common\patterns.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="..\common\stringutil.h" />
-    <ClInclude Include="sysexcept.h" />
+    <ClInclude Include="..\common\sysexcept.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>

@@ -145,7 +145,7 @@ DWORD WINAPI JThread::ThreadStub(LPVOID lpObject)
 {
 	JThread* obj = (JThread*)lpObject;
 	int refCount = obj->JGetRefCount() - 1; // dead check
-	ASSERT(refCount >= 0);
+	_ASSERT(refCount >= 0);
 	obj->JRelease(); // unlock object
 	if (!refCount) return 0; // no referances remains to object
 	if (obj->m_State == eRunning) return 1; // thread already running
@@ -153,10 +153,10 @@ DWORD WINAPI JThread::ThreadStub(LPVOID lpObject)
 	obj->m_State = eRunning;
 	DWORD retval = obj->ThreadProc();
 	obj->m_State = eStopped;
-	VERIFY(CloseHandle(obj->m_hThread));
+	_VERIFY(CloseHandle(obj->m_hThread));
 	obj->m_hThread = 0;
 	obj->m_dwThreadId = 0;
-	ASSERT(!obj->m_hSleep);
+	_ASSERT(!obj->m_hSleep);
 	return retval;
 }
 
@@ -176,7 +176,7 @@ int  JThread::Run()
 		__super::Run();
 
 		m_State = eWantRun;
-		ASSERT(JGetRefCount() != 0); // object must not be local or static
+		_ASSERT(JGetRefCount() != 0); // object must not be local or static
 		JAddRef(); // do not prevent to delete object until thread starting
 		m_hThread = CreateThread(NULL, 0, ThreadStub, this, 0, &m_dwThreadId);
 	}
@@ -204,12 +204,12 @@ void JThread::Stop()
 	DWORD t2 = GetTickCount();
 #endif
 	if (m_hThread) {
-		VERIFY(CloseHandle(m_hThread));
+		_VERIFY(CloseHandle(m_hThread));
 		m_hThread = 0;
 		m_dwThreadId = 0;
 	}
 	if (m_hSleep) {
-		VERIFY(CloseHandle(m_hSleep));
+		_VERIFY(CloseHandle(m_hSleep));
 		m_hSleep = 0;
 	}
 }
@@ -231,17 +231,17 @@ void JThread::Resume()
 void JThread::Wakeup()
 {
 	if (m_hSleep) {
-		VERIFY(SetEvent(m_hSleep));
+		_VERIFY(SetEvent(m_hSleep));
 		Sleep(0);
 	}
 }
 
 void JThread::Wait(DWORD dwMilliseconds)
 {
-	ASSERT(!m_hSleep);
+	_ASSERT(!m_hSleep);
 	m_hSleep = CreateEvent(0, TRUE, FALSE, 0);
 	WaitForSingleObject(m_hSleep, dwMilliseconds);
-	VERIFY(CloseHandle(m_hSleep));
+	_VERIFY(CloseHandle(m_hSleep));
 	m_hSleep = 0;
 }
 

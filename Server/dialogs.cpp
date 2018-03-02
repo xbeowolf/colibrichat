@@ -349,7 +349,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 				MapUser::const_iterator iu = getSelUser(index);
 				bool valid = iu != pNode->m_mUser.end();
 
-				VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_RENAME, FALSE));
+				_VERIFY(SetMenuDefaultItem((HMENU)wParam, IDC_RENAME, FALSE));
 				EnableMenuItem((HMENU)wParam, IDC_RENAME,
 					MF_BYCOMMAND | (profile::getInt(RF_SERVER, RK_CANEDITNICK, FALSE) ? MF_ENABLED : MF_GRAYED)); // disabled for not installed
 				EnableMenuItem((HMENU)wParam, IDC_GODMODE,

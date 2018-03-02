@@ -46,7 +46,7 @@ int JApplication::Run()
 		DWORD result = handles.empty()
 			? MsgWaitForMultipleObjects(0, 0, FALSE, IdleTimeout(), QS_ALLINPUT)
 			: MsgWaitForMultipleObjects(handles.size(), &handles[0], FALSE, IdleTimeout(), QS_ALLINPUT);
-		ASSERT(result != WAIT_FAILED);
+		_ASSERT(result != WAIT_FAILED);
 		if (result >= WAIT_OBJECT_0 && result < WAIT_OBJECT_0 + handles.size()) {
 			onSignaled(handles[WAIT_OBJECT_0 + handles.size() - result - 1]);
 		} else if (result == WAIT_OBJECT_0 + handles.size()) {
