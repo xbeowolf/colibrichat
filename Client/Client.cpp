@@ -163,16 +163,11 @@ jpOnline(0)
 	m_encryptorname = ECRYPT_BINDEFAULT;
 }
 
-void JClient::beforeDestruct()
-{
-	__super::beforeDestruct();
-}
-
 void JClient::lua_openVM()
 {
 	__super::lua_openVM();
 
-	lua_State* L = *jpLuaVM;
+	lua_State* L = m_luaVM;
 	_ASSERT(L);
 	// register Lua data
 	lunareg_colibri(L);
@@ -181,6 +176,11 @@ void JClient::lua_openVM()
 		throw std::exception(lua_tostring(L, -1));
 	}
 	_ASSERT(lua_gettop(L) == 0); // Lua stack must be empty
+}
+
+void JClient::beforeDestruct()
+{
+	__super::beforeDestruct();
 }
 
 void JClient::Init()

@@ -197,7 +197,7 @@ void JClient::JPage::OnHook(JNode* src)
 
 	JNODE(JClient, node, src);
 	if (node) {
-		jpLuaVM = node->jpLuaVM;
+		lua_setup(*node);
 		node->EvLinkStart += MakeDelegate(this, &JClient::JPage::OnLinkStart);
 		node->EvLinkClose += MakeDelegate(this, &JClient::JPage::OnLinkClose);
 	}
@@ -211,7 +211,7 @@ void JClient::JPage::OnUnhook(JNode* src)
 	if (node) {
 		node->EvLinkStart -= MakeDelegate(this, &JClient::JPage::OnLinkStart);
 		node->EvLinkClose -= MakeDelegate(this, &JClient::JPage::OnLinkClose);
-		jpLuaVM = 0;
+		lua_reset();
 	}
 
 	__super::OnUnhook(src);
@@ -1059,7 +1059,7 @@ LRESULT WINAPI JClient::JPageList::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 								break;
 
 							case 1:
-								_stprintf_s(buffer, _countof(buffer), TEXT("%u"), iter->second.opened.size());
+								_stprintf_s(buffer, _countof(buffer), TEXT("%zu"), iter->second.opened.size());
 								pnmv->item.pszText = buffer;
 								break;
 
@@ -1388,7 +1388,7 @@ void JClient::JPageList::Recv_Reply_LIST(SOCKET sock, WORD trnid, io::mem& is)
 		ClearView();
 		BuildView();
 	}
-	pNode->EvLog(format("listed [b]%u[/b] channels", m_mChannel.size()), elogInfo);
+	pNode->EvLog(format("listed [b]%zu[/b] channels", m_mChannel.size()), elogInfo);
 }
 
 JPtr<JBTransaction> JClient::JPageList::Make_Quest_LIST() const
@@ -1684,7 +1684,7 @@ LRESULT WINAPI JClient::JPageChat::DlgProc(HWND hWnd, UINT message, WPARAM wPara
 				{
 					TOOLTIPTEXT* lpttt = (TOOLTIPTEXT*)lParam;
 					lpttt->hinst = JClientApp::jpApp->hinstApp;
-					lpttt->lpszText = (LPTSTR)s_mapButTips[lpttt->hdr.idFrom];
+					lpttt->lpszText = (LPTSTR)s_mapButTips[(UINT)lpttt->hdr.idFrom];
 					break;
 				}
 

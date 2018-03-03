@@ -34,13 +34,6 @@ IMPLEMENT_LUAMETHOD(netengine::JLuaEngine<JT>, Disconnect)
 //
 
 template<class JT>
-netengine::JLuaEngine<JT>::JLuaEngine()
-: JT()
-{
-	jpLuaVM = new JLuaWrapper();
-}
-
-template<class JT>
 void netengine::JLuaEngine<JT>::Init()
 {
 	lua_openVM();
@@ -136,13 +129,20 @@ void netengine::JLuaEngine<JT>::lua_getmethod(lua_State* L, const char* method)
 template<class JT>
 void netengine::JLuaEngine<JT>::lua_openVM()
 {
-	jpLuaVM->lua_openVM();
+	__super::lua_openVM();
 }
 
 template<class JT>
 void netengine::JLuaEngine<JT>::lua_closeVM()
 {
-	jpLuaVM->lua_closeVM();
+	__super::lua_closeVM();
+}
+
+template<class JT>
+void netengine::JLuaEngine<JT>::beforeDestruct()
+{
+	lua_closeVM();
+	__super::beforeDestruct();
 }
 
 template<class JT>

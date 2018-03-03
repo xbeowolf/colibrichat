@@ -62,7 +62,7 @@ namespace netengine
 		Header(WORD msg, WORD ti = 0) throw();
 		void init(WORD msg, WORD ti = 0);
 
-		int    read(const char*& ptr) throw();
+		size_t read(const char*& ptr) throw();
 		size_t write(char*& ptr) const throw();
 		size_t getSize() const throw();
 		crc16_t realCRC() const throw();
@@ -97,9 +97,9 @@ namespace netengine
 		bool isPrimary() throw();
 
 		// stream IO
-		int  read(const char*& ptr);
-		void serialize(JPtr<JLink> link); // write to send buffer
-		bool unserialize(JPtr<JLink> link); // read from recv buffer
+		size_t read(const char*& ptr);
+		void   serialize(JPtr<JLink> link); // write to send buffer
+		bool   unserialize(JPtr<JLink> link); // read from recv buffer
 
 		// compression
 		void setdataUncompr(const std::string& str) throw();

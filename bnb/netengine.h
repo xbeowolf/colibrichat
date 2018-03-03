@@ -88,7 +88,8 @@ namespace netengine
 	};
 
 	typedef std::map<SOCKET, HANDLE> MapListen;
-	typedef std::map<JID, DWORD> MapValidate;
+	typedef std::map<SOCKET, DWORD> MapValidate;
+	typedef std::set<SOCKET> SetSock;
 
 	//
 	// Interface
@@ -106,7 +107,7 @@ namespace netengine
 
 	class JTransaction : public ITransaction, public JClass {};
 
-	class JLink : public JIDClass<JLink>
+	class JLink : public JIDClass<JLink, SOCKET>
 	{
 	public:
 
@@ -234,7 +235,7 @@ namespace netengine
 			DWORD ThreadProc();
 
 			// Links with connections
-			JPROPERTY_RREF_CONST(SetJID, aLinks);
+			JPROPERTY_RREF_CONST(SetSock, aLinks);
 		};
 		typedef std::vector<JPtr<JEventSock>> VecEventSock;
 
@@ -252,7 +253,7 @@ namespace netengine
 			DWORD ThreadProc();
 
 			// Links to close
-			JPROPERTY_RREF_CONST(SetJID, aClose);
+			JPROPERTY_RREF_CONST(SetSock, aClose);
 		};
 
 		class JIocpListener : public JThread
@@ -269,7 +270,7 @@ namespace netengine
 			DWORD ThreadProc();
 
 			// Links to close
-			JPROPERTY_RREF_CONST(SetJID, aClose);
+			JPROPERTY_RREF_CONST(SetSock, aClose);
 		};
 
 		class JIocpSock : public JThread
@@ -365,7 +366,7 @@ namespace netengine
 		// Sends transaction with given message and data
 		bool PushTrn(SOCKET sock, JTransaction* jpTrn, size_t ssi = 0) throw(); // push only prepared valid data
 		// Broadcast transaction to all given sockets
-		int  BroadcastTrn(const SetJID& set, JTransaction* jpTrn, size_t ssi = 0) throw();
+		int  BroadcastTrn(const SetSock& set, JTransaction* jpTrn, size_t ssi = 0) throw();
 
 	protected:
 
@@ -435,9 +436,9 @@ namespace netengine
 		JPROPERTY_R(HANDLE, hCompPort);
 
 		// Links with connections
-		JPROPERTY_RREF_CONST(SetJID, aLinksEvent);
-		JPROPERTY_RREF_CONST(SetJID, aLinksAsync);
-		JPROPERTY_RREF_CONST(SetJID, aLinksIocp);
+		JPROPERTY_RREF_CONST(SetSock, aLinksEvent);
+		JPROPERTY_RREF_CONST(SetSock, aLinksAsync);
+		JPROPERTY_RREF_CONST(SetSock, aLinksIocp);
 		JPROPERTY_RREF_CONST(MapListen, mListen);
 		JPROPERTY_RREF(MapValidate, mValidate);
 

@@ -208,7 +208,7 @@ namespace colibrichat
 		// Pages
 		//
 
-		class JPage : public JDialog
+		class JPage : public JDialog, public LuaWrapper
 		{
 		public:
 
@@ -246,7 +246,6 @@ namespace colibrichat
 
 		protected:
 
-			JPtr<JLuaWrapper> jpLuaVM;
 			JPROPERTY_R(EAlert, alert);
 			JPROPERTY_R(bool, fEnabled);
 		};
@@ -704,12 +703,12 @@ namespace colibrichat
 		static void doneclass();
 		DECLARE_LUACLASS(JClient);
 		const char* ClassName() const {return "JClient";}
-		void beforeDestruct();
 
 		DWORD getMinVersion() const {return BNP_ENGINEVERSMIN;}
 		DWORD getCurVersion() const {return BNP_ENGINEVERSNUM;}
 
 		virtual void lua_openVM();
+		virtual void beforeDestruct();
 
 		void Init();
 		void Done();

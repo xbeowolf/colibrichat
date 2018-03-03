@@ -27,22 +27,16 @@ using namespace netengine;
 //-----------------------------------------------------------------------------
 
 //
-// class JLuaWrapper
+// class LuaWrapper
 //
 
-JLuaWrapper::JLuaWrapper()
+LuaWrapper::LuaWrapper()
 {
-	m_luaVM = 0; // no other Lua registration here!
+	m_luaVM = nullptr; // no other Lua registration here!
 	ZeroMemory(&m_luaCS, sizeof(m_luaCS));
 }
 
-void JLuaWrapper::beforeDestruct()
-{
-	lua_closeVM();
-	__super::beforeDestruct();
-}
-
-void JLuaWrapper::lua_openVM()
+void LuaWrapper::lua_openVM()
 {
 	auto L = luaL_newstate();
 	_ASSERT(L);
@@ -79,7 +73,7 @@ void JLuaWrapper::lua_openVM()
 	InitializeCriticalSection(&m_luaCS);
 }
 
-void JLuaWrapper::lua_closeVM()
+void LuaWrapper::lua_closeVM()
 {
 	if (m_luaVM) {
 		// Close Lua virtual machine
@@ -87,6 +81,15 @@ void JLuaWrapper::lua_closeVM()
 		m_luaVM = nullptr;
 		DeleteCriticalSection(&m_luaCS);
 	}
+}
+
+void LuaWrapper::lua_setup(const LuaWrapper& lw) {
+	m_luaVM = lw.m_luaVM;
+	m_luaCS = lw.m_luaCS;
+}
+
+void LuaWrapper::lua_reset() {
+	m_luaVM = nullptr;
 }
 
 //-----------------------------------------------------------------------------

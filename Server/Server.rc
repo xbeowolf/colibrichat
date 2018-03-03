@@ -21,10 +21,8 @@
 // Neutral resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
-#ifdef _WIN32
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 #pragma code_page(1251)
-#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -34,7 +32,9 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_SERVER              ICON                    "Colibri2.ico"
+
 IDI_SMALL               ICON                    "chat.ico"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -42,8 +42,8 @@ IDI_SMALL               ICON                    "chat.ico"
 //
 
 1 VERSIONINFO
- FILEVERSION 1,2,5,1
- PRODUCTVERSION 1,2,5,1
+ FILEVERSION 1,2,6,0
+ PRODUCTVERSION 1,2,6,0
  FILEFLAGSMASK 0x1fL
 #ifdef _DEBUG
  FILEFLAGS 0x9L
@@ -61,14 +61,14 @@ BEGIN
             VALUE "Comments", "Shareware; Colibri Chat created 19.04.2009 17:17:32\r\n\r\nDeveloper contacts:\r\nmailto:xbeowolf@gmail.com\r\nphone:+380684862837\r\nskype:x-beowolf\r\nicq:320-329-575"
             VALUE "CompanyName", "Podobashev D. O. / BEOWOLF"
             VALUE "FileDescription", "Colibri Chat Server Application"
-            VALUE "FileVersion", "1, 2, 5, 1"
+            VALUE "FileVersion", "1.2.6.0"
             VALUE "InternalName", "ColibriServer"
             VALUE "LegalCopyright", "© BEOWOLF / Podobashev Dmitry, 2010"
             VALUE "LegalTrademarks", "MetaShape"
             VALUE "OriginalFilename", "ColibriServer.exe"
             VALUE "PrivateBuild", "Build 16"
             VALUE "ProductName", "Colibri Chat"
-            VALUE "ProductVersion", "1, 2, 5, 1"
+            VALUE "ProductVersion", "1.2.6.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -82,13 +82,11 @@ END
 
 
 /////////////////////////////////////////////////////////////////////////////
-// Russian resources
+// Russian (Russia) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
-#ifdef _WIN32
 LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
 #pragma code_page(1251)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -103,28 +101,26 @@ END
 
 3 TEXTINCLUDE 
 BEGIN
-    "\r\n"
+    "\r\0"
 END
 
 2 TEXTINCLUDE 
 BEGIN
-    "#include ""afxres.h""\r\n"
+    "#include ""afxres.h""\r\0"
 END
 
 #endif    // APSTUDIO_INVOKED
 
-#endif    // Russian resources
+#endif    // Russian (Russia) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -132,7 +128,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_CONNECTIONS, DIALOG
     BEGIN
@@ -198,7 +194,7 @@ END
 // Menu
 //
 
-IDM_SHELL MENU 
+IDM_SHELL MENU
 BEGIN
     POPUP "&Overlap"
     BEGIN
@@ -210,7 +206,7 @@ BEGIN
     END
 END
 
-IDM_CONNECTIONS MENU 
+IDM_CONNECTIONS MENU
 BEGIN
     POPUP "&Overlap"
     BEGIN
@@ -227,21 +223,21 @@ END
 // String Table
 //
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_SHELL_TIP           "Colibri Chat Server"
     IDS_ABOUT_TITLE         "About Colibri Chat"
     IDS_ABOUT_INFO          "Colibri Chat Server, product version 1.2.5.1\r\n\r\n© BEOWOLF / Podobashev Dmitry, 2010"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_PASS_NET            "First password for network connection does not coincide with second"
     IDS_PASS_GOD            "First password for god cheat does not coincide with second"
     IDS_PASS_DEVIL          "First password for devil cheat does not coincide with second"
 END
 
-#endif    // English (U.S.) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

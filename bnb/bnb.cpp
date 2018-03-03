@@ -251,7 +251,7 @@ void Header::init(WORD msg, WORD ti)
 		m_trnid = -1;
 }
 
-int Header::read(const char*& ptr) throw()
+size_t Header::read(const char*& ptr) throw()
 {
 	const char* ptr0 = ptr;
 
@@ -450,10 +450,10 @@ bool JBTransaction::isPrimary() throw()
 }
 
 // stream IO
-int JBTransaction::read(const char*& ptr)
+size_t JBTransaction::read(const char*& ptr)
 {
-	int epos = Header::read(ptr);
-	int dsize = m_sizecompr ? m_sizecompr : m_sizeuncompr;
+	size_t epos = Header::read(ptr);
+	DWORD dsize = m_sizecompr ? m_sizecompr : m_sizeuncompr;
 	m_data = std::string(ptr, dsize);
 	ptr += dsize;
 	epos += dsize;

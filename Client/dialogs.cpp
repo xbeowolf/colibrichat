@@ -204,7 +204,6 @@ INT_PTR WINAPI JClient::DlgProcHelper0(HWND hWnd, UINT message, WPARAM wParam, L
 
 	default: retval = FALSE;
 	}
-	SetWindowLong(hWnd, DWL_MSGRESULT, (LONG)retval);
 	return retval;
 }
 
@@ -312,7 +311,6 @@ INT_PTR WINAPI JClient::DlgProcHelper1(HWND hWnd, UINT message, WPARAM wParam, L
 
 	default: retval = FALSE;
 	}
-	SetWindowLong(hWnd, DWL_MSGRESULT, (LONG)retval);
 	return retval;
 }
 
@@ -477,7 +475,6 @@ INT_PTR WINAPI JClient::DlgProcHelper2(HWND hWnd, UINT message, WPARAM wParam, L
 
 	default: retval = FALSE;
 	}
-	SetWindowLong(hWnd, DWL_MSGRESULT, (LONG)retval);
 	return retval;
 }
 
@@ -617,7 +614,6 @@ INT_PTR WINAPI JClient::DlgProcHelper3(HWND hWnd, UINT message, WPARAM wParam, L
 
 	default: retval = FALSE;
 	}
-	SetWindowLong(hWnd, DWL_MSGRESULT, (LONG)retval);
 	return retval;
 }
 
@@ -1193,7 +1189,7 @@ LRESULT WINAPI JClient::JSplashRtfEditor::DlgProc(HWND hWnd, UINT message, WPARA
 				{
 					TOOLTIPTEXT* lpttt = (TOOLTIPTEXT*)lParam;
 					lpttt->hinst = JClientApp::jpApp->hinstApp;
-					lpttt->lpszText = (LPTSTR)s_mapButTips[lpttt->hdr.idFrom];
+					lpttt->lpszText = (LPTSTR)s_mapButTips[(UINT)lpttt->hdr.idFrom];
 					break;
 				}
 
@@ -1753,7 +1749,7 @@ LRESULT WINAPI JClient::JMessageEditor::DlgProc(HWND hWnd, UINT message, WPARAM 
 				{
 					TOOLTIPTEXT* lpttt = (TOOLTIPTEXT*)lParam;
 					lpttt->hinst = JClientApp::jpApp->hinstApp;
-					lpttt->lpszText = (LPTSTR)s_mapButTips[lpttt->hdr.idFrom];
+					lpttt->lpszText = (LPTSTR)s_mapButTips[(UINT)lpttt->hdr.idFrom];
 					break;
 				}
 

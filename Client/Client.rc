@@ -13,6 +13,7 @@
 // Generated from the TEXTINCLUDE 2 resource.
 //
 #include "winres.h"
+#include "windows.h"
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
 
@@ -20,17 +21,15 @@
 // Neutral resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
-#ifdef _WIN32
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 #pragma code_page(1251)
-#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // Accelerator
 //
 
-IDA_MAIN ACCELERATORS 
+IDA_MAIN ACCELERATORS
 BEGIN
     "B",            201,                    VIRTKEY, CONTROL, NOINVERT
     "I",            202,                    VIRTKEY, CONTROL, NOINVERT
@@ -41,7 +40,7 @@ BEGIN
     VK_RETURN,      IDOK2,                  VIRTKEY, CONTROL, NOINVERT
 END
 
-IDA_RICHEDIT ACCELERATORS 
+IDA_RICHEDIT ACCELERATORS
 BEGIN
     "B",            201,                    VIRTKEY, CONTROL, NOINVERT
     "I",            202,                    VIRTKEY, CONTROL, NOINVERT
@@ -57,15 +56,25 @@ END
 //
 
 IDB_EDIT                BITMAP                  "iml_edit.bmp"
+
 IDB_SEND                BITMAP                  "send.bmp"
+
 IDB_TAB                 BITMAP                  "iml_tab.bmp"
+
 IDB_MAN                 BITMAP                  "iml_man.bmp"
+
 IDB_STATUS              BITMAP                  "iml_status.bmp"
+
 IDB_STATUSIMG           BITMAP                  "iml_statusImg.bmp"
+
 IDB_UL_BG               BITMAP                  "userlist_bg.bmp"
+
 IDB_UL_SEL              BITMAP                  "userlist_sel.bmp"
+
 IDB_UL_HOT              BITMAP                  "userlist_hot.bmp"
+
 IDB_UL_FOC              BITMAP                  "userlist_foc.bmp"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -75,7 +84,9 @@ IDB_UL_FOC              BITMAP                  "userlist_foc.bmp"
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_CLIENT              ICON                    "Colibri1.ico"
+
 IDI_SMALL               ICON                    "Chat.ico"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -83,8 +94,8 @@ IDI_SMALL               ICON                    "Chat.ico"
 //
 
 1 VERSIONINFO
- FILEVERSION 1,2,5,2
- PRODUCTVERSION 1,2,5,2
+ FILEVERSION 1,2,6,0
+ PRODUCTVERSION 1,2,6,0
  FILEFLAGSMASK 0x1fL
 #ifdef _DEBUG
  FILEFLAGS 0x9L
@@ -102,14 +113,14 @@ BEGIN
             VALUE "Comments", "Shareware; Colibri Chat created 19.04.2009 17:17:32\r\n\r\nDeveloper contacts:\r\nmailto:xbeowolf@gmail.com\r\nphone:+380684862837\r\nskype:x-beowolf\r\nicq:320-329-575"
             VALUE "CompanyName", "Podobashev D. O. / BEOWOLF"
             VALUE "FileDescription", "Colibri Chat Client Application"
-            VALUE "FileVersion", "1, 2, 5, 2"
+            VALUE "FileVersion", "1.2.6.0"
             VALUE "InternalName", "ColibriClient"
             VALUE "LegalCopyright", "© BEOWOLF / Podobashev Dmitry, 2010"
             VALUE "LegalTrademarks", "MetaShape"
             VALUE "OriginalFilename", "ColibriClient.exe"
             VALUE "PrivateBuild", "Build 50"
             VALUE "ProductName", "Colibri Chat"
-            VALUE "ProductVersion", "1, 2, 5, 2"
+            VALUE "ProductVersion", "1.2.6.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -123,13 +134,11 @@ END
 
 
 /////////////////////////////////////////////////////////////////////////////
-// Russian resources
+// Russian (Russia) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
-#ifdef _WIN32
 LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
 #pragma code_page(1251)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -144,7 +153,7 @@ END
 
 3 TEXTINCLUDE 
 BEGIN
-    "\r\n"
+    "\r\0"
 END
 
 2 TEXTINCLUDE 
@@ -162,7 +171,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_HELPER0, DIALOG
     BEGIN
@@ -261,18 +270,16 @@ BEGIN
     EDITTEXT        IDC_PORT,4,130,40,14,ES_AUTOHSCROLL | ES_NUMBER
 END
 
-#endif    // Russian resources
+#endif    // Russian (Russia) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -280,7 +287,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_MAIN, DIALOG
     BEGIN
@@ -339,7 +346,7 @@ EXSTYLE WS_EX_CONTEXTHELP | WS_EX_CONTROLPARENT
 CAPTION "Server"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    CONTROL         "",IDC_LOG,"RichEdit20A",ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | ES_NUMBER | WS_BORDER | WS_VSCROLL | WS_TABSTOP,0,0,300,179,0,HIDC_LOG
+    CONTROL         "",IDC_LOG,"RichEdit20W",ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | ES_NUMBER | WS_BORDER | WS_VSCROLL | WS_TABSTOP,0,0,300,179,0,HIDC_LOG
     CONTROL         "Hostname/IP:",IDC_STATIC1,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,0,183,44,8,0,HIDC_STATIC1
     CONTROL         "port:",IDC_STATIC2,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,140,183,16,8,0,HIDC_STATIC2
     EDITTEXT        IDC_PORT,156,181,24,12,ES_AUTOHSCROLL | ES_NUMBER
@@ -427,7 +434,7 @@ END
 
 IDD_SPLASHRTF DIALOGEX 0, 0, 186, 90
 STYLE DS_ABSALIGN | DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_VISIBLE
-EXSTYLE WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_CONTEXTHELP | 0x80000L
+EXSTYLE WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_CONTEXTHELP | WS_EX_LAYERED
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     CONTROL         "",IDC_RICHEDIT,"RichEdit20A",ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | ES_WANTRETURN | WS_VSCROLL,0,0,186,90,0,HIDC_RICHEDIT
@@ -488,7 +495,7 @@ END
 // Menu
 //
 
-IDM_RICHEDIT MENU 
+IDM_RICHEDIT MENU
 BEGIN
     POPUP "&Overlap"
     BEGIN
@@ -505,7 +512,7 @@ BEGIN
     END
 END
 
-IDM_LOG MENU 
+IDM_LOG MENU
 BEGIN
     POPUP "&Overlap"
     BEGIN
@@ -515,7 +522,7 @@ BEGIN
     END
 END
 
-IDM_TAB MENU 
+IDM_TAB MENU
 BEGIN
     POPUP "&Overlap"
     BEGIN
@@ -523,7 +530,7 @@ BEGIN
     END
 END
 
-IDM_CHANNEL MENU 
+IDM_CHANNEL MENU
 BEGIN
     POPUP "&Overlap"
     BEGIN
@@ -547,7 +554,7 @@ BEGIN
     END
 END
 
-IDM_USER MENU 
+IDM_USER MENU
 BEGIN
     POPUP "&Overlap"
     BEGIN
@@ -573,7 +580,7 @@ BEGIN
     END
 END
 
-IDM_CHANLIST MENU 
+IDM_CHANLIST MENU
 BEGIN
     POPUP "&Overlap"
     BEGIN
@@ -586,7 +593,7 @@ BEGIN
     END
 END
 
-IDM_USERGOD MENU 
+IDM_USERGOD MENU
 BEGIN
     POPUP "&Overlap"
     BEGIN
@@ -619,7 +626,7 @@ END
 // String Table
 //
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_MSG_NICKERROR       "wrong nick"
     IDS_MSG_NICKVALID       "Content is valid"
@@ -630,7 +637,7 @@ BEGIN
     IDS_MSG_PRIVATEMESSAGE  "User bans messages receiving"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_MSG_ALERT           "User bans alerts receiving"
     IDS_MSG_SOUNDSIGNAL     "Sound signal disabled now for this user"
@@ -642,7 +649,7 @@ BEGIN
     IDS_MSG_READER          "You have only reader access rights, and can not send messages"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     idsRtfCmd               "Rich text commands"
     idsBold                 "Bold"
@@ -654,7 +661,7 @@ BEGIN
     idsFgColor              "Text Color"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     idsBgColor              "Background Color"
     idsSheetColor           "Sheet Color"
@@ -669,7 +676,7 @@ BEGIN
     idsBkMode               "Background Transparency"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_MSG_PASSAUTH        "Autentification of password"
     IDS_MSG_OLDPASS         "Wrong old password."
@@ -682,7 +689,7 @@ BEGIN
     IDS_MSG_PORTRANGE       "Port number is out of range 1000 ... 65535."
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_QSW                 "Quick Setup Wizard"
     IDS_QSW_QSW             "Quick Setup Wizard"
@@ -695,7 +702,7 @@ BEGIN
     IDS_QSW_HOST            "Host and port definition"
 END
 
-#endif    // English (U.S.) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

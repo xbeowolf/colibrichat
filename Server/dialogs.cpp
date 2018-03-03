@@ -226,7 +226,7 @@ LRESULT WINAPI JServer::JConnections::DlgProc(HWND hWnd, UINT message, WPARAM wP
 
 							case 2:
 								if (iu != pNode->mUser.end()) {
-									_stprintf_s(buffer, _countof(buffer), TEXT("%u"),
+									_stprintf_s(buffer, _countof(buffer), TEXT("%zu"),
 										iu->second.opened.size());
 								} else {
 									_stprintf_s(buffer, _countof(buffer), TEXT("N/A"));
@@ -407,10 +407,10 @@ void JServer::JConnections::DelLine(SOCKET sock)
 
 void JServer::JConnections::BuildView()
 {
-	for each (SetJID::value_type const& v in pNode->aLinksEvent) {
+	for each (SetSock::value_type const& v in pNode->aLinksEvent) {
 		if (JLink::get(v)->isEstablished()) AddLine(v);
 	}
-	for each (SetJID::value_type const& v in pNode->aLinksAsync) {
+	for each (SetSock::value_type const& v in pNode->aLinksAsync) {
 		if (JLink::get(v)->isEstablished()) AddLine(v);
 	}
 }

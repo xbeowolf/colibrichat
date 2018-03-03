@@ -276,7 +276,6 @@ INT_PTR WINAPI JPropertyDialog::DlgProcStub(HWND hWnd, UINT message, WPARAM wPar
 			SetWindowLongPtr(hWnd, GWLP_USERDATA, 0);
 		}
 	} else return FALSE;
-	SetWindowLong(hWnd, DWL_MSGRESULT, (LONG)retval);
 	return retval;
 }
 

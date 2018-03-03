@@ -264,7 +264,7 @@ void JLink::SubSend(size_t len) throw()
 size_t JLink::RecvData() throw()
 {
 	ioRecv.buf.buf = (char*)recvbuf.data();
-	ioRecv.buf.len = recvbuf.size();
+	ioRecv.buf.len = (ULONG)recvbuf.size();
 
 	DWORD dwNumberOfBytes = 0;
 	DWORD dwFlags = 0;
@@ -311,7 +311,7 @@ size_t JLink::SendData() throw()
 	}
 
 	ioSend.buf.buf = (char*)m_aBufferSend.data();
-	ioSend.buf.len = m_aBufferSend.size();
+	ioSend.buf.len = (ULONG)m_aBufferSend.size();
 
 	DWORD dwNumberOfBytes = 0;
 	int err = WSASend(m_ID, &ioSend.buf, 1, &dwNumberOfBytes, 0, (LPWSAOVERLAPPED)&ioSend, 0);
@@ -379,7 +379,7 @@ DWORD JEngine::JEventSock::ThreadProc()
 			aEvent[count++] = m_hSleep;
 			{
 				DoCS cs(&pNode->m_csLinks);
-				for each (SetJID::value_type const& v in m_aLinks) {
+				for each (SetSock::value_type const& v in m_aLinks) {
 					if (count >= _countof(aSock)) break;
 					JPtr<JLink> link = JLink::get(v);
 					_ASSERT(link);
@@ -420,7 +420,7 @@ DWORD JEngine::JEventSock::ThreadProc()
 	catch (std::exception& e)
 	{
 		std::string err = format("Unhandled Exception!\r\n%s\r\n%s\r\n", typeid(e).name(), e.what());
-		WriteConsoleA(s_hErrlog, err.c_str(), err.size(), 0, 0);
+		WriteConsoleA(s_hErrlog, err.c_str(), (DWORD)err.size(), 0, 0);
 
 		retval = -1;
 	}
@@ -458,7 +458,7 @@ DWORD JEngine::JManager::ThreadProc()
 			}
 
 			// Copy links that must be closed
-			SetJID close;
+			SetSock close;
 			{
 				DoCS cs(&pNode->m_csClose);
 				close = m_aClose;
@@ -478,7 +478,7 @@ DWORD JEngine::JManager::ThreadProc()
 			}
 			// Close links
 			if (close.size()) {
-				for each (SetJID::value_type const& v in close) {
+				for each (SetSock::value_type const& v in close) {
 					pNode->DeleteLink(v);
 				}
 			}
@@ -491,7 +491,7 @@ DWORD JEngine::JManager::ThreadProc()
 	catch (std::exception& e)
 	{
 		std::string err = format("Unhandled Exception!\r\n%s\r\n%s\r\n", typeid(e).name(), e.what());
-		WriteConsoleA(s_hErrlog, err.c_str(), err.size(), 0, 0);
+		WriteConsoleA(s_hErrlog, err.c_str(), (DWORD)err.size(), 0, 0);
 
 		retval = -1;
 	}
@@ -581,7 +581,7 @@ DWORD JEngine::JIocpListener::ThreadProc()
 	catch (std::exception& e)
 	{
 		std::string err = format("Unhandled Exception!\r\n%s\r\n%s\r\n", typeid(e).name(), e.what());
-		WriteConsoleA(s_hErrlog, err.c_str(), err.size(), 0, 0);
+		WriteConsoleA(s_hErrlog, err.c_str(), (DWORD)err.size(), 0, 0);
 
 		retval = -1;
 	}
@@ -656,7 +656,7 @@ DWORD JEngine::JIocpSock::ThreadProc()
 	catch (std::exception& e)
 	{
 		std::string err = format("Unhandled Exception!\r\n%s\r\n%s\r\n", typeid(e).name(), e.what());
-		WriteConsoleA(s_hErrlog, err.c_str(), err.size(), 0, 0);
+		WriteConsoleA(s_hErrlog, err.c_str(), (DWORD)err.size(), 0, 0);
 
 		retval = -1;
 	}
@@ -695,7 +695,7 @@ void JEngine::IPFilter::setCIDR(in_addr sa, u_short m)
 
 void JEngine::IPFilter::setCIDR(const std::string& cidr)
 {
-	int pos = cidr.find('/');
+	size_t pos = cidr.find('/');
 	m_addr.S_un.S_addr = ntohl(inet_addr(cidr.substr(0, pos).c_str()));
 	m_mask.S_un.S_addr = pos != std::string::npos
 		? 0xFFFFFFFF << (32 - atoi(cidr.substr(pos+1).c_str()))
@@ -759,11 +759,11 @@ size_t JEngine::countEstablished() const
 {
 	DoCS cs(&m_csLinks);
 	size_t count = 0;
-	for each (SetJID::value_type const& v in m_aLinksEvent)
+	for each (SetSock::value_type const& v in m_aLinksEvent)
 		if (JLink::get(v)->isEstablished()) count++;
-	for each (SetJID::value_type const& v in m_aLinksAsync)
+	for each (SetSock::value_type const& v in m_aLinksAsync)
 		if (JLink::get(v)->isEstablished()) count++;
-	for each (SetJID::value_type const& v in m_aLinksIocp)
+	for each (SetSock::value_type const& v in m_aLinksIocp)
 		if (JLink::get(v)->isEstablished()) count++;
 	return count;
 }
@@ -857,7 +857,7 @@ void JEngine::DeleteLink(SOCKET sock)
 					jp = m_aEventSock.back();
 					if (v != jp) {
 						_ASSERT(jp->m_aLinks.size());
-						JID sockm = *jp->m_aLinks.begin();
+						SOCKET sockm = *jp->m_aLinks.begin();
 						jp->m_aLinks.erase(sockm);
 						_VERIFY(v->m_aLinks.insert(sockm).second);
 						jp->Wakeup();
@@ -903,10 +903,10 @@ bool JEngine::PushTrn(SOCKET sock, JTransaction* jpTrn, size_t ssi) throw()
 	}
 }
 
-int  JEngine::BroadcastTrn(const SetJID& set, JTransaction* jpTrn, size_t ssi) throw()
+int  JEngine::BroadcastTrn(const SetSock& set, JTransaction* jpTrn, size_t ssi) throw()
 {
 	int sent = 0;
-	for each (SetJID::value_type const& v in set) {
+	for each (SetSock::value_type const& v in set) {
 		if (PushTrn(v, jpTrn, ssi))
 			sent++;
 	}

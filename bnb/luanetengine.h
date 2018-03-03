@@ -30,57 +30,49 @@
 //-----------------------------------------------------------------------------
 
 #ifdef _DEBUG
-#define LUACALLMARK(pLuaVM) lua_State* L = pLuaVM; int _top = lua_gettop(L); _ASSERT(_top >= 0);
+#define LUACALLMARK(lvm) lua_State* L = lvm; int _top = lua_gettop(L); _ASSERT(_top >= 0);
 #define LUACALLCHECK _ASSERT(lua_gettop(L) == _top);
 #else
-#define LUACALLMARK(pLuaVM) lua_State* L = pLuaVM;
+#define LUACALLMARK(lvm) lua_State* L = lvm;
 #define LUACALLCHECK
 #endif
-#define DOLUACS DoLuaCS _cs(jpLuaVM); LUACALLMARK(*jpLuaVM);
+#define DOLUACS DoCS _cs(&m_luaCS); LUACALLMARK(m_luaVM);
 
 //-----------------------------------------------------------------------------
 
 namespace netengine
 {
-	class JLuaWrapper;
-	class DoLuaCS;
+	class LuaWrapper;
 	template<class JT>
 	class JLuaEngine;
 
-	class JLuaWrapper : public JClass
+	class LuaWrapper
 	{
 	public:
 
-		friend class DoLuaCS;
+		friend class DoCS;
 
-		explicit JLuaWrapper();
-		void beforeDestruct();
+		explicit LuaWrapper();
 
 		virtual void lua_openVM();
 		virtual void lua_closeVM();
 		bool isopened() const { return m_luaVM != nullptr; }
-
-		operator lua_State*() const { return m_luaVM; }
+		void lua_setup(const LuaWrapper& lw);
+		void lua_reset();
 
 	protected:
 
 		lua_State* m_luaVM; // Lua virtual machine
 		mutable CRITICAL_SECTION m_luaCS; // Lua virtual machine critical section object
-	}; // class JLuaWrapper
-
-	class DoLuaCS : DoCS
-	{
-	public:
-		DoLuaCS(const JPtr<JLuaWrapper>& jp) : DoCS(&jp->m_luaCS) {}
-	}; // class DoLuaCS
+	}; // class LuaWrapper
 
 	template<class JT>
-	class JLuaEngine : public JT
+	class JLuaEngine : public JT, public LuaWrapper
 	{
 	public:
 
 		// Constructor
-		JLuaEngine();
+		JLuaEngine() {}
 		virtual const char* ClassName() const = 0;
 
 		void Init();
@@ -92,6 +84,7 @@ namespace netengine
 
 		virtual void lua_openVM();
 		virtual void lua_closeVM();
+		virtual void beforeDestruct();
 
 		// Timeout to validate the link, ms
 		DWORD ValidateTimeout(SOCKET sock);
@@ -110,10 +103,6 @@ namespace netengine
 
 		void OnTrnBadDOM(SOCKET sock, const std::string& data);
 		void OnTrnBadCRC(SOCKET sock);
-
-	public:
-
-		JPtr<JLuaWrapper> jpLuaVM;
 
 	protected:
 

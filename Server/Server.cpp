@@ -558,7 +558,7 @@ void JServer::OnLinkEstablished(SOCKET sock)
 		tnid.uID = 1;
 		tnid.uFlags = NIF_TIP;
 		tnid.uVersion = NOTIFYICON_VERSION;
-		_stprintf_s(tnid.szTip, _countof(tnid.szTip), APPNAME TEXT("\n%u connections"), countEstablished());
+		_stprintf_s(tnid.szTip, _countof(tnid.szTip), APPNAME TEXT("\n%zu connections"), countEstablished());
 		Shell_NotifyIcon(NIM_MODIFY, &tnid);
 	}
 }
@@ -602,7 +602,7 @@ void JServer::OnLinkClose(SOCKET sock, UINT err)
 		tnid.uID = 1;
 		tnid.uFlags = NIF_TIP;
 		tnid.uVersion = NOTIFYICON_VERSION;
-		_stprintf_s(tnid.szTip, _countof(tnid.szTip), APPNAME TEXT("\n%u connections"), count);
+		_stprintf_s(tnid.szTip, _countof(tnid.szTip), APPNAME TEXT("\n%zu connections"), count);
 		Shell_NotifyIcon(NIM_MODIFY, &tnid);
 	}
 }
@@ -610,13 +610,13 @@ void JServer::OnLinkClose(SOCKET sock, UINT err)
 int  JServer::BroadcastTrn(const SetId& set, bool nested, JTransaction* jpTrn, size_t ssi) throw()
 {
 	// Count users to prevent duplicate sents
-	SetJID broadcast;
+	SetSock broadcast;
 	MapIdSocket::const_iterator iis;
 	for each (SetId::value_type const& v in set)
 	{
 		iis = m_mIdSocket.find(v);
 		if (iis != m_mIdSocket.end()) // private talk
-			broadcast.insert((JID)iis->second);
+			broadcast.insert(iis->second);
 		else {
 			if (nested) {
 				MapChannel::const_iterator ic = m_mChannel.find(v);
@@ -624,7 +624,7 @@ int  JServer::BroadcastTrn(const SetId& set, bool nested, JTransaction* jpTrn, s
 					for each (SetId::value_type const& v in ic->second.opened) {
 						iis = m_mIdSocket.find(v);
 						if (iis != m_mIdSocket.end())
-							broadcast.insert((JID)iis->second);
+							broadcast.insert(iis->second);
 					}
 				}
 			}
